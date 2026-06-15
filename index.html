@@ -1132,8 +1132,8 @@ function renderCV() {
       : '<span style="color:var(--muted)">—</span>';
 
     const btnAcao = c.status.toUpperCase() === 'ATIVO'
-      ? `<button class="btn btn-danger btn-sm" onclick="inativarDireto('${c.linha}','${c.nome}')">Inativar</button>`
-      : `<button class="btn btn-success btn-sm" onclick="reativar('${c.linha}','${c.nome}')">Reativar</button>`;
+      ? `<button class="btn btn-danger btn-sm" onclick="inativarDireto('${c.matricula}','${c.nome}')">Inativar</button>`
+      : `<button class="btn btn-success btn-sm" onclick="reativar('${c.matricula}','${c.nome}')">Reativar</button>`;
 
     return `<tr>
       <td>${c.matricula}</td>
@@ -1258,7 +1258,8 @@ async function reativar(linha, nome) {
 // ══════════════════════════════════════════════
 async function carregarInativar() {
   const r = await api('getControleVouchers');
-  const ativos = (r.colaboradores || []).filter(c => c.status.toUpperCase() === 'ATIVO');
+  const lista = r.itens || r.colaboradores || [];
+  const ativos = lista.filter(c => (c.status || '').toUpperCase() === 'ATIVO');
   renderListaInativar(ativos);
   window._colabsAtivos = ativos;
 }
@@ -1293,19 +1294,24 @@ function selecionarParaInativar(linha, nome, matricula) {
 }
 
 async function confirmarInativacao() {
+  const motivo = document.getElementById('fi-motivo').value;
+  if (!motivo) { toast('Selecione um motivo', 'error'); return; }
   const dados = {
-    linha:   window._inativarLinha,
-    data:    document.getElementById('fi-data').value,
-    motivo:  document.getElementById('fi-motivo').value,
-    obs:     document.getElementById('fi-obs').value,
-    responsavel: session?.nome || ''
+    matricula:            document.getElementById('fi-matricula').value,
+    dataDesligamento:     document.getElementById('fi-data').value,
+    motivoDesligamento:   motivo,
+    observacoes:          document.getElementById('fi-obs').value,
+    responsavel:          session?.nome || ''
   };
-  if (!dados.motivo) { toast('Selecione um motivo', 'error'); return; }
-  const r = await api('inativarColaborador', dados);
-  toast('Colaborador inativado com sucesso!', 'success');
+  try {
+    await api('inativar', dados);
+    toast('Colaborador inativado com sucesso!', 'success');
     document.getElementById('form-inativar').style.display = 'none';
     document.getElementById('form-inativar-placeholder').style.display = 'block';
     carregarInativar();
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
 }
 
 // ══════════════════════════════════════════════
