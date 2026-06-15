@@ -537,11 +537,26 @@
       <h1>↓ Exportar Planilha Diária</h1>
       <p>Gerar planilha de vouchers para o dia</p>
     </div>
-    <div class="panel" style="max-width:520px">
-      <div class="form-group">
-        <label>Data Base</label>
-        <input type="date" id="exp-data" oninput="previewExport()"/>
+    <div class="panel" style="max-width:580px">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data Base</label>
+          <input type="date" id="exp-data" oninput="previewExport()"/>
+        </div>
+        <div class="form-group">
+          <label>Data de Vencimento</label>
+          <input type="date" id="exp-data-fim" oninput="previewExport()"/>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Deixe em branco para calcular automaticamente (dia base +1)</div>
+        </div>
       </div>
+
+      <!-- Atalhos de final de semana -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="atalhoFDS('sexta-sabado')">Sex → Sáb</button>
+        <button class="btn btn-ghost btn-sm" onclick="atalhoFDS('sexta-segunda')">Sex → Seg (fds completo)</button>
+        <button class="btn btn-ghost btn-sm" onclick="atalhoFDS('hoje-amanha')">Hoje → Amanhã</button>
+      </div>
+
       <div id="exp-preview" class="preview-box" style="display:none"></div>
       <button class="btn btn-primary" onclick="exportarPlanilha()" style="margin-top:8px">⬇ Baixar Excel</button>
     </div>
@@ -615,10 +630,40 @@
 
     <!-- Campos editáveis -->
     <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Configurações do Voucher</div>
+
     <div class="form-row">
-      <div class="form-group"><label>Hora Entrada</label><input type="time" id="ed-hora-entrada"/></div>
-      <div class="form-group"><label>Hora Saída</label><input type="time" id="ed-hora-saida"/></div>
+      <div class="form-group"><label>Hora Entrada</label><input type="time" id="ed-hora-entrada" oninput="recalcularDatasModal()"/></div>
+      <div class="form-group"><label>Hora Saída</label><input type="time" id="ed-hora-saida" oninput="recalcularDatasModal()"/></div>
     </div>
+
+    <div class="form-group">
+      <label>Trajeto</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:pointer" id="lbl-ida">
+          <input type="radio" name="ed-trajeto" value="IDA" id="radio-ida" style="accent-color:var(--accent)"/>
+          <span style="font-size:13px;font-weight:600;color:var(--accent)">IDA</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">vai de Uber</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:pointer" id="lbl-volta">
+          <input type="radio" name="ed-trajeto" value="VOLTA" id="radio-volta" style="accent-color:#a78bfa"/>
+          <span style="font-size:13px;font-weight:600;color:#a78bfa">VOLTA</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">sai de Uber</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Preview das datas calculadas -->
+    <div id="ed-datas-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:none">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Datas do voucher (calculadas)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><span style="font-size:10px;color:var(--muted)">DATA INÍCIO</span><div id="ed-prev-data-inicio" style="font-size:13px;font-weight:600;color:var(--success)">—</div></div>
+        <div><span style="font-size:10px;color:var(--muted)">HORA INÍCIO</span><div id="ed-prev-hora-inicio" style="font-size:13px;font-weight:600;color:var(--success)">—</div></div>
+        <div><span style="font-size:10px;color:var(--muted)">DATA FIM</span><div id="ed-prev-data-fim" style="font-size:13px;font-weight:600;color:var(--danger)">—</div></div>
+        <div><span style="font-size:10px;color:var(--muted)">HORA FIM</span><div id="ed-prev-hora-fim" style="font-size:13px;font-weight:600;color:var(--danger)">—</div></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">⚠️ Datas calculadas com base na data de hoje. Use a Exportação para gerar com data específica.</div>
+    </div>
+
     <div class="form-row">
       <div class="form-group"><label>Aplicativo</label>
         <select id="ed-aplicativo"><option>UBER</option><option>99</option><option>UBER/99</option></select>
@@ -1127,16 +1172,69 @@ function abrirEdicao(c) {
   document.getElementById('ed-hora-saida').value   = c.horaSaida   || '';
   document.getElementById('ed-aplicativo').value   = c.aplicativo  || 'UBER/99';
   document.getElementById('ed-voucher').value      = c.codVoucher  || '';
+  // trajeto editável
+  const trajetoVal = c.trajeto || '';
+  document.querySelectorAll('[name="ed-trajeto"]').forEach(r => { r.checked = r.value === trajetoVal; });
+  // preview datas
+  recalcularDatasModal();
   abrirModal('modal-edicao');
 }
 
+function recalcularDatasModal() {
+  const entrada = document.getElementById('ed-hora-entrada').value;
+  const saida   = document.getElementById('ed-hora-saida').value;
+  const preview = document.getElementById('ed-datas-preview');
+  if (!entrada || !saida) { preview.style.display = 'none'; return; }
+
+  // Determinar trajeto automaticamente pelas horas
+  const hE = parseInt(entrada.split(':')[0], 10);
+  const hS = parseInt(saida.split(':')[0],   10);
+  let trajetoAuto = null;
+  if (hE >= 0 && hE <= 4) trajetoAuto = 'IDA';
+  else if (hS >= 0 && hS <= 4) trajetoAuto = 'VOLTA';
+
+  // Se o usuário não selecionou manualmente, marcar o automático
+  const selecionado = document.querySelector('[name="ed-trajeto"]:checked');
+  if (!selecionado && trajetoAuto) {
+    const rb = document.getElementById(trajetoAuto === 'IDA' ? 'radio-ida' : 'radio-volta');
+    if (rb) rb.checked = true;
+  }
+
+  // Calcular datas com base em hoje
+  const hoje = new Date();
+  const ano = hoje.getFullYear(), mes = hoje.getMonth(), dia = hoje.getDate();
+  const [hEn, mEn] = entrada.split(':').map(Number);
+  const [hSa, mSa] = saida.split(':').map(Number);
+  const trajetoFinal = (document.querySelector('[name="ed-trajeto"]:checked') || {}).value || trajetoAuto;
+
+  let dInicio, dFim;
+  if (trajetoFinal === 'IDA') {
+    dFim    = new Date(ano, mes, dia + 1, hEn, mEn);
+    dInicio = new Date(dFim.getTime() - 2 * 3600000);
+  } else if (trajetoFinal === 'VOLTA') {
+    dInicio = new Date(ano, mes, dia + 1, hSa, mSa);
+    dFim    = new Date(dInicio.getTime() + 2 * 3600000);
+  } else { preview.style.display = 'none'; return; }
+
+  const fmtD = d => String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  const fmtH = d => String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+
+  document.getElementById('ed-prev-data-inicio').textContent = fmtD(dInicio);
+  document.getElementById('ed-prev-hora-inicio').textContent = fmtH(dInicio);
+  document.getElementById('ed-prev-data-fim').textContent    = fmtD(dFim);
+  document.getElementById('ed-prev-hora-fim').textContent    = fmtH(dFim);
+  preview.style.display = 'block';
+}
+
 async function salvarEdicao() {
+  const trajetoEl = document.querySelector('[name="ed-trajeto"]:checked');
   const dados = {
     matricula:   document.getElementById('ed-matricula').value,
     horaEntrada: document.getElementById('ed-hora-entrada').value,
     horaSaida:   document.getElementById('ed-hora-saida').value,
     aplicativo:  document.getElementById('ed-aplicativo').value,
     codVoucher:  document.getElementById('ed-voucher').value,
+    trajeto:     trajetoEl ? trajetoEl.value : '',
   };
   const r = await api('salvarConfigVoucher', dados);
   toast('Salvo com sucesso!', 'success'); fecharModal('modal-edicao'); carregarControle();
@@ -1212,37 +1310,84 @@ async function confirmarInativacao() {
 // ══════════════════════════════════════════════
 //  EXPORTAR
 // ══════════════════════════════════════════════
-function previewExport() {
+function calcularDatasExport() {
   const dataBase = document.getElementById('exp-data').value;
-  if (!dataBase) { document.getElementById('exp-preview').style.display = 'none'; return; }
-
+  const dataFimCustom = document.getElementById('exp-data-fim') ? document.getElementById('exp-data-fim').value : '';
+  if (!dataBase) return null;
   const [ano, mes, dia] = dataBase.split('-').map(Number);
   const base = new Date(ano, mes - 1, dia);
-  const prox = new Date(base); prox.setDate(prox.getDate() + 1);
+  // Data de vencimento: custom ou base+1
+  let venc;
+  if (dataFimCustom) {
+    const [av, mv, dv] = dataFimCustom.split('-').map(Number);
+    venc = new Date(av, mv - 1, dv);
+  } else {
+    venc = new Date(base); venc.setDate(venc.getDate() + 1);
+  }
+  return { base, venc };
+}
 
-  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+function atalhoFDS(tipo) {
+  const hoje = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  if (tipo === 'sexta-sabado') {
+    // sexta como base, sábado como vencimento
+    const sexta = new Date(hoje);
+    const diaSem = hoje.getDay();
+    const diffSexta = diaSem <= 5 ? (5 - diaSem) : 6; // próxima sexta
+    sexta.setDate(hoje.getDate() + (diaSem === 5 ? 0 : diffSexta));
+    const sabado = new Date(sexta); sabado.setDate(sexta.getDate() + 1);
+    document.getElementById('exp-data').value     = fmt(sexta);
+    document.getElementById('exp-data-fim').value = fmt(sabado);
+  } else if (tipo === 'sexta-segunda') {
+    const sexta = new Date(hoje);
+    const diaSem = hoje.getDay();
+    const diffSexta = diaSem === 5 ? 0 : (diaSem < 5 ? 5 - diaSem : 6);
+    sexta.setDate(hoje.getDate() + diffSexta);
+    const segunda = new Date(sexta); segunda.setDate(sexta.getDate() + 3);
+    document.getElementById('exp-data').value     = fmt(sexta);
+    document.getElementById('exp-data-fim').value = fmt(segunda);
+  } else {
+    document.getElementById('exp-data').value     = fmt(hoje);
+    document.getElementById('exp-data-fim').value = '';
+  }
+  previewExport();
+}
 
+function previewExport() {
+  const res = calcularDatasExport();
+  if (!res) { document.getElementById('exp-preview').style.display = 'none'; return; }
+  const { base, venc } = res;
+  const fmt  = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const isFDS = venc.getDay() === 0 || venc.getDay() === 6;
   document.getElementById('exp-preview').style.display = 'block';
   document.getElementById('exp-preview').innerHTML = `
-    <div class="row"><span class="lbl">Data Base:</span> <span class="val">${fmt(base)}</span></div>
-    <div class="row"><span class="lbl">Data Início (turno madrugada):</span> <span class="val">${fmt(prox)} 00:00</span></div>
-    <div class="row"><span class="lbl">Data Fim:</span> <span class="val">${fmt(prox)} 06:00</span></div>
-    <div class="row" style="margin-top:8px;color:var(--muted);font-size:11px">Turno de madrugada sempre ocorre no dia seguinte à data base</div>
+    <div class="row"><span class="lbl">Data Base:</span> <span class="val">${fmt(base)} (${dias[base.getDay()]})</span></div>
+    <div class="row"><span class="lbl">Data de Vencimento:</span> <span class="val" style="color:${isFDS?'var(--warning)':'var(--text)'}">${fmt(venc)} (${dias[venc.getDay()]})${isFDS?' ⚠️ Final de semana':''}</span></div>
+    <div class="row"><span class="lbl">Planilha gerada para:</span> <span class="val">${fmt(venc)}</span></div>
+    <div class="row" style="margin-top:8px;color:var(--muted);font-size:11px">
+      ${base.getDay() === 5 ? '📅 Sexta-feira detectada — verifique se a data de vencimento está correta para o fim de semana.' : 'Turno de madrugada ocorre no dia do vencimento.'}
+    </div>
   `;
 }
 
 async function exportarPlanilha() {
-  const dataBase = document.getElementById('exp-data').value;
-  if (!dataBase) { toast('Informe a data base', 'error'); return; }
-  const r = await api('exportarPlanilha', { dataBase });
+  const res = calcularDatasExport();
+  if (!res) { toast('Informe a data base', 'error'); return; }
+  const { base, venc } = res;
+  const fmtISO = d => d.toISOString().split('T')[0];
+  // Envia dataBase (para o backend calcular horários) e dataVenc (para sobrescrever a data de vencimento)
+  const r = await api('exportarExcel', { dataBase: fmtISO(base), dataVenc: fmtISO(venc) });
   if (!r || !r.linhas) { toast('Erro ao exportar', 'error'); return; }
 
   const dados = r.linhas || [];
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Vouchers');
-  XLSX.writeFile(wb, `vouchers_${dataBase}.xlsx`);
-  toast('Planilha exportada!', 'success');
+  const nomeFmt = d => String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();
+  XLSX.writeFile(wb, `vouchers_${nomeFmt(base)}_ate_${nomeFmt(venc)}.xlsx`);
+  toast(`Planilha exportada! ${r.total || 0} colaboradores.`, 'success');
 }
 
 // ══════════════════════════════════════════════
