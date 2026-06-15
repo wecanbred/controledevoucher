@@ -664,14 +664,18 @@ let chartAtividade = null;
 //  API
 // ══════════════════════════════════════════════
 async function api(acao, params = {}) {
-  const body = { acao, ...params };
+  // Apps Script: usar action (igual ao doPost) e Content-Type text/plain evita preflight CORS
+  const body = { action: acao, ...params };
   if (session) body.token = session.token;
   const r = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body),
+    redirect: 'follow',
   });
-  return r.json();
+  const json = await r.json();
+  if (json.ok === false) throw new Error(json.error);
+  return json.data !== undefined ? json.data : json;
 }
 
 // ══════════════════════════════════════════════
