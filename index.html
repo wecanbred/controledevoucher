@@ -688,7 +688,7 @@ async function fazerLogin() {
   err.style.display = 'none';
   try {
     const r = await api('login', { email, senha });
-    if (r.success) {
+    if (r && r.id) {
       session = r;
       document.getElementById('login-page').style.display = 'none';
       document.getElementById('user-nome').textContent  = r.nome;
@@ -696,11 +696,11 @@ async function fazerLogin() {
       aplicarPermissoes(r.permissoes || []);
       carregarDashboard();
     } else {
-      err.textContent  = r.error || 'Credenciais inválidas';
+      err.textContent  = 'Credenciais inválidas';
       err.style.display = 'block';
     }
   } catch(e) {
-    err.textContent  = 'Erro de conexão';
+    err.textContent  = e.message || 'Erro de conexão';
     err.style.display = 'block';
   }
 }
@@ -754,7 +754,7 @@ async function carregarDashboard() {
   document.getElementById('dash-content').style.display  = 'none';
 
   const r = await api('getDashboardData');
-  if (!r.success) { toast('Erro ao carregar dashboard: ' + r.error, 'error'); return; }
+  if (!r || !r.totais) { toast('Erro ao carregar dashboard', 'error'); return; }
 
   // KPIs
   document.getElementById('kpi-ativos').textContent   = r.totais.ativos;
@@ -908,9 +908,9 @@ async function carregarControle() {
   document.getElementById('cv-content').style.display = 'none';
 
   const r = await api('getControleVouchers');
-  if (!r.success) { toast('Erro: ' + r.error, 'error'); return; }
+  if (!r || !r.itens) { toast('Erro ao carregar controle', 'error'); return; }
 
-  cvDados    = r.colaboradores || [];
+  cvDados    = r.itens || r.colaboradores || [];
   cvFiltrado = [...cvDados];
   renderCV();
 
@@ -1008,22 +1008,19 @@ async function salvarEdicao() {
     prorrogacao: document.getElementById('ed-prorrogacao').value,
   };
   const r = await api('editarVoucher', dados);
-  if (r.success) { toast('Salvo com sucesso!', 'success'); fecharModal('modal-edicao'); carregarControle(); }
-  else toast('Erro: ' + r.error, 'error');
+  toast('Salvo com sucesso!', 'success'); fecharModal('modal-edicao'); carregarControle();
 }
 
 async function inativarDireto(linha, nome) {
   if (!confirm(`Inativar ${nome}?`)) return;
   const r = await api('inativarColaborador', { linha, motivo: 'Inativado manualmente', data: new Date().toISOString().split('T')[0] });
-  if (r.success) { toast('Inativado!', 'success'); carregarControle(); }
-  else toast('Erro: ' + r.error, 'error');
+  toast('Inativado!', 'success'); carregarControle();
 }
 
 async function reativar(linha, nome) {
   if (!confirm(`Reativar ${nome}?`)) return;
   const r = await api('reativarColaborador', { linha });
-  if (r.success) { toast('Reativado!', 'success'); carregarControle(); }
-  else toast('Erro: ' + r.error, 'error');
+  toast('Reativar!', 'success'); carregarControle();
 }
 
 // ══════════════════════════════════════════════
@@ -1075,12 +1072,10 @@ async function confirmarInativacao() {
   };
   if (!dados.motivo) { toast('Selecione um motivo', 'error'); return; }
   const r = await api('inativarColaborador', dados);
-  if (r.success) {
-    toast('Colaborador inativado com sucesso!', 'success');
+  toast('Colaborador inativado com sucesso!', 'success');
     document.getElementById('form-inativar').style.display = 'none';
     document.getElementById('form-inativar-placeholder').style.display = 'block';
     carregarInativar();
-  } else toast('Erro: ' + r.error, 'error');
 }
 
 // ══════════════════════════════════════════════
@@ -1109,9 +1104,9 @@ async function exportarPlanilha() {
   const dataBase = document.getElementById('exp-data').value;
   if (!dataBase) { toast('Informe a data base', 'error'); return; }
   const r = await api('exportarPlanilha', { dataBase });
-  if (!r.success) { toast('Erro: ' + r.error, 'error'); return; }
+  if (!r || !r.linhas) { toast('Erro ao exportar', 'error'); return; }
 
-  const dados = r.dados || [];
+  const dados = r.linhas || [];
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Vouchers');
@@ -1127,10 +1122,10 @@ async function carregarHistorico() {
   document.getElementById('hist-content').style.display = 'none';
 
   const r = await api('getHistorico');
-  if (!r.success) { toast('Erro: ' + r.error, 'error'); return; }
+  if (!r || !r.itens) { toast('Erro ao carregar histórico', 'error'); return; }
 
   const tbody = document.getElementById('tbody-hist');
-  tbody.innerHTML = (r.historico || []).reverse().map(h => `
+  tbody.innerHTML = (r.itens || []).slice().map(h => `
     <tr>
       <td>${h.dataHora}</td>
       <td><span class="tipo-badge ${tipoClass(h.tipo)}">${h.tipo}</span></td>
@@ -1153,10 +1148,10 @@ async function carregarUsuarios() {
   document.getElementById('users-content').style.display = 'none';
 
   const r = await api('listarUsuarios');
-  if (!r.success) { toast('Erro: ' + r.error, 'error'); return; }
+  if (!r || !r.itens) { toast('Erro ao carregar usuários', 'error'); return; }
 
   const tbody = document.getElementById('tbody-users');
-  tbody.innerHTML = (r.usuarios || []).map(u => `
+  tbody.innerHTML = (r.itens || []).map(u => `
     <tr>
       <td>${u.nome}</td>
       <td>${u.email}</td>
@@ -1194,14 +1189,12 @@ async function salvarUsuario() {
     permissoes:  perms
   };
   const r = await api('salvarUsuario', dados);
-  if (r.success) { toast('Salvo!', 'success'); fecharModal('modal-usuario'); carregarUsuarios(); }
-  else toast('Erro: ' + r.error, 'error');
+  toast('Salvo!', 'success'); fecharModal('modal-usuario'); carregarUsuarios();
 }
 
 async function toggleUsuario(id, ativar) {
   const r = await api('toggleUsuario', { id, ativar });
-  if (r.success) { toast(ativar ? 'Ativado!' : 'Desativado!', 'success'); carregarUsuarios(); }
-  else toast('Erro: ' + r.error, 'error');
+  toast(ativar ? 'Ativado!' : 'Desativado!', 'success'); carregarUsuarios();
 }
 
 // ══════════════════════════════════════════════
@@ -1212,10 +1205,8 @@ async function sincronizar() {
   btn.disabled = true; btn.textContent = '⏳ Sincronizando...';
   const r = await api('sincronizarTemplate');
   btn.disabled = false; btn.innerHTML = '🔄 Sincronizar Template';
-  if (r.success) {
-    toast(r.mensagem || 'Sincronizado!', 'success');
+  toast(r.mensagem || 'Sincronizado!', 'success');
     if (document.getElementById('page-dashboard').classList.contains('active')) carregarDashboard();
-  } else toast('Erro: ' + r.error, 'error');
 }
 
 // ══════════════════════════════════════════════
