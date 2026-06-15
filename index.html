@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Controle de Voucher — WeCan</title>
 
-<!-- Leaflet para o mapa -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Mapa via SVG embutido -->
 <!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- XLSX para exportação -->
@@ -133,9 +131,16 @@
 
   /* ── MAPA ── */
   #mapa-brasil {
-    width: 100%; height: 400px; border-radius: 8px;
-    background: var(--surface2);
+    width: 100%; height: 420px; border-radius: 8px;
+    background: var(--surface2); position: relative; overflow: hidden;
   }
+  #mapa-brasil svg { width: 100%; height: 100%; }
+  .estado-shape { fill: var(--surface2); stroke: var(--border); stroke-width: 0.5; transition: fill .2s; cursor: pointer; }
+  .estado-shape:hover { fill: var(--surface); }
+  .estado-shape.tem-dados { fill: rgba(79,124,255,0.25); }
+  .estado-shape.tem-dados:hover { fill: rgba(79,124,255,0.45); }
+  .mapa-tooltip { position:absolute; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; pointer-events:none; display:none; z-index:10; white-space:nowrap; }
+  .mapa-legenda { display:flex; gap:16px; margin-top:10px; font-size:11px; color:var(--muted); align-items:center; }
 
   /* ── CHART CONTAINERS ── */
   .chart-wrap { position: relative; height: 200px; }
@@ -472,12 +477,9 @@
               <th onclick="sortCV(1)">Nome Completo <span class="sort-ico">⇅</span></th>
               <th onclick="sortCV(2)">Celular <span class="sort-ico">⇅</span></th>
               <th onclick="sortCV(3)">CPF <span class="sort-ico">⇅</span></th>
-              <th onclick="sortCV(4)">Trajeto <span class="sort-ico">⇅</span></th>
-              <th onclick="sortCV(5)">Data Início <span class="sort-ico">⇅</span></th>
-              <th>Hora Início</th>
-              <th onclick="sortCV(7)">Data Fim <span class="sort-ico">⇅</span></th>
-              <th>Hora Fim</th>
-              <th onclick="sortCV(9)">Status <span class="sort-ico">⇅</span></th>
+              <th onclick="sortCV(4)">Unidade <span class="sort-ico">⇅</span></th>
+              <th onclick="sortCV(5)">Trajeto <span class="sort-ico">⇅</span></th>
+              <th onclick="sortCV(6)">Status <span class="sort-ico">⇅</span></th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -590,21 +592,38 @@
 <!-- MODAL EDIÇÃO VOUCHER -->
 <div class="modal-backdrop" id="modal-edicao">
   <div class="modal">
-    <h2>✏️ Editar Voucher</h2>
+    <h2>✏️ Editar Cadastro</h2>
     <input type="hidden" id="ed-linha"/>
+    <input type="hidden" id="ed-matricula"/>
+
+    <!-- Info somente leitura -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Informações do Colaborador</div>
+      <div class="form-row">
+        <div><span style="font-size:11px;color:var(--muted)">NOME</span><div id="ed-info-nome" style="font-size:13px;font-weight:600;margin-top:2px">—</div></div>
+        <div><span style="font-size:11px;color:var(--muted)">MATRÍCULA</span><div id="ed-info-mat" style="font-size:13px;font-weight:600;margin-top:2px">—</div></div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div><span style="font-size:11px;color:var(--muted)">DATA ADMISSÃO</span><div id="ed-info-admissao" style="font-size:13px;margin-top:2px">—</div></div>
+        <div><span style="font-size:11px;color:var(--muted)">VENC. CONTRATO</span><div id="ed-info-contrato" style="font-size:13px;margin-top:2px">—</div></div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div><span style="font-size:11px;color:var(--muted)">UNIDADE</span><div id="ed-info-unidade" style="font-size:13px;margin-top:2px">—</div></div>
+        <div><span style="font-size:11px;color:var(--muted)">TRAJETO ATUAL</span><div id="ed-info-trajeto" style="font-size:13px;margin-top:2px">—</div></div>
+      </div>
+    </div>
+
+    <!-- Campos editáveis -->
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Configurações do Voucher</div>
     <div class="form-row">
       <div class="form-group"><label>Hora Entrada</label><input type="time" id="ed-hora-entrada"/></div>
       <div class="form-group"><label>Hora Saída</label><input type="time" id="ed-hora-saida"/></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Aplicativo</label>
-        <select id="ed-aplicativo"><option>UBER</option><option>99</option></select>
+        <select id="ed-aplicativo"><option>UBER</option><option>99</option><option>UBER/99</option></select>
       </div>
-      <div class="form-group"><label>Voucher</label><input type="text" id="ed-voucher"/></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Data Admissão</label><input type="date" id="ed-admissao"/></div>
-      <div class="form-group"><label>Prorrogação Contrato</label><input type="date" id="ed-prorrogacao"/></div>
+      <div class="form-group"><label>Cód. Voucher</label><input type="text" id="ed-voucher" placeholder="Opcional"/></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModal('modal-edicao')">Cancelar</button>
@@ -656,7 +675,6 @@ let cvDados   = [];
 let cvFiltrado = [];
 let cvSortCol = -1;
 let cvSortAsc = true;
-let mapaInst  = null;
 let chartTrajetos  = null;
 let chartAtividade = null;
 
@@ -805,37 +823,141 @@ function tipoClass(tipo) {
 }
 
 function renderizarMapa(estados) {
-  if (!mapaInst) {
-    mapaInst = L.map('mapa-brasil', { zoomControl: true, scrollWheelZoom: false })
-      .setView([-15.7801, -47.9292], 4);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO', maxZoom: 18
-    }).addTo(mapaInst);
-  } else {
-    mapaInst.eachLayer(l => { if (l instanceof L.CircleMarker || l instanceof L.Marker) mapaInst.removeLayer(l); });
+  const container = document.getElementById('mapa-brasil');
+  const mapaData = {};
+  estados.forEach(e => { mapaData[e.sigla] = e.count; });
+  const max = Math.max(...Object.values(mapaData), 1);
+
+  // Tooltip
+  let tooltipEl = container.querySelector('.mapa-tooltip');
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'mapa-tooltip';
+    container.appendChild(tooltipEl);
   }
 
-  const coordsEstados = {
-    'AC':[-9.0,-70.0],'AL':[-9.5,-36.6],'AM':[-3.4,-65.3],'AP':[1.4,-51.8],
-    'BA':[-12.9,-41.6],'CE':[-5.2,-39.5],'DF':[-15.8,-47.9],'ES':[-19.5,-40.6],
-    'GO':[-16.0,-49.6],'MA':[-5.4,-44.8],'MG':[-18.5,-44.4],'MS':[-20.5,-54.5],
-    'MT':[-12.9,-51.0],'PA':[-3.8,-52.6],'PB':[-7.0,-36.7],'PE':[-8.3,-37.8],
-    'PI':[-7.7,-42.9],'PR':[-24.9,-51.6],'RJ':[-22.2,-42.8],'RN':[-5.8,-36.7],
-    'RO':[-10.9,-62.0],'RR':[2.1,-61.0],'RS':[-30.0,-53.3],'SC':[-27.3,-50.2],
-    'SE':[-10.6,-37.5],'SP':[-22.3,-48.9],'TO':[-10.2,-48.3]
+  // Posições centrais de cada estado no SVG viewBox (aprox. 850x700)
+  const pos = {
+    AC:{x:95,y:310},  AL:{x:635,y:315},  AM:{x:195,y:220},  AP:{x:470,y:95},
+    BA:{x:570,y:340},  CE:{x:635,y:235},  DF:{x:470,y:395},  ES:{x:600,y:430},
+    GO:{x:460,y:390},  MA:{x:520,y:210},  MG:{x:530,y:415},  MS:{x:380,y:465},
+    MT:{x:335,y:355},  PA:{x:430,y:195},  PB:{x:660,y:265},  PE:{x:630,y:280},
+    PI:{x:570,y:255},  PR:{x:430,y:500},  RJ:{x:565,y:455},  RN:{x:670,y:245},
+    RO:{x:225,y:330},  RR:{x:270,y:100},  RS:{x:390,y:570},  SC:{x:430,y:540},
+    SE:{x:640,y:335},  SP:{x:480,y:455},  TO:{x:490,y:310}
   };
 
-  const max = Math.max(...estados.map(e => e.count), 1);
-  estados.forEach(e => {
-    const coords = coordsEstados[e.sigla];
-    if (!coords) return;
-    const radius = 10 + (e.count / max) * 35;
-    L.circleMarker(coords, {
-      radius, color: '#4f7cff', fillColor: '#4f7cff',
-      fillOpacity: 0.5, weight: 2
-    }).addTo(mapaInst)
-      .bindPopup(`<b>${e.sigla}</b><br>${e.count} colaborador${e.count !== 1 ? 'es' : ''}`);
+  // Nomes dos estados
+  const nomes = {
+    AC:'Acre',AL:'Alagoas',AM:'Amazonas',AP:'Amapá',BA:'Bahia',CE:'Ceará',
+    DF:'Distrito Federal',ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',
+    MG:'Minas Gerais',MS:'Mato Grosso do Sul',MT:'Mato Grosso',PA:'Pará',
+    PB:'Paraíba',PE:'Pernambuco',PI:'Piauí',PR:'Paraná',RJ:'Rio de Janeiro',
+    RN:'Rio Grande do Norte',RO:'Rondônia',RR:'Roraima',RS:'Rio Grande do Sul',
+    SC:'Santa Catarina',SE:'Sergipe',SP:'São Paulo',TO:'Tocantins'
+  };
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+
+  // Limpa SVG anterior
+  let svg = container.querySelector('svg.mapa-svg');
+  if (svg) svg.remove();
+
+  svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 850 700');
+  svg.setAttribute('class', 'mapa-svg');
+  container.insertBefore(svg, tooltipEl);
+
+  // Borda do Brasil (simplificada como fundo)
+  const bg = document.createElementNS(svgNS, 'rect');
+  bg.setAttribute('width','850'); bg.setAttribute('height','700');
+  bg.setAttribute('fill','transparent');
+  svg.appendChild(bg);
+
+  // Renderiza cada estado como círculo + label
+  Object.keys(pos).forEach(uf => {
+    const p = pos[uf];
+    const count = mapaData[uf] || 0;
+    const pct = count / max;
+    const r = count > 0 ? Math.max(18, 18 + pct * 42) : 14;
+
+    // Grupo
+    const g = document.createElementNS(svgNS, 'g');
+    g.setAttribute('class', 'estado-group');
+    g.style.cursor = 'pointer';
+
+    // Círculo de fundo (sempre visível)
+    const circleBg = document.createElementNS(svgNS, 'circle');
+    circleBg.setAttribute('cx', p.x); circleBg.setAttribute('cy', p.y);
+    circleBg.setAttribute('r', r);
+    circleBg.setAttribute('fill', count > 0
+      ? `rgba(79,124,255,${0.15 + pct * 0.55})`
+      : 'rgba(46,51,80,0.5)');
+    circleBg.setAttribute('stroke', count > 0 ? '#4f7cff' : 'var(--border)');
+    circleBg.setAttribute('stroke-width', count > 0 ? '1.5' : '0.8');
+    g.appendChild(circleBg);
+
+    // Label UF
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', p.x); label.setAttribute('y', p.y + 1);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('dominant-baseline', 'middle');
+    label.setAttribute('fill', count > 0 ? '#fff' : '#8891b4');
+    label.setAttribute('font-size', count > 0 ? '9' : '8');
+    label.setAttribute('font-weight', count > 0 ? '700' : '400');
+    label.setAttribute('font-family', 'Segoe UI, sans-serif');
+    label.textContent = uf;
+    g.appendChild(label);
+
+    // Count badge (só se tem dados)
+    if (count > 0) {
+      const badge = document.createElementNS(svgNS, 'text');
+      badge.setAttribute('x', p.x); badge.setAttribute('y', p.y + r + 10);
+      badge.setAttribute('text-anchor', 'middle');
+      badge.setAttribute('fill', '#4f7cff');
+      badge.setAttribute('font-size', '8');
+      badge.setAttribute('font-family', 'Segoe UI, sans-serif');
+      badge.textContent = count;
+      g.appendChild(badge);
+    }
+
+    // Tooltip on hover
+    g.addEventListener('mouseenter', (e) => {
+      tooltipEl.innerHTML = `<strong>${uf}</strong> — ${nomes[uf]}<br><span style="color:var(--accent)">${count} colaborador${count !== 1 ? 'es' : ''}</span>`;
+      tooltipEl.style.display = 'block';
+    });
+    g.addEventListener('mousemove', (e) => {
+      const rect = container.getBoundingClientRect();
+      tooltipEl.style.left = (e.clientX - rect.left + 12) + 'px';
+      tooltipEl.style.top  = (e.clientY - rect.top  - 10) + 'px';
+    });
+    g.addEventListener('mouseleave', () => { tooltipEl.style.display = 'none'; });
+
+    svg.appendChild(g);
   });
+
+  // Linhas de conexão estéticas entre estados próximos (opcional visual)
+  // skipped para manter limpo
+
+  // Legenda
+  let legenda = container.parentElement.querySelector('.mapa-legenda');
+  if (!legenda) {
+    legenda = document.createElement('div');
+    legenda.className = 'mapa-legenda';
+    container.parentElement.appendChild(legenda);
+  }
+  const comDados = Object.values(mapaData).filter(v => v > 0).length;
+  legenda.innerHTML = `
+    <span style="display:flex;align-items:center;gap:6px">
+      <span style="width:12px;height:12px;border-radius:50%;background:rgba(79,124,255,0.5);border:1px solid #4f7cff;display:inline-block"></span>
+      Com colaboradores
+    </span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <span style="width:12px;height:12px;border-radius:50%;background:rgba(46,51,80,0.5);border:1px solid var(--border);display:inline-block"></span>
+      Sem dados
+    </span>
+    <span style="margin-left:auto">${comDados} estado${comDados !== 1 ? 's' : ''} com colaboradores</span>
+  `;
 }
 
 function renderGraficoTrajetos(trajetos) {
@@ -935,7 +1057,7 @@ function filtrarCV() {
 }
 
 function sortCV(col) {
-  const keys = ['matricula','nome','celular','cpf','trajeto','dataInicio','horaInicio','dataFim','horaFim','status'];
+  const keys = ['matricula','nome','celular','cpf','unidade','trajeto','status'];
   if (cvSortCol === col) cvSortAsc = !cvSortAsc;
   else { cvSortCol = col; cvSortAsc = true; }
 
@@ -972,44 +1094,51 @@ function renderCV() {
       <td><strong>${c.nome}</strong></td>
       <td>${c.celular || '—'}</td>
       <td>${c.cpf || '—'}</td>
+      <td><span style="color:var(--muted);font-size:12px">${c.unidade || '—'}</span></td>
       <td>${trajetoPill}</td>
-      <td>${c.dataInicio || '<span style="color:var(--muted)">—</span>'}</td>
-      <td>${c.horaInicio || '<span style="color:var(--muted)">—</span>'}</td>
-      <td>${c.dataFim || '<span style="color:var(--muted)">—</span>'}</td>
-      <td>${c.horaFim || '<span style="color:var(--muted)">—</span>'}</td>
       <td>${statusPill}</td>
       <td class="actions-cell">
         <button class="btn btn-ghost btn-sm" onclick="abrirEdicao(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
         ${btnAcao}
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="11" class="empty-state" style="padding:40px">Nenhum resultado encontrado</td></tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty-state" style="padding:40px">Nenhum resultado encontrado</td></tr>`;
 
   document.getElementById('cv-count').textContent = `Exibindo ${cvFiltrado.length} de ${cvDados.length} colaboradores`;
 }
 
 function abrirEdicao(c) {
-  document.getElementById('ed-linha').value       = c.linha;
-  document.getElementById('ed-hora-entrada').value = c.horaInicio || '';
-  document.getElementById('ed-hora-saida').value   = c.horaFim    || '';
-  document.getElementById('ed-aplicativo').value   = c.aplicativo || 'UBER';
-  document.getElementById('ed-voucher').value      = c.voucher    || '';
-  document.getElementById('ed-admissao').value     = c.admissao   ? isoDate(c.admissao) : '';
-  document.getElementById('ed-prorrogacao').value  = c.prorrogacao ? isoDate(c.prorrogacao) : '';
+  document.getElementById('ed-linha').value        = c.linha;
+  document.getElementById('ed-matricula').value    = c.matricula;
+  // info readonly
+  document.getElementById('ed-info-nome').textContent     = c.nome      || '—';
+  document.getElementById('ed-info-mat').textContent      = c.matricula || '—';
+  document.getElementById('ed-info-admissao').textContent = c.dataAdmissao    || '—';
+  document.getElementById('ed-info-contrato').textContent = c.dataProrrogacao || '—';
+  document.getElementById('ed-info-unidade').textContent  = c.unidade   || '—';
+  // trajeto calculado
+  const traj = c.trajeto || '—';
+  const trajColor = traj === 'IDA' ? 'var(--accent)' : traj === 'VOLTA' ? '#a78bfa' : 'var(--warning)';
+  document.getElementById('ed-info-trajeto').innerHTML = traj !== '—'
+    ? `<span style="color:${trajColor};font-weight:600">${traj}</span>`
+    : '<span style="color:var(--muted)">—</span>';
+  // campos editáveis
+  document.getElementById('ed-hora-entrada').value = c.horaEntrada || '';
+  document.getElementById('ed-hora-saida').value   = c.horaSaida   || '';
+  document.getElementById('ed-aplicativo').value   = c.aplicativo  || 'UBER/99';
+  document.getElementById('ed-voucher').value      = c.codVoucher  || '';
   abrirModal('modal-edicao');
 }
 
 async function salvarEdicao() {
   const dados = {
-    linha:       document.getElementById('ed-linha').value,
+    matricula:   document.getElementById('ed-matricula').value,
     horaEntrada: document.getElementById('ed-hora-entrada').value,
     horaSaida:   document.getElementById('ed-hora-saida').value,
     aplicativo:  document.getElementById('ed-aplicativo').value,
-    voucher:     document.getElementById('ed-voucher').value,
-    admissao:    document.getElementById('ed-admissao').value,
-    prorrogacao: document.getElementById('ed-prorrogacao').value,
+    codVoucher:  document.getElementById('ed-voucher').value,
   };
-  const r = await api('editarVoucher', dados);
+  const r = await api('salvarConfigVoucher', dados);
   toast('Salvo com sucesso!', 'success'); fecharModal('modal-edicao'); carregarControle();
 }
 
