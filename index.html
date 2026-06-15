@@ -804,7 +804,7 @@ function navTo(id) {
   if (id === 'usuarios')   carregarUsuarios();
   if (id === 'exportar') {
     const hoje = new Date();
-    document.getElementById('exp-data').value = hoje.toISOString().split('T')[0];
+    const hj = hoje; document.getElementById('exp-data').value = hj.getFullYear() + '-' + String(hj.getMonth()+1).padStart(2,'0') + '-' + String(hj.getDate()).padStart(2,'0');
     previewExport();
   }
 }
@@ -1285,7 +1285,7 @@ function filtrarInativar() {
 function selecionarParaInativar(linha, nome, matricula) {
   document.getElementById('fi-nome').value      = nome;
   document.getElementById('fi-matricula').value = matricula;
-  document.getElementById('fi-data').value      = new Date().toISOString().split('T')[0];
+  const _hj = new Date(); document.getElementById('fi-data').value = _hj.getFullYear() + '-' + String(_hj.getMonth()+1).padStart(2,'0') + '-' + String(_hj.getDate()).padStart(2,'0');
   document.getElementById('fi-motivo').value    = '';
   document.getElementById('fi-obs').value       = '';
   window._inativarLinha = linha;
@@ -1336,7 +1336,7 @@ function calcularDatasExport() {
 
 function atalhoFDS(tipo) {
   const hoje = new Date();
-  const fmt = d => d.toISOString().split('T')[0];
+  const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   if (tipo === 'sexta-sabado') {
     // sexta como base, sábado como vencimento
     const sexta = new Date(hoje);
@@ -1383,9 +1383,9 @@ async function exportarPlanilha() {
   const res = calcularDatasExport();
   if (!res) { toast('Informe a data base', 'error'); return; }
   const { base, venc } = res;
-  const fmtISO = d => d.toISOString().split('T')[0];
-  // Envia dataBase (para o backend calcular horários) e dataVenc (para sobrescrever a data de vencimento)
-  const r = await api('exportarExcel', { dataBase: fmtISO(base), dataVenc: fmtISO(venc) });
+  // Formatar como YYYY-MM-DD usando data local (evita bug de UTC-3 do toISOString)
+  const fmtLocal = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const r = await api('exportarExcel', { dataBase: fmtLocal(base), dataVenc: fmtLocal(venc) });
   if (!r || !r.linhas) { toast('Erro ao exportar', 'error'); return; }
 
   const dados = r.linhas || [];
