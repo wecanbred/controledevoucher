@@ -713,6 +713,35 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbxX9zRkKk6xw0hEe2W8RcGe1wvRo2miyrDNQJXcUgUsHy6Mpvr47gaLRQNoY-N7LVKP7g/exec';
 
 // ══════════════════════════════════════════════
+//  SESSÃO PERSISTENTE (sobrevive a F5)
+// ══════════════════════════════════════════════
+const SESSION_KEY     = 'wecan_session_v1';
+const SESSION_TTL_MS  = 8 * 60 * 60 * 1000; // 8 horas
+
+function salvarSessao(s) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ session: s, savedAt: Date.now() }));
+  } catch(e) {}
+}
+
+function carregarSessaoSalva() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.savedAt || (Date.now() - parsed.savedAt) > SESSION_TTL_MS) {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return parsed.session;
+  } catch(e) { return null; }
+}
+
+function limparSessaoSalva() {
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════
 let session   = null;
@@ -753,6 +782,7 @@ async function fazerLogin() {
     const r = await api('login', { email, senha });
     if (r && r.id) {
       session = r;
+      salvarSessao(r);
       document.getElementById('login-page').style.display = 'none';
       document.getElementById('user-nome').textContent  = r.nome;
       document.getElementById('user-email').textContent = r.email;
@@ -773,6 +803,7 @@ document.addEventListener('keydown', e => {
 
 function logout() {
   session = null;
+  limparSessaoSalva();
   sessionStorage.clear();
   location.reload();
 }
@@ -781,9 +812,23 @@ function aplicarPermissoes(perms) {
   document.querySelectorAll('nav a[data-perm]').forEach(a => {
     const p = a.dataset.perm;
     if (!perms.includes(p)) a.style.display = 'none';
+    else a.style.display = 'flex';
   });
-  if (perms.includes('sincronizar')) {
-    document.getElementById('btn-sync-sidebar').style.display = 'flex';
+  document.getElementById('btn-sync-sidebar').style.display = perms.includes('sincronizar') ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════
+//  INICIALIZAÇÃO — restaura sessão salva, se houver, sem exigir novo login a cada F5
+// ══════════════════════════════════════════════
+function initApp() {
+  const salva = carregarSessaoSalva();
+  if (salva && salva.id) {
+    session = salva;
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('user-nome').textContent  = salva.nome;
+    document.getElementById('user-email').textContent = salva.email;
+    aplicarPermissoes(salva.permissoes || []);
+    carregarDashboard();
   }
 }
 
@@ -816,7 +861,14 @@ async function carregarDashboard() {
   document.getElementById('dash-loading').style.display = 'block';
   document.getElementById('dash-content').style.display  = 'none';
 
-  const r = await api('getDashboardData');
+  let r;
+  try {
+    r = await api('getDashboardData');
+  } catch(e) {
+    document.getElementById('dash-loading').innerHTML = '⚠️ Erro ao carregar dashboard: ' + e.message;
+    toast('Erro ao carregar dashboard: ' + e.message, 'error');
+    return;
+  }
   if (!r) { toast('Erro ao carregar dashboard', 'error'); return; }
   // compatibilidade: getDashboard retorna {ativos,inativos,total,recentes}, getDashboardData retorna {totais,...}
   if (!r.totais && r.ativos !== undefined) { r = { totais: {ativos:r.ativos, inativos:r.inativos, total:r.total}, trajetos:{IDA:0,VOLTA:0,'IDA E VOLTA':0}, atividade:[], topUnidades:[], topCidades:[], estadosMapa:[], ultimasInativacoes: (r.recentes||[]).map(x=>({dataHora:x.dataInat,tipo:'INATIVAÇÃO',matricula:x.matricula,motivo:x.motivo,responsavel:''})) }; }
@@ -1077,7 +1129,14 @@ async function carregarControle() {
   document.getElementById('cv-loading').style.display  = 'block';
   document.getElementById('cv-content').style.display = 'none';
 
-  const r = await api('getControleVouchers');
+  let r;
+  try {
+    r = await api('getControleVouchers');
+  } catch(e) {
+    document.getElementById('cv-loading').innerHTML = '⚠️ Erro ao carregar: ' + e.message;
+    toast('Erro ao carregar controle: ' + e.message, 'error');
+    return;
+  }
   if (!r || !r.itens) { toast('Erro ao carregar controle', 'error'); return; }
 
   cvDados    = r.itens || r.colaboradores || [];
@@ -1237,31 +1296,55 @@ async function salvarEdicao() {
     codVoucher:  document.getElementById('ed-voucher').value,
     trajeto:     trajetoEl ? trajetoEl.value : '',
   };
-  const r = await api('salvarConfigVoucher', dados);
-  toast('Salvo com sucesso!', 'success'); fecharModal('modal-edicao'); carregarControle();
+  try {
+    await api('salvarConfigVoucher', dados);
+    toast('Salvo com sucesso!', 'success'); fecharModal('modal-edicao'); carregarControle();
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, 'error');
+  }
 }
 
-async function inativarDireto(linha, nome) {
+async function inativarDireto(matricula, nome) {
   if (!confirm(`Inativar ${nome}?`)) return;
-  const r = await api('inativarColaborador', { linha, motivo: 'Inativado manualmente', data: new Date().toISOString().split('T')[0] });
-  toast('Inativado!', 'success'); carregarControle();
+  try {
+    await api('inativar', {
+      matricula,
+      motivoDesligamento: 'Inativado manualmente',
+      dataDesligamento: new Date().toISOString().split('T')[0],
+      responsavel: session?.nome || ''
+    });
+    toast('Inativado!', 'success');
+    carregarControle();
+  } catch(e) {
+    toast('Erro ao inativar: ' + e.message, 'error');
+  }
 }
 
-async function reativar(linha, nome) {
+async function reativar(matricula, nome) {
   if (!confirm(`Reativar ${nome}?`)) return;
-  const r = await api('reativarColaborador', { linha });
-  toast('Reativar!', 'success'); carregarControle();
+  try {
+    await api('reativar', { matricula });
+    toast('Reativado!', 'success');
+    carregarControle();
+  } catch(e) {
+    toast('Erro ao reativar: ' + e.message, 'error');
+  }
 }
 
 // ══════════════════════════════════════════════
 //  INATIVAR COLABORADOR
 // ══════════════════════════════════════════════
 async function carregarInativar() {
-  const r = await api('getControleVouchers');
-  const lista = r.itens || r.colaboradores || [];
-  const ativos = lista.filter(c => (c.status || '').toUpperCase() === 'ATIVO');
-  renderListaInativar(ativos);
-  window._colabsAtivos = ativos;
+  try {
+    const r = await api('getControleVouchers');
+    const lista = r.itens || r.colaboradores || [];
+    const ativos = lista.filter(c => (c.status || '').toUpperCase() === 'ATIVO');
+    renderListaInativar(ativos);
+    window._colabsAtivos = ativos;
+  } catch(e) {
+    toast('Erro ao carregar colaboradores: ' + e.message, 'error');
+    document.getElementById('lista-inativar').innerHTML = '<p class="text-muted" style="padding:12px">Erro ao carregar.</p>';
+  }
 }
 
 function renderListaInativar(lista) {
@@ -1385,16 +1468,20 @@ async function exportarPlanilha() {
   const { base, venc } = res;
   // Formatar como YYYY-MM-DD usando data local (evita bug de UTC-3 do toISOString)
   const fmtLocal = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-  const r = await api('exportarExcel', { dataBase: fmtLocal(base), dataVenc: fmtLocal(venc) });
-  if (!r || !r.linhas) { toast('Erro ao exportar', 'error'); return; }
+  try {
+    const r = await api('exportarExcel', { dataBase: fmtLocal(base), dataVenc: fmtLocal(venc) });
+    if (!r || !r.linhas) { toast('Erro ao exportar', 'error'); return; }
 
-  const dados = r.linhas || [];
-  const ws = XLSX.utils.json_to_sheet(dados);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Vouchers');
-  const nomeFmt = d => String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();
-  XLSX.writeFile(wb, `vouchers_${nomeFmt(base)}_ate_${nomeFmt(venc)}.xlsx`);
-  toast(`Planilha exportada! ${r.total || 0} colaboradores.`, 'success');
+    const dados = r.linhas || [];
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Vouchers');
+    const nomeFmt = d => String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();
+    XLSX.writeFile(wb, `vouchers_${nomeFmt(base)}_ate_${nomeFmt(venc)}.xlsx`);
+    toast(`Planilha exportada! ${r.total || 0} colaboradores.`, 'success');
+  } catch(e) {
+    toast('Erro ao exportar: ' + e.message, 'error');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1404,13 +1491,20 @@ async function carregarHistorico() {
   document.getElementById('hist-loading').style.display  = 'block';
   document.getElementById('hist-content').style.display = 'none';
 
-  const r = await api('getHistorico');
+  let r;
+  try {
+    r = await api('historico');
+  } catch(e) {
+    document.getElementById('hist-loading').innerHTML = '⚠️ Erro ao carregar histórico: ' + e.message;
+    toast('Erro ao carregar histórico: ' + e.message, 'error');
+    return;
+  }
   if (!r || !r.itens) { toast('Erro ao carregar histórico', 'error'); return; }
 
   const tbody = document.getElementById('tbody-hist');
   tbody.innerHTML = (r.itens || []).slice().map(h => `
     <tr>
-      <td>${h.dataHora}</td>
+      <td>${h.dataHora || h.data || ''}</td>
       <td><span class="tipo-badge ${tipoClass(h.tipo)}">${h.tipo}</span></td>
       <td>${h.matricula}</td>
       <td>${h.motivo}</td>
@@ -1430,7 +1524,14 @@ async function carregarUsuarios() {
   document.getElementById('users-loading').style.display  = 'block';
   document.getElementById('users-content').style.display = 'none';
 
-  const r = await api('listarUsuarios');
+  let r;
+  try {
+    r = await api('listarUsuarios');
+  } catch(e) {
+    document.getElementById('users-loading').innerHTML = '⚠️ Erro ao carregar usuários: ' + e.message;
+    toast('Erro ao carregar usuários: ' + e.message, 'error');
+    return;
+  }
   if (!r || !r.itens) { toast('Erro ao carregar usuários', 'error'); return; }
 
   const tbody = document.getElementById('tbody-users');
@@ -1464,20 +1565,35 @@ function abrirModalUsuario(u) {
 
 async function salvarUsuario() {
   const perms = [...document.querySelectorAll('[name=perm]:checked')].map(cb => cb.value);
+  const id = document.getElementById('u-id').value;
   const dados = {
-    id:          document.getElementById('u-id').value,
+    id,
     nome:        document.getElementById('u-nome').value,
     email:       document.getElementById('u-email').value,
     senha:       document.getElementById('u-senha').value,
-    permissoes:  perms
+    permissoes:  perms,
+    criadoPor:   session?.nome || ''
   };
-  const r = await api('salvarUsuario', dados);
-  toast('Salvo!', 'success'); fecharModal('modal-usuario'); carregarUsuarios();
+  try {
+    if (id) {
+      await api('editarUsuario', dados);
+    } else {
+      if (!dados.senha) { toast('Informe uma senha para o novo usuário', 'error'); return; }
+      await api('criarUsuario', dados);
+    }
+    toast('Salvo!', 'success'); fecharModal('modal-usuario'); carregarUsuarios();
+  } catch(e) {
+    toast('Erro ao salvar usuário: ' + e.message, 'error');
+  }
 }
 
 async function toggleUsuario(id, ativar) {
-  const r = await api('toggleUsuario', { id, ativar });
-  toast(ativar ? 'Ativado!' : 'Desativado!', 'success'); carregarUsuarios();
+  try {
+    await api('toggleUsuario', { id });
+    toast(ativar ? 'Ativado!' : 'Desativado!', 'success'); carregarUsuarios();
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1486,10 +1602,15 @@ async function toggleUsuario(id, ativar) {
 async function sincronizar() {
   const btn = document.getElementById('btn-sync-sidebar');
   btn.disabled = true; btn.textContent = '⏳ Sincronizando...';
-  const r = await api('sincronizar');
-  btn.disabled = false; btn.innerHTML = '🔄 Sincronizar Template';
-  toast(r.mensagem || 'Sincronizado!', 'success');
+  try {
+    const r = await api('sincronizar');
+    toast(r.mensagem || 'Sincronizado!', 'success');
     if (document.getElementById('page-dashboard').classList.contains('active')) carregarDashboard();
+  } catch(e) {
+    toast('Erro ao sincronizar: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🔄 Sincronizar Template';
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1516,6 +1637,9 @@ function isoDate(dataBR) {
   const [d, m, a] = dataBR.split('/');
   return `${a}-${m}-${d}`;
 }
+
+// Restaura sessão salva (se houver) ao carregar/recarregar a página
+initApp();
 </script>
 </body>
 </html>
