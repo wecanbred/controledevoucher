@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Seleção & Admissão — WeCan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #222637;
+    --surface3:  #2a2f47;
+    --border:    #2e3350;
+    --accent:    #14b8a6;
+    --accent-dim:#0d9488;
+    --voucher:   #4f7cff;
+    --success:   #22c55e;
+    --danger:    #ef4444;
+    --warning:   #f59e0b;
+    --text:      #e8eaf6;
+    --muted:     #8891b4;
+    --radius:    10px;
+    --font:      'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 226px; min-height: 100vh; background: var(--surface);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  }
+  .sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo .mark { width:30px; height:30px; border-radius:8px; background: linear-gradient(135deg,var(--accent),var(--accent-dim)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; color:#06231f; margin-bottom:10px; }
+  .sidebar-logo h2 { font-size: 13px; font-weight: 800; letter-spacing: .4px; }
+  .sidebar-logo span { font-size: 11px; color: var(--muted); }
+
+  nav { flex: 1; padding: 10px 0; overflow-y:auto; }
+  .nav-group { margin-bottom: 4px; }
+  .nav-group-header {
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:none; border:none; cursor:pointer; font-family: var(--font);
+    padding: 12px 18px 8px; font-size:10.5px; color: var(--muted); text-transform:uppercase; letter-spacing:.7px; font-weight:700;
+  }
+  .nav-group-header:hover { color: var(--text); }
+  .nav-group-header .chevron { font-size:11px; transition: transform .15s; color: var(--muted); }
+  .nav-group.collapsed .nav-group-header .chevron { transform: rotate(-90deg); }
+  .nav-group.collapsed .nav-group-items { display:none; }
+  nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 18px; font-size: 13.5px; color: var(--muted);
+    text-decoration: none; cursor: pointer; border-left: 3px solid transparent;
+    transition: all .15s; position:relative;
+  }
+  nav a:hover { color: var(--text); background: var(--surface2); }
+  nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(20,184,166,.07); font-weight: 600; }
+  nav a .ico { width: 18px; text-align: center; font-size: 15px; }
+  nav a .count-badge { margin-left:auto; background: var(--surface3); color: var(--muted); font-size:10.5px; padding:1px 7px; border-radius:20px; font-weight:700; }
+  nav a.active .count-badge { background: rgba(20,184,166,.18); color: var(--accent); }
+  nav a .count-badge.alert { background: rgba(245,158,11,.18); color: var(--warning); }
+
+  .sidebar-user { padding: 14px 18px; border-top: 1px solid var(--border); font-size: 12px; }
+  .sidebar-user strong { display: block; color: var(--text); }
+  .sidebar-user span { color: var(--muted); font-size: 11px; }
+  .btn-logout {
+    margin-top: 8px; background: none; border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; padding: 4px 10px; border-radius: 6px;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── MAIN ── */
+  #main { margin-left: 226px; flex: 1; padding: 26px 32px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 22px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .page-header h1 { font-size: 21px; font-weight: 800; }
+  .page-header p { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .scope-banner { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color: var(--muted); background: var(--surface2); border:1px solid var(--border); padding:4px 10px; border-radius:20px; margin-top:8px; }
+  .scope-banner b { color: var(--accent); }
+
+  /* ── CARDS / KPI ── */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .card-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+  .card-value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+  .card-value.teal   { color: var(--accent); }
+  .card-value.green  { color: var(--success); }
+  .card-value.red    { color: var(--danger); }
+  .card-value.blue   { color: var(--voucher); }
+  .card-value.amber  { color: var(--warning); }
+  .card-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .dash-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; margin-bottom: 20px; }
+  .dash-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .panel h3 { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; display:flex; align-items:center; gap:8px; }
+  .panel h3 .badge { background: var(--surface2); color: var(--accent); border-radius: 20px; padding: 1px 8px; font-size: 11px; font-weight:600; }
+  .chart-wrap { position: relative; height: 230px; }
+
+  .ranking-list { list-style: none; }
+  .ranking-list li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .ranking-list li:last-child { border-bottom: none; }
+  .rank-pos { width: 22px; height: 22px; border-radius: 50%; background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .rank-pos.gold   { background: #3f2d0c; color: #fbbf24; }
+  .rank-pos.silver { background: #1e293b; color: #94a3b8; }
+  .rank-pos.bronze { background: #3a1d0f; color: #fb923c; }
+  .rank-name { flex: 1; }
+  .rank-bar-wrap { width: 70px; height: 6px; background: var(--surface2); border-radius: 3px; }
+  .rank-bar { height: 6px; border-radius: 3px; background: var(--accent); }
+  .rank-count { font-size: 12px; color: var(--muted); min-width: 22px; text-align: right; }
+
+  /* ── TOOLBAR / TABLE ── */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .toolbar input, .toolbar select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: var(--font); outline: none;
+  }
+  .toolbar input { flex: 1; min-width: 200px; }
+  .toolbar input::placeholder { color: var(--muted); }
+  .toolbar input:focus, .toolbar select:focus { border-color: var(--accent); }
+
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-family: var(--font); font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; white-space:nowrap; }
+  .btn-primary { background: var(--accent); color: #06231f; }
+  .btn-primary:hover { background: #1fd6c2; }
+  .btn-danger  { background: rgba(239,68,68,.13); color: var(--danger); border: 1px solid rgba(239,68,68,.3); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-success { background: rgba(34,197,94,.13); color: var(--success); border: 1px solid rgba(34,197,94,.3); }
+  .btn-success:hover { background: var(--success); color: #fff; }
+  .btn-ghost   { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table.main-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.main-table thead th {
+    background: var(--surface2); color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px;
+    padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); position: sticky; top: 0;
+  }
+  table.main-table tbody tr { border-bottom: 1px solid rgba(46,51,80,.4); cursor:pointer; }
+  table.main-table tbody tr:hover td { background: rgba(20,184,166,.045); }
+  table.main-table td { padding: 9px 12px; white-space: nowrap; vertical-align: middle; }
+  .actions-cell { display: flex; gap: 6px; align-items: center; }
+  .text-truncate { max-width:220px; overflow:hidden; text-overflow:ellipsis; display:inline-block; white-space:nowrap; vertical-align:bottom; }
+
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 700; white-space:nowrap; }
+  .pill.uniforme-enviado { background: rgba(34,197,94,.14); color: var(--success); }
+  .pill.uniforme-pendente { background: rgba(245,158,11,.14); color: var(--warning); }
+  .pill.vaga-noprazo { background: rgba(34,197,94,.14); color: var(--success); }
+  .pill.vaga-antecipada { background: rgba(20,184,166,.14); color: var(--accent); }
+  .pill.vaga-atrasada { background: rgba(239,68,68,.14); color: var(--danger); }
+  .pill.voucher { background: rgba(79,124,255,.16); color: var(--voucher); }
+  .pill.regional-sp { background: rgba(20,184,166,.12); color: var(--accent); }
+  .pill.regional-rj { background: rgba(168,85,247,.12); color:#c084fc; }
+  .pill.noshow { background: rgba(239,68,68,.14); color: var(--danger); }
+  .pill.muted { background: var(--surface3); color: var(--muted); }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-state .ico { font-size: 32px; margin-bottom: 10px; }
+
+  /* ── MODAL ── */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 999; align-items: center; justify-content: center; padding:20px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 720px; max-width: 95vw; max-height: 92vh; overflow-y: auto; }
+  .modal-head { padding: 22px 26px 0; }
+  .modal-head h2 { font-size: 16.5px; margin-bottom:4px; }
+  .modal-head p { font-size:12px; color:var(--muted); margin-bottom:16px; }
+
+  .tabs-bar { display:flex; gap:4px; padding: 0 26px; border-bottom:1px solid var(--border); overflow-x:auto; }
+  .tab-btn { background:none; border:none; color:var(--muted); font-family:var(--font); font-size:12.5px; font-weight:600; padding:10px 14px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display:none; padding: 20px 26px; }
+  .tab-content.active { display:block; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: var(--font); outline: none;
+  }
+  .form-group input:disabled { opacity:.6; cursor:not-allowed; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 26px 22px; border-top:1px solid var(--border); margin-top:6px; }
+  .voucher-flag { display:flex; align-items:center; gap:10px; background: rgba(79,124,255,.08); border:1px solid rgba(79,124,255,.3); border-radius:8px; padding:10px 14px; font-size:12px; color:#9db4ff; margin-top:4px; }
+
+  /* ── TIMELINE (datas do processo) ── */
+  .timeline { display:flex; align-items:flex-start; gap:0; margin: 6px 0 4px; overflow-x:auto; padding-bottom:6px; }
+  .tl-step { display:flex; flex-direction:column; align-items:center; min-width:96px; position:relative; }
+  .tl-dot { width:11px; height:11px; border-radius:50%; background: var(--border); border:2px solid var(--surface); z-index:2; }
+  .tl-step.done .tl-dot { background: var(--accent); }
+  .tl-line { position:absolute; top:5px; left:50%; width:100%; height:2px; background: var(--border); z-index:1; }
+  .tl-step.done .tl-line { background: var(--accent); }
+  .tl-step:last-child .tl-line { display:none; }
+  .tl-label { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; margin-top:8px; text-align:center; }
+  .tl-date { font-size:11.5px; font-weight:700; margin-top:3px; }
+  .tl-step.done .tl-date { color: var(--text); }
+  .tl-step:not(.done) .tl-date { color: var(--muted); }
+
+  /* ── FILA DE AUTORIZAÇÃO ── */
+  .queue-card { background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:16px 18px; margin-bottom:12px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .queue-card .qc-main { flex:1; min-width:220px; }
+  .queue-card .qc-main strong { font-size:14px; display:block; }
+  .queue-card .qc-main span { font-size:11.5px; color:var(--muted); }
+  .queue-card .qc-transp { font-size:11.5px; background: rgba(79,124,255,.12); color: var(--voucher); padding:4px 10px; border-radius:8px; font-weight:600; }
+  .queue-card .qc-actions { display:flex; gap:8px; }
+  .queue-tabs { display:flex; gap:8px; margin-bottom:18px; }
+  .qtab { background: var(--surface2); border:1px solid var(--border); color:var(--muted); font-size:12.5px; font-weight:600; padding:7px 16px; border-radius:20px; cursor:pointer; font-family:var(--font); }
+  .qtab.active { background: rgba(79,124,255,.15); color: var(--voucher); border-color: rgba(79,124,255,.4); }
+
+  /* ── ACCESS NOTE ── */
+  .access-note { background: var(--surface2); border:1px dashed var(--border); border-radius:10px; padding:14px 16px; font-size:12px; color:var(--muted); margin-bottom:18px; line-height:1.6; }
+  .access-note b { color: var(--text); }
+  .iframe-wrap { border:1px solid var(--border); border-radius: var(--radius); overflow:hidden; height: 76vh; background: var(--surface); }
+  .iframe-wrap iframe { width:100%; height:100%; border:none; display:block; }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .3s; max-width: 340px; }
+  #toast.show { opacity: 1; }
+  #toast.success { border-color: var(--success); color: var(--success); }
+  #toast.error   { border-color: var(--danger);  color: var(--danger); }
+  #toast.info    { border-color: var(--voucher); color: var(--voucher); }
+
+  .text-muted { color: var(--muted); font-size: 12px; }
+  .mt-10 { margin-top:10px; } .mt-16 { margin-top: 16px; }
+</style>
+</head>
+<body>
+
+
+<!-- SIDEBAR -->
+<div id="sidebar" style="display:none">
+  <div class="sidebar-logo">
+    <div class="mark">SA</div>
+    <h2>SELEÇÃO &amp; ADMISSÃO</h2>
+    <span>WeCan BR · Consolidado</span>
+  </div>
+  <nav id="nav">
+    <div class="nav-group" id="navgroup-selecao">
+      <button class="nav-group-header" onclick="toggleNavGroup('selecao')">
+        <span>Seleção &amp; Admissão</span><span class="chevron">▾</span>
+      </button>
+      <div class="nav-group-items">
+        <a class="active" onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
+        <a onclick="navTo('vagas')" data-page="vagas"><span class="ico">▤</span> Vagas / Admissões</a>
+        <a onclick="navTo('voucher')" data-page="voucher" id="nav-voucher"><span class="ico">⇄</span> Fila de Voucher <span class="count-badge alert" id="nav-voucher-count">0</span></a>
+      </div>
+    </div>
+
+    <div class="nav-group" id="navgroup-voucherapp" style="display:none">
+      <button class="nav-group-header" onclick="toggleNavGroup('voucherapp')">
+        <span>Voucher · sistema integrado</span><span class="chevron">▾</span>
+      </button>
+      <div class="nav-group-items">
+        <a onclick="abrirVoucherEm('dashboard')" data-vp="dashboard"><span class="ico">📊</span> Dashboard</a>
+        <a onclick="abrirVoucherEm('controle')" data-vp="controle"><span class="ico">☰</span> Controle de Vouchers</a>
+        <a onclick="abrirVoucherEm('inativar')" data-vp="inativar"><span class="ico">⊘</span> Inativar Colaborador</a>
+        <a onclick="abrirVoucherEm('exportar')" data-vp="exportar"><span class="ico">↓</span> Exportar Planilha</a>
+        <a onclick="abrirVoucherEm('historico')" data-vp="historico"><span class="ico">🕐</span> Histórico</a>
+        <a onclick="abrirVoucherEm('usuarios')" data-vp="usuarios"><span class="ico">👤</span> Usuários</a>
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-user">
+    <strong id="user-nome">—</strong>
+    <span id="user-perfil">—</span><br/>
+    <a href="hub.html" style="font-size:11px;color:var(--muted);text-decoration:underline">Trocar de sistema</a>
+    &nbsp;·&nbsp;
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main" style="display:none">
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Visão geral do processo de seleção e admissão</p>
+        <div class="scope-banner" id="scope-banner-dash"></div>
+      </div>
+    </div>
+
+    <div class="cards-grid" id="kpi-cards"></div>
+
+    <div class="dash-grid">
+      <div class="panel">
+        <h3>📊 Vagas por Regional <span class="badge" id="badge-regional"></span></h3>
+        <div class="chart-wrap"><canvas id="chart-regional"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>🏆 Top Consultores</h3>
+        <ul class="ranking-list" id="rank-consultores"></ul>
+      </div>
+    </div>
+
+    <div class="dash-grid three">
+      <div class="panel">
+        <h3>📋 Status da Vaga</h3>
+        <div class="chart-wrap" style="height:190px"><canvas id="chart-status"></canvas></div>
+      </div>
+      <div class="panel" style="grid-column: span 2">
+        <h3>🦺 Status do Uniforme por Regional</h3>
+        <div class="chart-wrap" style="height:190px"><canvas id="chart-uniforme"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>⚠️ Admissões com No Show / Atraso</h3>
+      <div class="table-wrap">
+        <table class="main-table">
+          <thead><tr><th>Colaborador</th><th>Consultor</th><th>Regional</th><th>Motivo</th><th>Observação</th></tr></thead>
+          <tbody id="tb-noshow"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VAGAS ══ -->
+  <div class="page" id="page-vagas">
+    <div class="page-header">
+      <div>
+        <h1>Vagas / Admissões</h1>
+        <p>Cadastro consolidado — abas HUBs (SP) e SOC_RJ1 e RJ2</p>
+        <div class="scope-banner" id="scope-banner-vagas"></div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModalVaga(null)">+ Nova Vaga</button>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="busca-vaga" placeholder="Buscar por colaborador, matrícula, Jira..." oninput="renderVagas()"/>
+      <select id="filtro-regional" onchange="renderVagas()">
+        <option value="">Todas as regionais</option>
+        <option value="SPI">SPI (HUBs)</option>
+        <option value="RIO/ES">RIO/ES (SOC)</option>
+      </select>
+      <select id="filtro-statusvaga" onchange="renderVagas()">
+        <option value="">Todos os status</option>
+        <option>Finalizada No Prazo</option>
+        <option>Finalizada Antecipada</option>
+        <option>Finalizada Atrasada</option>
+      </select>
+      <select id="filtro-consultor" onchange="renderVagas()">
+        <option value="">Todos os consultores</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead>
+          <tr>
+            <th>Jira</th><th>Consultor</th><th>Reg.</th><th>Colaborador</th><th>Cargo</th>
+            <th>Local</th><th>Uniforme</th><th>Status Vaga</th><th>Transporte</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-vagas"></tbody>
+      </table>
+    </div>
+    <p class="text-muted mt-16" id="vagas-count"></p>
+  </div>
+
+  <!-- ══ FILA DE VOUCHER ══ -->
+  <div class="page" id="page-voucher">
+    <div class="page-header">
+      <div>
+        <h1>Fila de Autorização — Voucher</h1>
+        <p>Colaboradores com benefício de Voucher pendente de confirmação</p>
+      </div>
+    </div>
+    <div class="access-note">
+      Quando o campo <b>Transporte</b> de uma vaga é cadastrado ou editado contendo <b>Voucher</b>, o colaborador cai aqui automaticamente. Aprovar marca como <b>pré-aprovado</b> — a ativação real no sistema de Voucher só acontece quando esse colaborador aparecer de fato na planilha Template (admissão confirmada), então o benefício final na assinatura do contrato sempre prevalece.
+    </div>
+    <div class="queue-tabs">
+      <button class="qtab active" data-qf="pendente" onclick="setQueueFilter('pendente')">Pendentes</button>
+      <button class="qtab" data-qf="aprovado" onclick="setQueueFilter('aprovado')">Pré-aprovados</button>
+      <button class="qtab" data-qf="rejeitado" onclick="setQueueFilter('rejeitado')">Rejeitados</button>
+    </div>
+    <div id="queue-list"></div>
+  </div>
+
+  <!-- ══ VOUCHER (sistema integrado — somente Master) ══ -->
+  <div class="page" id="page-voucherapp">
+    <div class="page-header">
+      <div>
+        <h1>Voucher</h1>
+        <p>Sistema de Controle de Voucher — aplicativo independente, com login compartilhado</p>
+      </div>
+      <a class="btn btn-ghost btn-sm" id="voucherapp-open-tab" href="#" target="_blank" rel="noopener">Abrir em nova aba ↗</a>
+    </div>
+    <div class="access-note">
+      Esta seção carrega o sistema de Voucher publicado separadamente — o código continua independente do Seleção &amp; Admissão, só aparece aqui dentro pra você não precisar trocar de sistema. Visível apenas para o perfil Master.
+    </div>
+    <div class="iframe-wrap"><iframe id="voucherapp-iframe" src="" title="Sistema de Voucher" loading="lazy"></iframe></div>
+  </div>
+
+</div><!-- /main -->
+
+
+<!-- MODAL VAGA -->
+<div class="modal-backdrop" id="modal-vaga">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="mv-title">Nova Vaga</h2>
+      <p id="mv-subtitle">Preencha os dados do processo de seleção e admissão</p>
+      <div id="mv-timeline-wrap" style="display:none">
+        <div class="timeline" id="mv-timeline"></div>
+      </div>
+    </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="vaga" onclick="switchTab('vaga')">Vaga & Local</button>
+      <button class="tab-btn" data-tab="colaborador" onclick="switchTab('colaborador')">Colaborador</button>
+      <button class="tab-btn" data-tab="processo" onclick="switchTab('processo')">Datas & Processo</button>
+      <button class="tab-btn" data-tab="beneficios" onclick="switchTab('beneficios')">Benefícios</button>
+      <button class="tab-btn" data-tab="obs" onclick="switchTab('obs')">Itens & Observações</button>
+    </div>
+
+    <input type="hidden" id="v-id"/>
+
+    <div class="tab-content active" data-tab="vaga">
+      <div class="form-row">
+        <div class="form-group"><label>Consultor Responsável</label><select id="v-consultor"></select></div>
+        <div class="form-group"><label>Código do Jira</label><input type="text" id="v-jira" placeholder="VWF-00000"/></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Código Hub/Soc</label><input type="text" id="v-codigoHub" placeholder="HUB-LSP-100"/></div>
+        <div class="form-group"><label>Regional</label>
+          <select id="v-regional"><option value="SPI">SPI</option><option value="RIO/ES">RIO/ES</option></select>
+        </div>
+        <div class="form-group"><label>Mês</label><input type="text" id="v-mes" placeholder="dezembro, 2025"/></div>
+      </div>
+      <div class="form-group"><label>Local de Trabalho</label><input type="text" id="v-local" placeholder="Endereço completo"/></div>
+      <div class="form-row three">
+        <div class="form-group"><label>Modalidade</label><input type="text" id="v-modalidade" placeholder="Temporário"/></div>
+        <div class="form-group"><label>Tempo</label><input type="text" id="v-tempo" placeholder="180 dias"/></div>
+        <div class="form-group"><label>Cargo</label><input type="text" id="v-cargo" placeholder="Auxiliar de logística"/></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Turno</label><input type="text" id="v-turno" placeholder="F1"/></div>
+        <div class="form-group"><label>Horário</label><input type="text" id="v-horario" placeholder="08:00-16:20"/></div>
+        <div class="form-group"><label>Escala</label><input type="text" id="v-escala" placeholder="SEG-SAB"/></div>
+      </div>
+    </div>
+
+    <div class="tab-content" data-tab="colaborador">
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2"><label>Nome do Colaborador</label><input type="text" id="v-colaborador" placeholder="NOME COMPLETO EM MAIÚSCULO"/></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Matrícula</label><input type="text" id="v-matricula" placeholder="WE000000"/></div>
+        <div class="form-group"><label>OPS ID</label><input type="text" id="v-opsId" placeholder="Ops000000"/></div>
+        <div class="form-group"><label>Status do Uniforme</label>
+          <select id="v-statusUniforme"><option value="">—</option><option>ENVIADO</option><option>PENDENTE</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>CPF</label><input type="text" id="v-cpf" placeholder="000.000.000-00"/></div>
+        <div class="form-group"><label>Gênero</label>
+          <select id="v-genero"><option value="">—</option><option>MASCULINO</option><option>FEMININO</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>E-mail</label><input type="email" id="v-email"/></div>
+        <div class="form-group"><label>Telefone</label><input type="text" id="v-telefone" placeholder="DDDNNNNNNNNN"/></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Indicação Shopee</label>
+          <select id="v-indicacao"><option>NÃO</option><option>SIM</option></select>
+        </div>
+        <div class="form-group"><label>Preferência</label><input type="text" id="v-preferencia" placeholder="Sem preferência"/></div>
+        <div class="form-group"><label>Tipo de Processo</label>
+          <select id="v-tipoProcesso"><option>ONLINE</option><option>PRESENCIAL</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" data-tab="processo">
+      <div class="form-row three">
+        <div class="form-group"><label>Recebimento</label><input type="date" id="v-recebimento"/></div>
+        <div class="form-group"><label>Data Admissão Solicitada</label><input type="date" id="v-dataAdmSolicitada"/></div>
+        <div class="form-group"><label>Data Reprogramação Admissão</label><input type="date" id="v-dataReprog"/></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Nova Data ETO</label><input type="date" id="v-novaDataETO"/></div>
+        <div class="form-group"><label>Data Admissão Realizada</label><input type="date" id="v-dataAdmRealizada"/></div>
+        <div class="form-group"><label>Etapa do Processo Seletivo</label>
+          <select id="v-etapa"><option>Em andamento</option><option>Contrato Assinado</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Status da Vaga</label>
+          <select id="v-statusVaga">
+            <option value="">—</option>
+            <option>Finalizada No Prazo</option>
+            <option>Finalizada Antecipada</option>
+            <option>Finalizada Atrasada</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Tipo de Vaga</label>
+          <select id="v-tipoVaga"><option>1 - Vaga Oficial</option><option>2 - Reposição - NO SHOW</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Salário</label><input type="text" id="v-salario" placeholder="R$ 0,00"/></div>
+        <div class="form-group"><label>CNPJ</label><input type="text" id="v-cnpj"/></div>
+      </div>
+      <div class="form-group"><label>Departamento GI</label><input type="text" id="v-departamentoGI"/></div>
+    </div>
+
+    <div class="tab-content" data-tab="beneficios">
+      <div class="form-group">
+        <label>Transporte</label>
+        <select id="v-transporte" onchange="checarVoucherFlag()">
+          <option>VALE TRANSPORTE</option>
+          <option>AUXILIO MOBILIDADE</option>
+          <option>FRETADO + VALE TRANSPORTE</option>
+          <option>OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)</option>
+          <option>VOUCHER UBER + VT</option>
+          <option>VOUCHER UBER/99</option>
+        </select>
+        <div class="voucher-flag" id="voucher-flag" style="display:none">
+          🔗 Esta opção contém <b>Voucher</b> — ao salvar, este colaborador entrará automaticamente na <b>Fila de Autorização do sistema de Voucher</b>.
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Refeição</label><input type="text" id="v-refeicao" placeholder="R$150,00"/></div>
+        <div class="form-group"><label>Cesta Básica</label><input type="text" id="v-cestaBasica" placeholder="Confirmado / Não pagamos"/></div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group"><label>Colete</label><input type="text" id="v-colete" placeholder="G"/></div>
+        <div class="form-group"><label>Bota</label><input type="text" id="v-bota" placeholder="42"/></div>
+        <div class="form-group"><label>Luva</label><input type="text" id="v-luva" placeholder="M"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Gestor Turno</label><input type="text" id="v-gestorTurno"/></div>
+        <div class="form-group"><label>E-mail/Telefone Gestor Turno</label><input type="text" id="v-contatoGestorTurno"/></div>
+      </div>
+      <div class="form-group"><label>Unidade WeCan</label><input type="text" id="v-unidadeWecan" placeholder="CAMPINAS"/></div>
+    </div>
+
+    <div class="tab-content" data-tab="obs">
+      <div class="form-group">
+        <label>No Show</label>
+        <input type="text" id="v-noShow" placeholder="Nome do(s) candidato(s) em no show, se houver"/>
+      </div>
+      <div class="form-group">
+        <label>Motivo do Atraso no Fechamento da Vaga</label>
+        <select id="v-motivoAtraso">
+          <option value="">—</option>
+          <option>ALTERAÇÃO DE DATA SOLICITADA PELO CLIENTE</option>
+          <option>NO SHOW/ET</option>
+          <option>DECLINIO NA ADMISSÃO</option>
+          <option>ATRASO EM R&S</option>
+          <option>REGIÃO CRÍTICA</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Observação</label><textarea id="v-observacao" rows="3"></textarea></div>
+      <div class="form-group"><label>Tipo de Processo (do candidato desistente)</label>
+        <select id="v-tipoProcessoDesistente"><option value="">—</option><option>ONLINE</option><option>PRESENCIAL</option></select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-vaga')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarVaga()">Salvar Vaga</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  USUÁRIOS DE DEMONSTRAÇÃO (mock — login real virá do sistema de Voucher)
+// ══════════════════════════════════════════════
+const PERFIL_LABEL = { equipe:'Equipe (Consultor)', gestor:'Gestor', master:'Master', onsite:'Onsite' };
+let session = null;
+
+// ══════════════════════════════════════════════
+//  DADOS DE EXEMPLO (substituirão a leitura real da planilha)
+// ══════════════════════════════════════════════
+const CONSULTORES = ['LIDIANE SILVA','FABIANA SANDER','RENATA SOARES','HENRIQUE DO NASCIMENTO','ADRIAN NARDE','CAROL CATTO'];
+
+function gerarVagas() {
+  const base = [
+    { consultor:'FABIANA SANDER', jira:'VWF-88386', codigoHub:'HUB-LSP-105', regional:'SPI', local:'Avenida Comendador Aladino Selmi, 2.502 - Campinas - São Paulo - CEP 13478-710.', cargo:'Líder de logística', turno:'F1', horario:'08:00-16:20', escala:'SEG-SAB', colaborador:'EVANDRO GOBBI', matricula:'WE804962', opsId:'Ops147403', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-15', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'1 - Vaga Oficial', transporte:'OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)', refeicao:'R$150,00', unidadeWecan:'CAMPINAS', cpf:'378421828-84', genero:'MASCULINO' },
+    { consultor:'FABIANA SANDER', jira:'VWF-93083', codigoHub:'HUB-LSP-105', regional:'SPI', local:'Avenida Comendador Aladino Selmi, 2.502 - Campinas - São Paulo - CEP 13478-710.', cargo:'Analista de transporte', turno:'F1', horario:'08:00-16:20', escala:'TER-DOM', colaborador:'ERIK PLANEJAMENTO DE SOUZA', matricula:'WE805187', opsId:'Ops148392', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'1 - Vaga Oficial', transporte:'VOUCHER UBER + VT', refeicao:'R$150,00', unidadeWecan:'CAMPINAS', cpf:'398951588-92', genero:'MASCULINO' },
+    { consultor:'HENRIQUE DO NASCIMENTO', jira:'VWF-95614', codigoHub:'HUB-LSP-87', regional:'SPI', local:'Rodovia Edgard Máximo Zambotto (SP 354), km 79, bairro da Ponte Alta, Atibaia - Módulos G10, G11 e G12.', cargo:'Auxiliar de logística', turno:'F12', horario:'05:25-15:13', escala:'TER-SAB 5X2', colaborador:'MAYRA CRISTINA DOS SANTOS', matricula:'WE805316', opsId:'Ops150762', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-22', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'2 - Reposição - NO SHOW', transporte:'AUXILIO MOBILIDADE', refeicao:'R$35,50 por dia trabalhado', unidadeWecan:'JUNDIAI', cpf:'128894377-60', genero:'FEMININO', noShow:'MAYRA CRISTINA DOS SANTOS / GUSTAVO VINHAS / BIANCA APARECIDA SOARES', motivoAtraso:'NO SHOW/ET', observacao:'NO SHOW 30/1 / no show 13/1 / ETO em 17/12' },
+    { consultor:'ADRIAN NARDE', jira:'VWF-95577', codigoHub:'HUB-LSP-100', regional:'SPI', local:'Av. Nossa Senhora Auxiliadora, nº 901 - Bairro dos Fernandes, CEP 13.214-855', cargo:'Auxiliar de logística', turno:'F12', horario:'06:00-15:48', escala:'TER-SAB 5X2', colaborador:'LAYSLA DE SOUZA GODOY', matricula:'WE805177', opsId:'Ops149163', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Antecipada', tipoVaga:'1 - Vaga Oficial', transporte:'VALE TRANSPORTE', refeicao:'R$35,50 por dia trabalhado', unidadeWecan:'JUNDIAI', cpf:'510655248-62', genero:'FEMININO' },
+    { consultor:'CAROL CATTO', jira:'VWF-95388', codigoHub:'HUB-LSP-38', regional:'SPI', local:'Avenida Mariano Corte, Simonsen, 1850, Lote 12, Quadra 1, Simonsen, Votuporanga,', cargo:'Auxiliar de logística', turno:'F34', horario:'02:00-11:22', escala:'QUI-SEG 5X2 (FOLGA EM TER e QUA)', colaborador:'JEFERSON LUIS REIS DE PAULA', matricula:'WE807272', opsId:'Ops189792', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-22', etapa:'Contrato Assinado', statusVaga:'Finalizada Antecipada', tipoVaga:'2 - Reposição - NO SHOW', transporte:'VOUCHER UBER/99', refeicao:'R$220,00', unidadeWecan:'BAURU', cpf:'42186451832', genero:'MASCULINO' },
+    { consultor:'LIDIANE SILVA', jira:'VWF-96886', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'ANA PAULA BITENCOURT', matricula:'WE805450', opsId:'OPS167937', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-05', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'1 - Vaga Oficial', transporte:'AUXILIO MOBILIDADE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'219640992-1', genero:'FEMININO' },
+    { consultor:'LIDIANE SILVA', jira:'VWF-96885', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'CLAUDIA FABIANE FERREIRA', matricula:'WE805441', opsId:'OPS167938', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-05', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'1 - Vaga Oficial', transporte:'VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'219720136-8', genero:'FEMININO' },
+    { consultor:'RENATA SOARES', jira:'VWF-96878', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'DOUGLAS DE OLIVEIRA ARTIGOU', matricula:'WE805480', opsId:'OPS167944', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-13', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'2 - Reposição - NO SHOW', transporte:'FRETADO + VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'099343667-62', genero:'MASCULINO', noShow:'DOUGLAS DE OLIVEIRA ARTIGOU', motivoAtraso:'NO SHOW/ET', observacao:'No Show de 05/01/2026. Admissão reprogramada para 12/01/2026' },
+    { consultor:'RENATA SOARES', jira:'VWF-96877', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'MOISES VICTOR SILVA CARVALHO', matricula:'WE805515', opsId:'OPS167945', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-05', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'1 - Vaga Oficial', transporte:'FRETADO + VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'226815437-89', genero:'MASCULINO' },
+    { consultor:'LIDIANE SILVA', jira:'VWF-96860', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'PEDRO HENRIQUE DOMINGOS DE SOUZA', matricula:'WE805686', opsId:'OPS167964', statusUniforme:'', dataAdmRealizada:'2026-01-13', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'2 - Reposição - NO SHOW', transporte:'VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'201177947-24', genero:'MASCULINO', noShow:'PEDRO HENRIQUE DOMINGOS DE SOUZA', motivoAtraso:'NO SHOW/ET', observacao:'No Show de 05/01/2026. Admissão reprogramada para 12/01/2026' },
+    { consultor:'ADRIAN NARDE', jira:'VWF-95570', codigoHub:'HUB-LSP-100', regional:'SPI', local:'Av. Nossa Senhora Auxiliadora, nº 901 - Bairro dos Fernandes, CEP 13.214-855', cargo:'Auxiliar de logística', turno:'F32', horario:'06:00-15:48', escala:'TER-SAB 5X2', colaborador:'IAGO TIRSO SILVA', matricula:'WE805231', opsId:'Ops149162', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Antecipada', tipoVaga:'1 - Vaga Oficial', transporte:'VOUCHER UBER + VT', refeicao:'R$35,50 por dia trabalhado', unidadeWecan:'JUNDIAI', cpf:'862877735-02', genero:'MASCULINO' },
+    { consultor:'FABIANA SANDER', jira:'VWF-88440', codigoHub:'HUB-LSP-105', regional:'SPI', local:'Avenida Comendador Aladino Selmi, 2.502 - Campinas - São Paulo - CEP 13478-710.', cargo:'Analista de logística', turno:'F2', horario:'08:00-16:20', escala:'SEG-SAB', colaborador:'ANDRELIZA BACH MURBACH', matricula:'WE805193', opsId:'Ops148393', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'1 - Vaga Oficial', transporte:'OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)', refeicao:'R$150,00', unidadeWecan:'CAMPINAS', cpf:'353917738-81', genero:'FEMININO' },
+  ];
+  return base.map((v,i) => ({
+    id: 'v' + (i+1),
+    mes: v.regional === 'SPI' ? 'dezembro, 2025' : 'janeiro, 2026',
+    recebimento: '2025-12-01',
+    dataAdmSolicitada: v.dataAdmRealizada,
+    dataReprog: '',
+    novaDataETO: '',
+    modalidade: 'Temporário', tempo: '180 dias',
+    preferencia: 'Sem preferência', tipoProcesso: 'ONLINE', indicacao: 'NÃO',
+    cestaBasica: '', colete:'', bota:'', luva:'', gestorTurno:'', contatoGestorTurno:'',
+    salario:'R$ 2.350,00', cnpj:'42.446.277/0297-60', departamentoGI:'HUB-LSP-100_Jundiaí',
+    motivoAtraso:'', observacao:'', noShow:'', tipoProcessoDesistente:'',
+    email:'', telefone:'',
+    filaVoucherStatus: v.transporte.toUpperCase().includes('VOUCHER') ? 'pendente' : null,
+    filaVoucherMotivo: '',
+    ...v,
+  }));
+}
+let VAGAS = gerarVagas();
+
+// ══════════════════════════════════════════════
+//  ACESSO / ESCOPO
+// ══════════════════════════════════════════════
+function podeVerTudo() { return session && (session.perfil === 'gestor' || session.perfil === 'master'); }
+function podeAutorizarVoucher() { return session && ['gestor','master','onsite'].includes(session.perfil); }
+function ehMaster() { return session && session.perfil === 'master'; }
+
+// Caminho do sistema de Voucher (publicado separadamente). Por enquanto
+// apontando para um voucher.html de demonstração na mesma pasta, só pra
+// esse teste funcionar de ponta a ponta. Troque para a URL real (ex:
+// '../voucher/index.html' ou a URL completa do GitHub Pages dele) quando
+// for publicar de verdade.
+const VOUCHER_APP_URL = 'voucher.html';
+function vagasNoEscopo() {
+  if (podeVerTudo() || (session && session.perfil === 'onsite')) return VAGAS;
+  return VAGAS.filter(v => v.consultor === session.nome);
+}
+
+// ══════════════════════════════════════════════
+//  SESSÃO — login acontece em index.html; aqui só lemos/validamos
+// ══════════════════════════════════════════════
+const SESSION_KEY = 'wecan_session_v1';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
+
+function carregarSessaoSalva() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.savedAt || (Date.now() - parsed.savedAt) > SESSION_TTL_MS) { localStorage.removeItem(SESSION_KEY); return null; }
+    return parsed.session;
+  } catch(e) { return null; }
+}
+function limparSessaoSalva() { try { localStorage.removeItem(SESSION_KEY); } catch(e) {} }
+
+function iniciarSessao(conta) {
+  session = conta;
+  document.getElementById('sidebar').style.display = 'flex';
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('user-nome').textContent = session.nome;
+  document.getElementById('user-perfil').textContent = PERFIL_LABEL[session.perfil];
+  document.getElementById('nav-voucher').style.display = podeAutorizarVoucher() ? 'flex' : 'none';
+  document.getElementById('navgroup-voucherapp').style.display = ehMaster() ? 'block' : 'none';
+  document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
+  popularFiltroConsultor();
+  navTo('dashboard');
+}
+
+// Sem sessão válida → volta pro login compartilhado, em vez de mostrar
+// uma tela de login própria deste sistema.
+function initApp() {
+  const salva = carregarSessaoSalva();
+  if (salva) iniciarSessao(salva);
+  else window.location.href = 'index.html';
+}
+
+function logout() {
+  limparSessaoSalva();
+  window.location.href = 'index.html';
+}
+
+function popularFiltroConsultor() {
+  const sel = document.getElementById('filtro-consultor');
+  const consultores = podeVerTudo() ? CONSULTORES : [session.nome];
+  sel.innerHTML = '<option value="">Todos os consultores</option>' + consultores.map(c => `<option>${c}</option>`).join('');
+  sel.parentElement.style.display = (podeVerTudo()) ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════
+function navTo(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const link = document.querySelector(`nav a[data-page="${id}"]`);
+  if (link) link.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'vagas') renderVagas();
+  if (id === 'voucher') renderQueue();
+  atualizarBadgeFila();
+}
+
+function toggleNavGroup(nome) {
+  document.getElementById('navgroup-' + nome).classList.toggle('collapsed');
+}
+
+// ── Abre o sistema de Voucher embutido já direto na página pedida,
+// chamando a função navTo() interna do próprio app de Voucher (mesma
+// origem ⇒ acesso direto ao contentWindow), sem misturar os dois códigos.
+let vouchFrameLoaded = false;
+function carregarVoucherFrame() {
+  const frame = document.getElementById('voucherapp-iframe');
+  if (frame.getAttribute('src') !== VOUCHER_APP_URL) {
+    vouchFrameLoaded = false;
+    frame.addEventListener('load', () => { vouchFrameLoaded = true; }, { once:true });
+    frame.src = VOUCHER_APP_URL;
+  }
+}
+function abrirVoucherEm(pagina) {
+  navTo('voucherapp');
+  document.querySelectorAll('nav a[data-vp]').forEach(a => a.classList.toggle('active', a.dataset.vp === pagina));
+  carregarVoucherFrame();
+  const frame = document.getElementById('voucherapp-iframe');
+  const tentarNavegar = () => {
+    try { if (frame.contentWindow && typeof frame.contentWindow.navTo === 'function') frame.contentWindow.navTo(pagina); }
+    catch(e) { /* outro domínio ou ainda carregando — ok, o usuário cai na tela inicial do Voucher */ }
+  };
+  if (vouchFrameLoaded) setTimeout(tentarNavegar, 50);
+  else frame.addEventListener('load', () => setTimeout(tentarNavegar, 300), { once:true });
+}
+
+function escopoLabel() {
+  return podeVerTudo() || session.perfil==='onsite'
+    ? `Visualizando <b>todas as vagas</b> (perfil ${PERFIL_LABEL[session.perfil].toLowerCase()})`
+    : `Visualizando apenas as <b>${vagasNoEscopo().length} vagas</b> sob sua responsabilidade`;
+}
+
+// ══════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════
+let chartRegional=null, chartStatus=null, chartUniforme=null;
+
+function renderDashboard() {
+  document.getElementById('scope-banner-dash').innerHTML = escopoLabel();
+  const dados = vagasNoEscopo();
+
+  const total = dados.length;
+  const finalizadas = dados.filter(v => (v.statusVaga||'').startsWith('Finalizada')).length;
+  const noShow = dados.filter(v => v.noShow).length;
+  const pendentesVoucher = VAGAS.filter(v => v.filaVoucherStatus === 'pendente').length;
+
+  const kpis = [
+    { label:'Total de Vagas', value: total, cls:'teal', sub:'no escopo atual' },
+    { label:'Finalizadas', value: finalizadas, cls:'green', sub:'processo concluído' },
+    { label:'Com No Show', value: noShow, cls:'red', sub:'atenção necessária' },
+  ];
+  if (podeAutorizarVoucher()) kpis.push({ label:'Pendentes de Voucher', value: pendentesVoucher, cls:'blue', sub:'aguardando autorização' });
+  document.getElementById('kpi-cards').innerHTML = kpis.map(k => `
+    <div class="card"><div class="card-label">${k.label}</div><div class="card-value ${k.cls}">${k.value}</div><div class="card-sub">${k.sub}</div></div>`).join('');
+
+  // Regional donut
+  const porRegional = { 'SPI':0, 'RIO/ES':0 };
+  dados.forEach(v => porRegional[v.regional] = (porRegional[v.regional]||0)+1);
+  document.getElementById('badge-regional').textContent = total + ' vagas';
+  const ctxR = document.getElementById('chart-regional').getContext('2d');
+  if (chartRegional) chartRegional.destroy();
+  chartRegional = new Chart(ctxR, { type:'doughnut', data:{ labels:['SPI (HUBs)','RIO/ES (SOC)'], datasets:[{ data:[porRegional['SPI'],porRegional['RIO/ES']], backgroundColor:['#14b8a6','#c084fc'], borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8891b4', font:{size:11}, padding:12 } } } } });
+
+  // Ranking consultores
+  const porConsultor = {};
+  dados.forEach(v => porConsultor[v.consultor] = (porConsultor[v.consultor]||0)+1);
+  const rank = Object.entries(porConsultor).sort((a,b)=>b[1]-a[1]).map(([nome,count])=>({nome,count}));
+  const max = rank[0]?.count || 1;
+  document.getElementById('rank-consultores').innerHTML = rank.map((r,i) => {
+    const posClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<li><span class="rank-pos ${posClass}">${i+1}</span><span class="rank-name">${r.nome}</span>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(r.count/max*100)}%"></div></div>
+      <span class="rank-count">${r.count}</span></li>`;
+  }).join('') || '<li style="color:var(--muted);padding:8px 0">Sem dados</li>';
+
+  // Status da vaga
+  const statusCount = {};
+  dados.forEach(v => { const s = v.statusVaga || 'Sem status'; statusCount[s] = (statusCount[s]||0)+1; });
+  const ctxS = document.getElementById('chart-status').getContext('2d');
+  if (chartStatus) chartStatus.destroy();
+  chartStatus = new Chart(ctxS, { type:'bar', data:{ labels:Object.keys(statusCount), datasets:[{ data:Object.values(statusCount), backgroundColor:'rgba(20,184,166,.55)', borderColor:'#14b8a6', borderWidth:1, borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales:{ x:{ ticks:{ color:'#8891b4', font:{size:10}, stepSize:1 }, grid:{ color:'rgba(46,51,80,.4)' } }, y:{ ticks:{ color:'#8891b4', font:{size:10} }, grid:{ display:false } } } } });
+
+  // Uniforme por regional (stacked-ish bar)
+  const uniGroups = { 'SPI':{ENVIADO:0,PENDENTE:0}, 'RIO/ES':{ENVIADO:0,PENDENTE:0} };
+  dados.forEach(v => {
+    const st = v.statusUniforme === 'ENVIADO' ? 'ENVIADO' : 'PENDENTE';
+    if (uniGroups[v.regional]) uniGroups[v.regional][st]++;
+  });
+  const ctxU = document.getElementById('chart-uniforme').getContext('2d');
+  if (chartUniforme) chartUniforme.destroy();
+  chartUniforme = new Chart(ctxU, { type:'bar', data:{ labels:['SPI (HUBs)','RIO/ES (SOC)'], datasets:[
+      { label:'Enviado', data:[uniGroups['SPI'].ENVIADO, uniGroups['RIO/ES'].ENVIADO], backgroundColor:'rgba(34,197,94,.6)', borderRadius:4 },
+      { label:'Pendente', data:[uniGroups['SPI'].PENDENTE, uniGroups['RIO/ES'].PENDENTE], backgroundColor:'rgba(245,158,11,.6)', borderRadius:4 },
+    ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8891b4', font:{size:11} } } },
+      scales:{ x:{ ticks:{ color:'#8891b4', font:{size:11} }, grid:{ display:false } }, y:{ ticks:{ color:'#8891b4', font:{size:10}, stepSize:1 }, grid:{ color:'rgba(46,51,80,.4)' } } } } });
+
+  // No show table
+  const ns = dados.filter(v => v.noShow);
+  document.getElementById('tb-noshow').innerHTML = ns.map(v => `
+    <tr><td>${v.colaborador}</td><td>${v.consultor}</td><td><span class="pill ${v.regional==='SPI'?'regional-sp':'regional-rj'}">${v.regional}</span></td>
+    <td>${v.motivoAtraso||'—'}</td><td class="text-truncate" style="max-width:320px">${v.observacao||'—'}</td></tr>`).join('')
+    || '<tr><td colspan="5" class="text-muted" style="padding:16px">Nenhum registro de no show no escopo atual</td></tr>';
+}
+
+// ══════════════════════════════════════════════
+//  VAGAS — TABELA
+// ══════════════════════════════════════════════
+function renderVagas() {
+  document.getElementById('scope-banner-vagas').innerHTML = escopoLabel();
+  const busca = (document.getElementById('busca-vaga').value || '').toLowerCase();
+  const fRegional = document.getElementById('filtro-regional').value;
+  const fStatus = document.getElementById('filtro-statusvaga').value;
+  const fConsultor = document.getElementById('filtro-consultor').value;
+
+  let dados = vagasNoEscopo();
+  dados = dados.filter(v => {
+    const matchBusca = !busca || v.colaborador.toLowerCase().includes(busca) || v.matricula.toLowerCase().includes(busca) || v.jira.toLowerCase().includes(busca);
+    const matchRegional = !fRegional || v.regional === fRegional;
+    const matchStatus = !fStatus || v.statusVaga === fStatus;
+    const matchConsultor = !fConsultor || v.consultor === fConsultor;
+    return matchBusca && matchRegional && matchStatus && matchConsultor;
+  });
+
+  document.getElementById('tbody-vagas').innerHTML = dados.map(v => {
+    const uniPill = v.statusUniforme === 'ENVIADO' ? '<span class="pill uniforme-enviado">ENVIADO</span>' : '<span class="pill uniforme-pendente">PENDENTE</span>';
+    const statusCls = v.statusVaga === 'Finalizada No Prazo' ? 'vaga-noprazo' : v.statusVaga === 'Finalizada Antecipada' ? 'vaga-antecipada' : v.statusVaga === 'Finalizada Atrasada' ? 'vaga-atrasada' : 'muted';
+    const isVoucher = (v.transporte||'').toUpperCase().includes('VOUCHER');
+    return `<tr onclick="abrirModalVaga('${v.id}')">
+      <td>${v.jira}</td>
+      <td>${v.consultor}</td>
+      <td><span class="pill ${v.regional==='SPI'?'regional-sp':'regional-rj'}">${v.regional==='SPI'?'SP':'RJ'}</span></td>
+      <td><strong>${v.colaborador}</strong></td>
+      <td>${v.cargo}</td>
+      <td><span class="text-truncate" title="${v.local}">${v.local}</span></td>
+      <td>${uniPill}</td>
+      <td><span class="pill ${statusCls}">${v.statusVaga||'—'}</span></td>
+      <td>${isVoucher ? `<span class="pill voucher">${v.transporte}</span>` : `<span class="text-muted">${v.transporte||'—'}</span>`}</td>
+      <td class="actions-cell"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirModalVaga('${v.id}')">Editar</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="10"><div class="empty-state"><div class="ico">📭</div>Nenhuma vaga encontrada com esses filtros</div></td></tr>`;
+
+  document.getElementById('vagas-count').textContent = `Exibindo ${dados.length} vaga(s)`;
+}
+
+// ══════════════════════════════════════════════
+//  MODAL VAGA — abrir / preencher / salvar
+// ══════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.tab===tab));
+}
+
+function preencherSelectConsultor() {
+  const sel = document.getElementById('v-consultor');
+  const lista = podeVerTudo() ? CONSULTORES : [session.nome];
+  sel.innerHTML = lista.map(c => `<option ${c===session.nome?'selected':''}>${c}</option>`).join('');
+  sel.disabled = !podeVerTudo();
+}
+
+function abrirModalVaga(id) {
+  switchTab('vaga');
+  preencherSelectConsultor();
+  const v = id ? VAGAS.find(x => x.id === id) : null;
+
+  if (v && !podeVerTudo() && v.consultor !== session.nome) { toast('Você não tem permissão para editar esta vaga.', 'error'); return; }
+
+  document.getElementById('mv-title').textContent = v ? 'Editar Vaga' : 'Nova Vaga';
+  document.getElementById('mv-subtitle').textContent = v ? `${v.colaborador} · ${v.jira}` : 'Preencha os dados do processo de seleção e admissão';
+  document.getElementById('v-id').value = v ? v.id : '';
+
+  const set = (elId, val) => document.getElementById(elId).value = val || '';
+  set('v-consultor', v ? v.consultor : session.nome);
+  if (v && podeVerTudo()) document.getElementById('v-consultor').value = v.consultor;
+  set('v-jira', v?.jira); set('v-codigoHub', v?.codigoHub); set('v-regional', v?.regional || 'SPI'); set('v-mes', v?.mes);
+  set('v-local', v?.local); set('v-modalidade', v?.modalidade || 'Temporário'); set('v-tempo', v?.tempo || '180 dias'); set('v-cargo', v?.cargo);
+  set('v-turno', v?.turno); set('v-horario', v?.horario); set('v-escala', v?.escala);
+
+  set('v-colaborador', v?.colaborador); set('v-matricula', v?.matricula); set('v-opsId', v?.opsId);
+  set('v-statusUniforme', v?.statusUniforme); set('v-cpf', v?.cpf); set('v-genero', v?.genero);
+  set('v-email', v?.email); set('v-telefone', v?.telefone); set('v-indicacao', v?.indicacao || 'NÃO');
+  set('v-preferencia', v?.preferencia || 'Sem preferência'); set('v-tipoProcesso', v?.tipoProcesso || 'ONLINE');
+
+  set('v-recebimento', v?.recebimento); set('v-dataAdmSolicitada', v?.dataAdmSolicitada); set('v-dataReprog', v?.dataReprog);
+  set('v-novaDataETO', v?.novaDataETO); set('v-dataAdmRealizada', v?.dataAdmRealizada); set('v-etapa', v?.etapa || 'Em andamento');
+  set('v-statusVaga', v?.statusVaga); set('v-tipoVaga', v?.tipoVaga || '1 - Vaga Oficial'); set('v-salario', v?.salario); set('v-cnpj', v?.cnpj); set('v-departamentoGI', v?.departamentoGI);
+
+  set('v-transporte', v?.transporte || 'VALE TRANSPORTE'); set('v-refeicao', v?.refeicao); set('v-cestaBasica', v?.cestaBasica);
+  set('v-colete', v?.colete); set('v-bota', v?.bota); set('v-luva', v?.luva);
+  set('v-gestorTurno', v?.gestorTurno); set('v-contatoGestorTurno', v?.contatoGestorTurno); set('v-unidadeWecan', v?.unidadeWecan);
+
+  set('v-noShow', v?.noShow); set('v-motivoAtraso', v?.motivoAtraso); set('v-observacao', v?.observacao); set('v-tipoProcessoDesistente', v?.tipoProcessoDesistente);
+
+  checarVoucherFlag();
+  renderTimelineModal(v);
+  abrirModal('modal-vaga');
+}
+
+function checarVoucherFlag() {
+  const val = (document.getElementById('v-transporte').value || '').toUpperCase();
+  document.getElementById('voucher-flag').style.display = val.includes('VOUCHER') ? 'flex' : 'none';
+}
+
+function renderTimelineModal(v) {
+  const wrap = document.getElementById('mv-timeline-wrap');
+  if (!v) { wrap.style.display = 'none'; return; }
+  const steps = [
+    { label:'Recebimento', date:v.recebimento },
+    { label:'Adm. Solicitada', date:v.dataAdmSolicitada },
+    { label:'Reprogramação', date:v.dataReprog },
+    { label:'Nova Data ETO', date:v.novaDataETO },
+    { label:'Adm. Realizada', date:v.dataAdmRealizada },
+  ];
+  const fmt = d => d ? d.split('-').reverse().join('/') : '—';
+  document.getElementById('mv-timeline').innerHTML = steps.map(s => `
+    <div class="tl-step ${s.date ? 'done':''}"><div class="tl-line"></div><div class="tl-dot"></div>
+      <div class="tl-label">${s.label}</div><div class="tl-date">${fmt(s.date)}</div></div>`).join('');
+  wrap.style.display = 'block';
+}
+
+function salvarVaga() {
+  const id = document.getElementById('v-id').value;
+  const get = elId => document.getElementById(elId).value;
+  const transporte = get('v-transporte');
+  const isVoucher = transporte.toUpperCase().includes('VOUCHER');
+
+  const dadosForm = {
+    consultor:get('v-consultor'), jira:get('v-jira'), codigoHub:get('v-codigoHub'), regional:get('v-regional'), mes:get('v-mes'),
+    local:get('v-local'), modalidade:get('v-modalidade'), tempo:get('v-tempo'), cargo:get('v-cargo'),
+    turno:get('v-turno'), horario:get('v-horario'), escala:get('v-escala'),
+    colaborador:get('v-colaborador'), matricula:get('v-matricula'), opsId:get('v-opsId'), statusUniforme:get('v-statusUniforme'),
+    cpf:get('v-cpf'), genero:get('v-genero'), email:get('v-email'), telefone:get('v-telefone'), indicacao:get('v-indicacao'),
+    preferencia:get('v-preferencia'), tipoProcesso:get('v-tipoProcesso'),
+    recebimento:get('v-recebimento'), dataAdmSolicitada:get('v-dataAdmSolicitada'), dataReprog:get('v-dataReprog'),
+    novaDataETO:get('v-novaDataETO'), dataAdmRealizada:get('v-dataAdmRealizada'), etapa:get('v-etapa'),
+    statusVaga:get('v-statusVaga'), tipoVaga:get('v-tipoVaga'), salario:get('v-salario'), cnpj:get('v-cnpj'), departamentoGI:get('v-departamentoGI'),
+    transporte, refeicao:get('v-refeicao'), cestaBasica:get('v-cestaBasica'), colete:get('v-colete'), bota:get('v-bota'), luva:get('v-luva'),
+    gestorTurno:get('v-gestorTurno'), contatoGestorTurno:get('v-contatoGestorTurno'), unidadeWecan:get('v-unidadeWecan'),
+    noShow:get('v-noShow'), motivoAtraso:get('v-motivoAtraso'), observacao:get('v-observacao'), tipoProcessoDesistente:get('v-tipoProcessoDesistente'),
+  };
+
+  if (!dadosForm.colaborador) { toast('Informe o nome do colaborador.', 'error'); return; }
+
+  if (id) {
+    const v = VAGAS.find(x => x.id === id);
+    const eraVoucher = (v.transporte||'').toUpperCase().includes('VOUCHER');
+    Object.assign(v, dadosForm);
+    if (isVoucher && !eraVoucher) { v.filaVoucherStatus = 'pendente'; v.filaVoucherMotivo=''; toast('Salvo! Colaborador adicionado à fila de autorização de Voucher.', 'info'); }
+    else if (!isVoucher && eraVoucher) { v.filaVoucherStatus = null; toast('Salvo! Transporte deixou de ser Voucher — removido da fila.', 'info'); }
+    else toast('Vaga atualizada com sucesso!', 'success');
+  } else {
+    const novo = { id:'v'+(VAGAS.length+1+Math.floor(Math.random()*1000)), ...dadosForm, filaVoucherStatus: isVoucher ? 'pendente':null, filaVoucherMotivo:'' };
+    VAGAS.push(novo);
+    toast(isVoucher ? 'Vaga criada! Colaborador adicionado à fila de autorização de Voucher.' : 'Vaga criada com sucesso!', isVoucher ? 'info':'success');
+  }
+
+  fecharModal('modal-vaga');
+  renderVagas();
+  atualizarBadgeFila();
+}
+
+// ══════════════════════════════════════════════
+//  FILA DE AUTORIZAÇÃO — VOUCHER
+// ══════════════════════════════════════════════
+let queueFilter = 'pendente';
+function setQueueFilter(f) {
+  queueFilter = f;
+  document.querySelectorAll('.qtab').forEach(b => b.classList.toggle('active', b.dataset.qf===f));
+  renderQueue();
+}
+function atualizarBadgeFila() {
+  const n = VAGAS.filter(v => v.filaVoucherStatus === 'pendente').length;
+  document.getElementById('nav-voucher-count').textContent = n;
+}
+function renderQueue() {
+  const lista = VAGAS.filter(v => v.filaVoucherStatus === queueFilter);
+  const list = document.getElementById('queue-list');
+  if (!lista.length) { list.innerHTML = `<div class="empty-state"><div class="ico">📬</div>Nenhum colaborador nesta categoria</div>`; return; }
+  list.innerHTML = lista.map(v => `
+    <div class="queue-card">
+      <div class="qc-main"><strong>${v.colaborador}</strong><span>${v.consultor} · ${v.regional} · ${v.cargo} · Matrícula ${v.matricula||'—'}</span></div>
+      <span class="qc-transp">${v.transporte}</span>
+      ${queueFilter === 'pendente' ? `
+        <div class="qc-actions">
+          <button class="btn btn-success btn-sm" onclick="autorizarVoucher('${v.id}')">Aprovar</button>
+          <button class="btn btn-danger btn-sm" onclick="rejeitarVoucher('${v.id}')">Rejeitar</button>
+        </div>` : queueFilter === 'aprovado' ? `<span class="pill uniforme-enviado">Pré-aprovado por ${v.filaVoucherAutorizadoPor||'—'}</span>`
+        : `<span class="pill noshow">${v.filaVoucherMotivo || 'Rejeitado'}</span>`}
+    </div>`).join('');
+}
+function autorizarVoucher(id) {
+  const v = VAGAS.find(x => x.id === id);
+  v.filaVoucherStatus = 'aprovado';
+  v.filaVoucherAutorizadoPor = session.nome;
+  toast('Pré-aprovado! Vai ativar de verdade quando aparecer no Template (admissão confirmada).', 'success');
+  renderQueue(); atualizarBadgeFila();
+}
+function rejeitarVoucher(id) {
+  const motivo = prompt('Motivo da rejeição (ex: colaborador trocou de benefício):') || 'Rejeitado';
+  const v = VAGAS.find(x => x.id === id);
+  v.filaVoucherStatus = 'rejeitado';
+  v.filaVoucherMotivo = motivo;
+  toast('Pendente rejeitado.', 'error');
+  renderQueue(); atualizarBadgeFila();
+}
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => { if (e.target.classList.contains('modal-backdrop')) e.target.classList.remove('open'); });
+
+function toast(msg, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (tipo ? ' ' + tipo : '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.className = '', 4000);
+}
+
+initApp();
+</script>
+</body>
+</html>
