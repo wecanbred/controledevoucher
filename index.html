@@ -3,25 +3,30 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>WecanBR · Sistema Integrado</title>
+<title>WECANBR · Sistema Integrado</title>
 <style>
   :root {
-    --bg:        #0f1117;
-    --surface:   #1a1d27;
-    --surface2:  #222637;
-    --surface3:  #2a2f47;
-    --border:    #2e3350;
-    --accent:    #14b8a6;
+    --bg:        #150a20;
+    --surface:   #211132;
+    --surface2:  #2c1740;
+    --surface3:  #38204e;
+    --border:    #432a5c;
+    --accent:    #63ccb0;
+    --accent-dim:#4aa890;
+    --brand:     #4f0672;
     --danger:    #ef4444;
-    --text:      #e8eaf6;
-    --muted:     #8891b4;
+    --text:      #efe9f7;
+    --muted:     #a394bf;
     --font:      'Segoe UI', system-ui, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display:flex; align-items:center; justify-content:center; }
 
   #login-page {
-    position: fixed; inset: 0; background: radial-gradient(circle at 20% 20%, rgba(20,184,166,.08), transparent 50%), var(--bg);
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 18% 18%, rgba(99,204,176,.10), transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(79,6,114,.35), transparent 55%),
+                var(--bg);
     display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px;
   }
   .login-box { width: 420px; max-width: 100%; }
@@ -55,9 +60,9 @@
   }
   .form-group input:focus { border-color: var(--accent); }
 
-  .btn { padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-family: var(--font); font-weight: 600; }
-  .btn-primary { background: var(--accent); color: #06231f; width:100%; margin-top:4px; }
-  .btn-primary:hover { background: #1fd6c2; }
+  .btn { padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-family: var(--font); font-weight: 700; }
+  .btn-primary { background: var(--accent); color: var(--brand); width:100%; margin-top:4px; }
+  .btn-primary:hover { background: #7adcc4; }
 </style>
 </head>
 <body>
@@ -95,40 +100,14 @@
 
     <div class="demo-note">
       <strong>Ambiente de teste:</strong> a validação real ainda não está conectada à planilha. Contas de demonstração:<br/>
-      <code>edivan.costa@wecanbr.com.br</code> / <code>Edivan027@</code> (Outro/Master) · qualquer outra conta de exemplo usa a senha <code>123456</code>.
+      <code>edivan.costa@wecanbr.com.br</code> / <code>Edivan027@</code> (Outro/Master) · qualquer outra conta de exemplo usa a senha <code>123456</code>. Novos acessos criados pelo Master (tela Usuários) também funcionam aqui.
     </div>
   </div>
 </div>
 
+<script src="shared.js"></script>
 <script>
-// ══════════════════════════════════════════════
-//  USUÁRIOS DE DEMONSTRAÇÃO (mock — login real virá da planilha/Apps Script)
-// ══════════════════════════════════════════════
-const USUARIOS_DEMO = [
-  { id:'u1', nome:'LIDIANE SILVA',  perfil:'equipe', email:'lidiane.silva@wecanbr.com.br', senha:'123456' },
-  { id:'u2', nome:'FABIANA SANDER', perfil:'equipe', email:'fabiana.sander@wecanbr.com.br', senha:'123456' },
-  { id:'u3', nome:'EDIVAN COSTA',   perfil:'master', email:'edivan.costa@wecanbr.com.br', senha:'Edivan027@' },
-  { id:'u4', nome:'GESTORA REGIONAL', perfil:'gestor', email:'gestora.regional@wecanbr.com.br', senha:'123456' },
-  { id:'u5', nome:'ONSITE DUQUE DE CAXIAS', perfil:'onsite', email:'onsite.duquedecaxias@wecanbr.com.br', senha:'123456' },
-];
-const PERFIL_LABEL = { equipe:'Equipe (Consultor)', gestor:'Gestor', master:'Master', onsite:'Onsite' };
 let tipoSelecionado = null;
-
-// ── Sessão persistente — mesma chave usada pelos sistemas de Admissão e Voucher.
-// Hospedados sob o mesmo domínio, login feito aqui já vale nos dois.
-const SESSION_KEY = 'wecan_session_v1';
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
-
-function salvarSessao(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify({ session: s, savedAt: Date.now() })); } catch(e) {} }
-function carregarSessaoSalva() {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed.savedAt || (Date.now() - parsed.savedAt) > SESSION_TTL_MS) { localStorage.removeItem(SESSION_KEY); return null; }
-    return parsed.session;
-  } catch(e) { return null; }
-}
 
 function selecionarTipo(tipo) {
   if (!tipo) return;
@@ -150,9 +129,20 @@ function fazerLogin() {
   const err = document.getElementById('login-error');
   err.style.display = 'none';
 
-  const conta = USUARIOS_DEMO.find(u => u.email.toLowerCase() === email);
+  if (!tipoSelecionado) {
+    err.textContent = 'Selecione o tipo de acesso antes de entrar.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const conta = carregarUsuarios().find(u => u.email.toLowerCase() === email);
   if (!conta || conta.senha !== senha) {
     err.textContent = 'E-mail ou senha incorretos.';
+    err.style.display = 'block';
+    return;
+  }
+  if (conta.ativo === false) {
+    err.textContent = 'Este acesso está desativado. Fale com um administrador.';
     err.style.display = 'block';
     return;
   }

@@ -7,19 +7,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg:        #0f1117;
-    --surface:   #1a1d27;
-    --surface2:  #222637;
-    --surface3:  #2a2f47;
-    --border:    #2e3350;
-    --accent:    #14b8a6;
-    --accent-dim:#0d9488;
+    --bg:        #150a20;
+    --surface:   #211132;
+    --surface2:  #2c1740;
+    --surface3:  #38204e;
+    --border:    #432a5c;
+    --accent:    #63ccb0;
+    --accent-dim:#4aa890;
+    --brand:     #4f0672;
     --voucher:   #4f7cff;
     --success:   #22c55e;
     --danger:    #ef4444;
     --warning:   #f59e0b;
-    --text:      #e8eaf6;
-    --muted:     #8891b4;
+    --text:      #efe9f7;
+    --muted:     #a394bf;
     --radius:    10px;
     --font:      'Segoe UI', system-ui, sans-serif;
   }
@@ -35,7 +36,7 @@
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
   }
   .sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
-  .sidebar-logo .mark { width:30px; height:30px; border-radius:8px; background: linear-gradient(135deg,var(--accent),var(--accent-dim)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; color:#06231f; margin-bottom:10px; }
+  .sidebar-logo .mark { width:30px; height:30px; border-radius:8px; background: linear-gradient(135deg,var(--accent),var(--accent-dim)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; color:var(--brand); margin-bottom:10px; }
   .sidebar-logo h2 { font-size: 13px; font-weight: 800; letter-spacing: .4px; }
   .sidebar-logo span { font-size: 11px; color: var(--muted); }
 
@@ -57,10 +58,10 @@
     transition: all .15s; position:relative;
   }
   nav a:hover { color: var(--text); background: var(--surface2); }
-  nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(20,184,166,.07); font-weight: 600; }
+  nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(99,204,176,.10); font-weight: 600; }
   nav a .ico { width: 18px; text-align: center; font-size: 15px; }
   nav a .count-badge { margin-left:auto; background: var(--surface3); color: var(--muted); font-size:10.5px; padding:1px 7px; border-radius:20px; font-weight:700; }
-  nav a.active .count-badge { background: rgba(20,184,166,.18); color: var(--accent); }
+  nav a.active .count-badge { background: rgba(99,204,176,.20); color: var(--accent); }
   nav a .count-badge.alert { background: rgba(245,158,11,.18); color: var(--warning); }
 
   .sidebar-user { padding: 14px 18px; border-top: 1px solid var(--border); font-size: 12px; }
@@ -125,8 +126,8 @@
   .toolbar input:focus, .toolbar select:focus { border-color: var(--accent); }
 
   .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-family: var(--font); font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; white-space:nowrap; }
-  .btn-primary { background: var(--accent); color: #06231f; }
-  .btn-primary:hover { background: #1fd6c2; }
+  .btn-primary { background: var(--accent); color: var(--brand); }
+  .btn-primary:hover { background: #7adcc4; }
   .btn-danger  { background: rgba(239,68,68,.13); color: var(--danger); border: 1px solid rgba(239,68,68,.3); }
   .btn-danger:hover { background: var(--danger); color: #fff; }
   .btn-success { background: rgba(34,197,94,.13); color: var(--success); border: 1px solid rgba(34,197,94,.3); }
@@ -142,7 +143,7 @@
     padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); position: sticky; top: 0;
   }
   table.main-table tbody tr { border-bottom: 1px solid rgba(46,51,80,.4); cursor:pointer; }
-  table.main-table tbody tr:hover td { background: rgba(20,184,166,.045); }
+  table.main-table tbody tr:hover td { background: rgba(99,204,176,.06); }
   table.main-table td { padding: 9px 12px; white-space: nowrap; vertical-align: middle; }
   .actions-cell { display: flex; gap: 6px; align-items: center; }
   .text-truncate { max-width:220px; overflow:hidden; text-overflow:ellipsis; display:inline-block; white-space:nowrap; vertical-align:bottom; }
@@ -151,10 +152,10 @@
   .pill.uniforme-enviado { background: rgba(34,197,94,.14); color: var(--success); }
   .pill.uniforme-pendente { background: rgba(245,158,11,.14); color: var(--warning); }
   .pill.vaga-noprazo { background: rgba(34,197,94,.14); color: var(--success); }
-  .pill.vaga-antecipada { background: rgba(20,184,166,.14); color: var(--accent); }
+  .pill.vaga-antecipada { background: rgba(99,204,176,.16); color: var(--accent); }
   .pill.vaga-atrasada { background: rgba(239,68,68,.14); color: var(--danger); }
   .pill.voucher { background: rgba(79,124,255,.16); color: var(--voucher); }
-  .pill.regional-sp { background: rgba(20,184,166,.12); color: var(--accent); }
+  .pill.regional-sp { background: rgba(99,204,176,.14); color: var(--accent); }
   .pill.regional-rj { background: rgba(168,85,247,.12); color:#c084fc; }
   .pill.noshow { background: rgba(239,68,68,.14); color: var(--danger); }
   .pill.muted { background: var(--surface3); color: var(--muted); }
@@ -249,6 +250,7 @@
         <a class="active" onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
         <a onclick="navTo('vagas')" data-page="vagas"><span class="ico">▤</span> Vagas / Admissões</a>
         <a onclick="navTo('voucher')" data-page="voucher" id="nav-voucher"><span class="ico">⇄</span> Fila de Voucher <span class="count-badge alert" id="nav-voucher-count">0</span></a>
+        <a onclick="navTo('usuarios')" data-page="usuarios" id="nav-usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
       </div>
     </div>
 
@@ -383,6 +385,26 @@
       <button class="qtab" data-qf="rejeitado" onclick="setQueueFilter('rejeitado')">Rejeitados</button>
     </div>
     <div id="queue-list"></div>
+  </div>
+
+  <!-- ══ USUÁRIOS (acessos da Admissão — somente Master) ══ -->
+  <div class="page" id="page-usuarios">
+    <div class="page-header">
+      <div>
+        <h1>Usuários</h1>
+        <p>Gerencie quem tem acesso ao sistema de Seleção &amp; Admissão</p>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModalUsuario(null)">+ Novo Usuário</button>
+    </div>
+    <div class="access-note">
+      Esses acessos valem para o login compartilhado (página inicial). Cada perfil controla o que a pessoa vê dentro do Seleção &amp; Admissão — Equipe só enxerga as próprias vagas, Gestor e Onsite veem tudo, Master também acessa o Voucher integrado.
+    </div>
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo de acesso</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-usuarios"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ══ VOUCHER (sistema integrado — somente Master) ══ -->
@@ -573,13 +595,39 @@
   </div>
 </div>
 
+<!-- MODAL USUÁRIO -->
+<div class="modal-backdrop" id="modal-usuario">
+  <div class="modal" style="width:440px">
+    <div class="modal-head">
+      <h2 id="mu-title">Novo Usuário</h2>
+      <p>Defina o tipo de acesso — isso controla o que essa pessoa vê no sistema</p>
+    </div>
+    <div style="padding:0 26px 6px">
+      <input type="hidden" id="u-id"/>
+      <div class="form-group"><label>Nome</label><input type="text" id="u-nome" placeholder="NOME COMPLETO"/></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="u-email" placeholder="nome@wecanbr.com.br"/></div>
+      <div class="form-group"><label>Senha</label><input type="text" id="u-senha" placeholder="Deixe em branco para manter a atual"/></div>
+      <div class="form-group">
+        <label>Tipo de acesso</label>
+        <select id="u-perfil">
+          <option value="equipe">Consultor (Equipe)</option>
+          <option value="gestor">Gestor</option>
+          <option value="onsite">Onsite</option>
+          <option value="master">Outro (Master)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarUsuario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
+<script src="shared.js"></script>
 <script>
-// ══════════════════════════════════════════════
-//  USUÁRIOS DE DEMONSTRAÇÃO (mock — login real virá do sistema de Voucher)
-// ══════════════════════════════════════════════
-const PERFIL_LABEL = { equipe:'Equipe (Consultor)', gestor:'Gestor', master:'Master', onsite:'Onsite' };
 let session = null;
 
 // ══════════════════════════════════════════════
@@ -642,20 +690,8 @@ function vagasNoEscopo() {
 
 // ══════════════════════════════════════════════
 //  SESSÃO — login acontece em index.html; aqui só lemos/validamos
+//  (salvarSessao, carregarSessaoSalva, limparSessaoSalva vêm do shared.js)
 // ══════════════════════════════════════════════
-const SESSION_KEY = 'wecan_session_v1';
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
-
-function carregarSessaoSalva() {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed.savedAt || (Date.now() - parsed.savedAt) > SESSION_TTL_MS) { localStorage.removeItem(SESSION_KEY); return null; }
-    return parsed.session;
-  } catch(e) { return null; }
-}
-function limparSessaoSalva() { try { localStorage.removeItem(SESSION_KEY); } catch(e) {} }
 
 function iniciarSessao(conta) {
   session = conta;
@@ -664,6 +700,7 @@ function iniciarSessao(conta) {
   document.getElementById('user-nome').textContent = session.nome;
   document.getElementById('user-perfil').textContent = PERFIL_LABEL[session.perfil];
   document.getElementById('nav-voucher').style.display = podeAutorizarVoucher() ? 'flex' : 'none';
+  document.getElementById('nav-usuarios').style.display = ehMaster() ? 'flex' : 'none';
   document.getElementById('navgroup-voucherapp').style.display = ehMaster() ? 'block' : 'none';
   document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
   popularFiltroConsultor();
@@ -691,6 +728,79 @@ function popularFiltroConsultor() {
 }
 
 // ══════════════════════════════════════════════
+//  USUÁRIOS — acessos ao sistema de Seleção & Admissão (e ao hub)
+//  Lista compartilhada com index.html via shared.js / localStorage.
+// ══════════════════════════════════════════════
+function renderUsuarios() {
+  const lista = carregarUsuarios();
+  document.getElementById('tbody-usuarios').innerHTML = lista.map(u => `
+    <tr>
+      <td><strong>${u.nome}</strong></td>
+      <td>${u.email}</td>
+      <td><span class="pill muted">${PERFIL_LABEL[u.perfil] || u.perfil}</span></td>
+      <td>${u.ativo === false ? '<span class="pill vaga-atrasada">INATIVO</span>' : '<span class="pill uniforme-enviado">ATIVO</span>'}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleUsuarioAtivo('${u.id}')">${u.ativo === false ? 'Ativar' : 'Desativar'}</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${u.id}','${u.nome}')">Excluir</button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state">Nenhum usuário cadastrado</div></td></tr>`;
+}
+
+function abrirModalUsuario(u) {
+  document.getElementById('mu-title').textContent = u ? 'Editar Usuário' : 'Novo Usuário';
+  document.getElementById('u-id').value = u ? u.id : '';
+  document.getElementById('u-nome').value = u ? u.nome : '';
+  document.getElementById('u-email').value = u ? u.email : '';
+  document.getElementById('u-senha').value = '';
+  document.getElementById('u-perfil').value = u ? u.perfil : 'equipe';
+  abrirModal('modal-usuario');
+}
+
+function salvarUsuario() {
+  const id = document.getElementById('u-id').value;
+  const nome = document.getElementById('u-nome').value.trim();
+  const email = document.getElementById('u-email').value.trim().toLowerCase();
+  const senha = document.getElementById('u-senha').value;
+  const perfil = document.getElementById('u-perfil').value;
+
+  if (!nome || !email) { toast('Preencha nome e e-mail.', 'error'); return; }
+
+  const lista = carregarUsuarios();
+  if (id) {
+    const u = lista.find(x => x.id === id);
+    if (!u) { toast('Usuário não encontrado.', 'error'); return; }
+    u.nome = nome; u.email = email; u.perfil = perfil;
+    if (senha) u.senha = senha;
+  } else {
+    if (lista.some(x => x.email.toLowerCase() === email)) { toast('Já existe um usuário com esse e-mail.', 'error'); return; }
+    if (!senha) { toast('Defina uma senha para o novo usuário.', 'error'); return; }
+    lista.push({ id: gerarIdUsuario(), nome, email, senha, perfil, ativo: true });
+  }
+  salvarUsuarios(lista);
+  fecharModal('modal-usuario');
+  renderUsuarios();
+  toast('Usuário salvo! Já pode fazer login com esse acesso.', 'success');
+}
+
+function toggleUsuarioAtivo(id) {
+  const lista = carregarUsuarios();
+  const u = lista.find(x => x.id === id);
+  if (!u) return;
+  u.ativo = u.ativo === false ? true : false;
+  salvarUsuarios(lista);
+  renderUsuarios();
+  toast(u.ativo ? 'Usuário ativado.' : 'Usuário desativado.', 'success');
+}
+
+function excluirUsuario(id, nome) {
+  if (!confirm(`Excluir o acesso de ${nome}? Essa ação não pode ser desfeita.`)) return;
+  salvarUsuarios(carregarUsuarios().filter(x => x.id !== id));
+  renderUsuarios();
+  toast('Usuário excluído.', 'success');
+}
+
+// ══════════════════════════════════════════════
 //  NAV
 // ══════════════════════════════════════════════
 function navTo(id) {
@@ -702,6 +812,7 @@ function navTo(id) {
   if (id === 'dashboard') renderDashboard();
   if (id === 'vagas') renderVagas();
   if (id === 'voucher') renderQueue();
+  if (id === 'usuarios') renderUsuarios();
   atualizarBadgeFila();
 }
 
@@ -769,7 +880,7 @@ function renderDashboard() {
   document.getElementById('badge-regional').textContent = total + ' vagas';
   const ctxR = document.getElementById('chart-regional').getContext('2d');
   if (chartRegional) chartRegional.destroy();
-  chartRegional = new Chart(ctxR, { type:'doughnut', data:{ labels:['SPI (HUBs)','RIO/ES (SOC)'], datasets:[{ data:[porRegional['SPI'],porRegional['RIO/ES']], backgroundColor:['#14b8a6','#c084fc'], borderWidth:0, hoverOffset:6 }] },
+  chartRegional = new Chart(ctxR, { type:'doughnut', data:{ labels:['SPI (HUBs)','RIO/ES (SOC)'], datasets:[{ data:[porRegional['SPI'],porRegional['RIO/ES']], backgroundColor:['#63ccb0','#c084fc'], borderWidth:0, hoverOffset:6 }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8891b4', font:{size:11}, padding:12 } } } } });
 
   // Ranking consultores
@@ -789,7 +900,7 @@ function renderDashboard() {
   dados.forEach(v => { const s = v.statusVaga || 'Sem status'; statusCount[s] = (statusCount[s]||0)+1; });
   const ctxS = document.getElementById('chart-status').getContext('2d');
   if (chartStatus) chartStatus.destroy();
-  chartStatus = new Chart(ctxS, { type:'bar', data:{ labels:Object.keys(statusCount), datasets:[{ data:Object.values(statusCount), backgroundColor:'rgba(20,184,166,.55)', borderColor:'#14b8a6', borderWidth:1, borderRadius:4 }] },
+  chartStatus = new Chart(ctxS, { type:'bar', data:{ labels:Object.keys(statusCount), datasets:[{ data:Object.values(statusCount), backgroundColor:'rgba(99,204,176,.55)', borderColor:'#63ccb0', borderWidth:1, borderRadius:4 }] },
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ x:{ ticks:{ color:'#8891b4', font:{size:10}, stepSize:1 }, grid:{ color:'rgba(46,51,80,.4)' } }, y:{ ticks:{ color:'#8891b4', font:{size:10} }, grid:{ display:false } } } } });
 

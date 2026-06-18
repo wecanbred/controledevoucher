@@ -3,15 +3,20 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>WecanBR · Sistema Integrado</title>
+<title>WECANBR · Sistema Integrado</title>
 <style>
   :root {
-    --bg: #0f1117; --surface: #1a1d27; --surface2: #222637; --border: #2e3350;
-    --accent: #14b8a6; --voucher: #4f7cff; --text: #e8eaf6; --muted: #8891b4;
+    --bg: #150a20; --surface: #211132; --surface2: #2c1740; --border: #432a5c;
+    --accent: #63ccb0; --brand: #4f0672; --voucher: #4f7cff; --text: #efe9f7; --muted: #a394bf;
     --font: 'Segoe UI', system-ui, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  body {
+    background: radial-gradient(circle at 18% 18%, rgba(99,204,176,.10), transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(79,6,114,.35), transparent 55%),
+                var(--bg);
+    color: var(--text); font-family: var(--font); min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
   .wrap { width: 560px; max-width: 100%; }
   .head { margin-bottom: 26px; }
   .head h1 { font-size: 24px; font-weight: 800; }
@@ -25,8 +30,8 @@
   .sys-card:hover { border-color: var(--accent); background: var(--surface2); transform: translateX(2px); }
   .sys-card.voucher:hover { border-color: var(--voucher); }
   .sys-ico { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
-  .sys-card:not(.voucher) .sys-ico { background: rgba(20,184,166,.12); color: var(--accent); }
-  .sys-card.voucher .sys-ico { background: rgba(79,124,255,.12); color: var(--voucher); }
+  .sys-card:not(.voucher) .sys-ico { background: rgba(99,204,176,.14); color: var(--accent); }
+  .sys-card.voucher .sys-ico { background: rgba(79,124,255,.14); color: var(--voucher); }
   .sys-info strong { display:block; font-size:15px; }
   .sys-info span { font-size:12px; color: var(--muted); }
   .empty { color: var(--muted); font-size: 13px; padding: 20px 0; }
@@ -46,21 +51,9 @@
   <div class="logout-row"><button class="btn-logout" onclick="logout()">Sair</button></div>
 </div>
 
+<script src="shared.js"></script>
 <script>
-const PERFIL_LABEL = { equipe:'Equipe (Consultor)', gestor:'Gestor', master:'Master', onsite:'Onsite' };
-const SESSION_KEY = 'wecan_session_v1';
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
-
-function carregarSessaoSalva() {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed.savedAt || (Date.now() - parsed.savedAt) > SESSION_TTL_MS) { localStorage.removeItem(SESSION_KEY); return null; }
-    return parsed.session;
-  } catch(e) { return null; }
-}
-function logout() { try { localStorage.removeItem(SESSION_KEY); } catch(e) {} window.location.href = 'index.html'; }
+function logout() { limparSessaoSalva(); window.location.href = 'index.html'; }
 
 const session = carregarSessaoSalva();
 if (!session) {
@@ -70,9 +63,7 @@ if (!session) {
   document.getElementById('perfil-usuario').textContent = PERFIL_LABEL[session.perfil] || session.perfil;
 
   const cartoes = [];
-  // Seleção & Admissão: todo perfil cadastrado tem acesso (a tela interna filtra o que cada um vê)
   cartoes.push({ href:'admissao.html', cls:'', ico:'◆', titulo:'Seleção & Admissão', desc:'Vagas, admissões e fila de autorização de voucher' });
-  // Voucher: hoje, só Master enxerga o sistema completo a partir daqui
   if (session.perfil === 'master') {
     cartoes.push({ href:'voucher.html', cls:'voucher', ico:'🚖', titulo:'Voucher', desc:'Controle de vouchers de mobilidade — sistema integrado' });
   }
