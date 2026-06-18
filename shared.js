@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════
 //  shared.js — WecanBR Sistema Integrado
 //  Funções comuns de sessão e usuários.
-//  Usado por index.html, hub.html e admissao.html.
+//  Usado por index.html e admissao.html.
 //  Mesma origem ⇒ mesmo localStorage ⇒ funciona como
 //  um "banco" compartilhado entre as três páginas.
 //  (Substituir por chamadas reais ao Apps Script quando

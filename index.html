@@ -152,7 +152,7 @@ function fazerLogin() {
     return;
   }
   salvarSessao(conta);
-  window.location.href = 'hub.html';
+  window.location.href = 'admissao.html';
 }
 document.addEventListener('keydown', e => {
   const step = document.getElementById('step-credenciais');
@@ -162,7 +162,7 @@ document.addEventListener('keydown', e => {
 // Se já existe sessão válida, não mostra login de novo — manda direto pro hub.
 (function initApp() {
   const salva = carregarSessaoSalva();
-  if (salva) window.location.href = 'hub.html';
+  if (salva) window.location.href = 'admissao.html';
 })();
 </script>
 </body>
