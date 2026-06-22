@@ -155,8 +155,10 @@
   .pill.vaga-antecipada { background: rgba(99,204,176,.16); color: var(--accent); }
   .pill.vaga-atrasada { background: rgba(239,68,68,.14); color: var(--danger); }
   .pill.voucher { background: rgba(79,124,255,.16); color: var(--voucher); }
-  .pill.regional-sp { background: rgba(99,204,176,.14); color: var(--accent); }
-  .pill.regional-rj { background: rgba(168,85,247,.12); color:#c084fc; }
+  .pill.regional-sp  { background: rgba(99,204,176,.14); color: var(--accent); }
+  .pill.regional-rj  { background: rgba(168,85,247,.12); color:#c084fc; }
+  .pill.regional-co  { background: rgba(245,158,11,.14); color:#f59e0b; }
+  .pill.regional-spm { background: rgba(59,130,246,.14); color:#60a5fa; }
   .pill.noshow { background: rgba(239,68,68,.14); color: var(--danger); }
   .pill.muted { background: var(--surface3); color: var(--muted); }
 
@@ -338,18 +340,24 @@
       <input type="text" id="busca-vaga" placeholder="Buscar por colaborador, matrícula, Jira..." oninput="renderVagas()"/>
       <select id="filtro-regional" onchange="renderVagas()">
         <option value="">Todas as regionais</option>
-        <option value="SPI">SPI (HUBs)</option>
-        <option value="RIO/ES">RIO/ES (SOC)</option>
+        <option value="SPI">SPI</option>
+        <option value="CO/N">CO/N</option>
+        <option value="SPM">SPM</option>
+        <option value="RIO/ES">RIO/ES</option>
       </select>
       <select id="filtro-statusvaga" onchange="renderVagas()">
         <option value="">Todos os status</option>
+        <option>Em Andamento No Prazo</option>
+        <option>Em Andamento Atrasada</option>
         <option>Finalizada No Prazo</option>
         <option>Finalizada Antecipada</option>
         <option>Finalizada Atrasada</option>
+        <option>Cancelada</option>
       </select>
       <select id="filtro-consultor" onchange="renderVagas()">
         <option value="">Todos os consultores</option>
       </select>
+      <button class="btn btn-ghost btn-sm" onclick="atualizarDados()" title="Buscar dados mais recentes da planilha">🔄 Atualizar</button>
     </div>
 
     <div class="table-wrap">
@@ -442,6 +450,7 @@
     </div>
 
     <input type="hidden" id="v-id"/>
+    <input type="hidden" id="v-jiraOriginal"/>
 
     <div class="tab-content active" data-tab="vaga">
       <div class="form-row">
@@ -451,9 +460,9 @@
       <div class="form-row three">
         <div class="form-group"><label>Código Hub/Soc</label><input type="text" id="v-codigoHub" placeholder="HUB-LSP-100"/></div>
         <div class="form-group"><label>Regional</label>
-          <select id="v-regional"><option value="SPI">SPI</option><option value="RIO/ES">RIO/ES</option></select>
+          <select id="v-regional"><option value="SPI">SPI</option><option value="CO/N">CO/N</option><option value="SPM">SPM</option><option value="RIO/ES">RIO/ES</option></select>
         </div>
-        <div class="form-group"><label>Mês</label><input type="text" id="v-mes" placeholder="dezembro, 2025"/></div>
+        <div class="form-group"><label>Mês</label><input type="date" id="v-mes"/></div>
       </div>
       <div class="form-group"><label>Local de Trabalho</label><input type="text" id="v-local" placeholder="Endereço completo"/></div>
       <div class="form-row three">
@@ -476,7 +485,8 @@
         <div class="form-group"><label>Matrícula</label><input type="text" id="v-matricula" placeholder="WE000000"/></div>
         <div class="form-group"><label>OPS ID</label><input type="text" id="v-opsId" placeholder="Ops000000"/></div>
         <div class="form-group"><label>Status do Uniforme</label>
-          <select id="v-statusUniforme"><option value="">—</option><option>ENVIADO</option><option>PENDENTE</option></select>
+          <input type="text" id="v-statusUniforme" list="dl-statusUniforme" placeholder="ENVIADO / PENDENTE / ENVIADO dd/mm"/>
+          <datalist id="dl-statusUniforme"><option value="ENVIADO"/><option value="PENDENTE"/></datalist>
         </div>
       </div>
       <div class="form-row">
@@ -510,20 +520,31 @@
         <div class="form-group"><label>Nova Data ETO</label><input type="date" id="v-novaDataETO"/></div>
         <div class="form-group"><label>Data Admissão Realizada</label><input type="date" id="v-dataAdmRealizada"/></div>
         <div class="form-group"><label>Etapa do Processo Seletivo</label>
-          <select id="v-etapa"><option>Em andamento</option><option>Contrato Assinado</option></select>
+          <select id="v-etapa">
+            <option>R&amp;S</option>
+            <option>Pesquisa</option>
+            <option>Validação de Fretado</option>
+            <option>Documentação</option>
+            <option>Contrato Assinado</option>
+            <option>Exame admissional</option>
+            <option>Cancelada</option>
+          </select>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Status da Vaga</label>
           <select id="v-statusVaga">
             <option value="">—</option>
+            <option>Em Andamento No Prazo</option>
+            <option>Em Andamento Atrasada</option>
             <option>Finalizada No Prazo</option>
             <option>Finalizada Antecipada</option>
             <option>Finalizada Atrasada</option>
+            <option>Cancelada</option>
           </select>
         </div>
         <div class="form-group"><label>Tipo de Vaga</label>
-          <select id="v-tipoVaga"><option>1 - Vaga Oficial</option><option>2 - Reposição - NO SHOW</option></select>
+          <select id="v-tipoVaga"><option>1 - Vaga Oficial</option><option>2 - Reposição - NO SHOW</option><option>3 - Reposição - ETO</option></select>
         </div>
       </div>
       <div class="form-row">
@@ -536,21 +557,31 @@
     <div class="tab-content" data-tab="beneficios">
       <div class="form-group">
         <label>Transporte</label>
-        <select id="v-transporte" onchange="checarVoucherFlag()">
-          <option>VALE TRANSPORTE</option>
-          <option>AUXILIO MOBILIDADE</option>
-          <option>FRETADO + VALE TRANSPORTE</option>
-          <option>OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)</option>
-          <option>VOUCHER UBER + VT</option>
-          <option>VOUCHER UBER/99</option>
-        </select>
+        <input type="text" id="v-transporte" list="dl-transporte" oninput="checarVoucherFlag()" placeholder="VALE TRANSPORTE"/>
+        <datalist id="dl-transporte">
+          <option value="VALE TRANSPORTE"/>
+          <option value="AUXILIO MOBILIDADE"/>
+          <option value="FRETADO"/>
+          <option value="FRETADO + VALE TRANSPORTE"/>
+          <option value="FRETADO + VT"/>
+          <option value="VOUCHER UBER + VT"/>
+          <option value="VOUCHER UBER / MOBILIDADE OU VT"/>
+          <option value="MOBILIDADE OU VT"/>
+          <option value="OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)"/>
+        </datalist>
         <div class="voucher-flag" id="voucher-flag" style="display:none">
           🔗 Esta opção contém <b>Voucher</b> — ao salvar, este colaborador entrará automaticamente na <b>Fila de Autorização do sistema de Voucher</b>.
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Refeição</label><input type="text" id="v-refeicao" placeholder="R$150,00"/></div>
-        <div class="form-group"><label>Cesta Básica</label><input type="text" id="v-cestaBasica" placeholder="Confirmado / Não pagamos"/></div>
+        <div class="form-group"><label>Refeição</label>
+          <input type="text" id="v-refeicao" list="dl-refeicao" placeholder="R$150,00"/>
+          <datalist id="dl-refeicao"><option value="REFEITORIO"/><option value="R$35,50 por dia trabalhado"/><option value="R$32,00 por dia trabalhado"/></datalist>
+        </div>
+        <div class="form-group"><label>Cesta Básica</label>
+          <input type="text" id="v-cestaBasica" list="dl-cestaBasica" placeholder="Confirmado / Não pagamos"/>
+          <datalist id="dl-cestaBasica"><option value="NÃO"/><option value="Não pagamos"/><option value="R$150,00"/><option value="R$152,00"/><option value="R$200,00"/><option value="R$220,00"/></datalist>
+        </div>
       </div>
       <div class="form-row three">
         <div class="form-group"><label>Colete</label><input type="text" id="v-colete" placeholder="G"/></div>
@@ -573,11 +604,12 @@
         <label>Motivo do Atraso no Fechamento da Vaga</label>
         <select id="v-motivoAtraso">
           <option value="">—</option>
-          <option>ALTERAÇÃO DE DATA SOLICITADA PELO CLIENTE</option>
-          <option>NO SHOW/ET</option>
-          <option>DECLINIO NA ADMISSÃO</option>
-          <option>ATRASO EM R&S</option>
-          <option>REGIÃO CRÍTICA</option>
+          <option>No Show/ET</option>
+          <option>Região Crítica</option>
+          <option>Declínio</option>
+          <option>Reprova no exame admissional</option>
+          <option>Problemas de informação Shopee (alteração de turno/escala/horário)</option>
+          <option>Problemas de informação Shopee (alteração de preferência)</option>
         </select>
       </div>
       <div class="form-group"><label>Observação</label><textarea id="v-observacao" rows="3"></textarea></div>
@@ -588,7 +620,7 @@
 
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModal('modal-vaga')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarVaga()">Salvar Vaga</button>
+      <button class="btn btn-primary" id="btn-salvar-vaga" onclick="salvarVaga()">Salvar Vaga</button>
     </div>
   </div>
 </div>
@@ -617,7 +649,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarUsuario()">Salvar</button>
+      <button class="btn btn-primary" id="btn-salvar-usuario" onclick="salvarUsuario()">Salvar</button>
     </div>
   </div>
 </div>
@@ -627,46 +659,34 @@
 <script src="shared.js"></script>
 <script>
 let session = null;
+let MAIN_HTML_ORIGINAL = '';
 
 // ══════════════════════════════════════════════
-//  DADOS DE EXEMPLO (substituirão a leitura real da planilha)
+//  DADOS — agora vêm da planilha real via Apps Script (Code.gs)
 // ══════════════════════════════════════════════
-const CONSULTORES = ['LIDIANE SILVA','FABIANA SANDER','RENATA SOARES','HENRIQUE DO NASCIMENTO','ADRIAN NARDE','CAROL CATTO'];
+let VAGAS = [];
 
-function gerarVagas() {
-  const base = [
-    { consultor:'FABIANA SANDER', jira:'VWF-88386', codigoHub:'HUB-LSP-105', regional:'SPI', local:'Avenida Comendador Aladino Selmi, 2.502 - Campinas - São Paulo - CEP 13478-710.', cargo:'Líder de logística', turno:'F1', horario:'08:00-16:20', escala:'SEG-SAB', colaborador:'EVANDRO GOBBI', matricula:'WE804962', opsId:'Ops147403', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-15', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'1 - Vaga Oficial', transporte:'OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)', refeicao:'R$150,00', unidadeWecan:'CAMPINAS', cpf:'378421828-84', genero:'MASCULINO' },
-    { consultor:'FABIANA SANDER', jira:'VWF-93083', codigoHub:'HUB-LSP-105', regional:'SPI', local:'Avenida Comendador Aladino Selmi, 2.502 - Campinas - São Paulo - CEP 13478-710.', cargo:'Analista de transporte', turno:'F1', horario:'08:00-16:20', escala:'TER-DOM', colaborador:'ERIK PLANEJAMENTO DE SOUZA', matricula:'WE805187', opsId:'Ops148392', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'1 - Vaga Oficial', transporte:'VOUCHER UBER + VT', refeicao:'R$150,00', unidadeWecan:'CAMPINAS', cpf:'398951588-92', genero:'MASCULINO' },
-    { consultor:'HENRIQUE DO NASCIMENTO', jira:'VWF-95614', codigoHub:'HUB-LSP-87', regional:'SPI', local:'Rodovia Edgard Máximo Zambotto (SP 354), km 79, bairro da Ponte Alta, Atibaia - Módulos G10, G11 e G12.', cargo:'Auxiliar de logística', turno:'F12', horario:'05:25-15:13', escala:'TER-SAB 5X2', colaborador:'MAYRA CRISTINA DOS SANTOS', matricula:'WE805316', opsId:'Ops150762', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-22', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'2 - Reposição - NO SHOW', transporte:'AUXILIO MOBILIDADE', refeicao:'R$35,50 por dia trabalhado', unidadeWecan:'JUNDIAI', cpf:'128894377-60', genero:'FEMININO', noShow:'MAYRA CRISTINA DOS SANTOS / GUSTAVO VINHAS / BIANCA APARECIDA SOARES', motivoAtraso:'NO SHOW/ET', observacao:'NO SHOW 30/1 / no show 13/1 / ETO em 17/12' },
-    { consultor:'ADRIAN NARDE', jira:'VWF-95577', codigoHub:'HUB-LSP-100', regional:'SPI', local:'Av. Nossa Senhora Auxiliadora, nº 901 - Bairro dos Fernandes, CEP 13.214-855', cargo:'Auxiliar de logística', turno:'F12', horario:'06:00-15:48', escala:'TER-SAB 5X2', colaborador:'LAYSLA DE SOUZA GODOY', matricula:'WE805177', opsId:'Ops149163', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Antecipada', tipoVaga:'1 - Vaga Oficial', transporte:'VALE TRANSPORTE', refeicao:'R$35,50 por dia trabalhado', unidadeWecan:'JUNDIAI', cpf:'510655248-62', genero:'FEMININO' },
-    { consultor:'CAROL CATTO', jira:'VWF-95388', codigoHub:'HUB-LSP-38', regional:'SPI', local:'Avenida Mariano Corte, Simonsen, 1850, Lote 12, Quadra 1, Simonsen, Votuporanga,', cargo:'Auxiliar de logística', turno:'F34', horario:'02:00-11:22', escala:'QUI-SEG 5X2 (FOLGA EM TER e QUA)', colaborador:'JEFERSON LUIS REIS DE PAULA', matricula:'WE807272', opsId:'Ops189792', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-22', etapa:'Contrato Assinado', statusVaga:'Finalizada Antecipada', tipoVaga:'2 - Reposição - NO SHOW', transporte:'VOUCHER UBER/99', refeicao:'R$220,00', unidadeWecan:'BAURU', cpf:'42186451832', genero:'MASCULINO' },
-    { consultor:'LIDIANE SILVA', jira:'VWF-96886', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'ANA PAULA BITENCOURT', matricula:'WE805450', opsId:'OPS167937', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-05', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'1 - Vaga Oficial', transporte:'AUXILIO MOBILIDADE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'219640992-1', genero:'FEMININO' },
-    { consultor:'LIDIANE SILVA', jira:'VWF-96885', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'CLAUDIA FABIANE FERREIRA', matricula:'WE805441', opsId:'OPS167938', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-05', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'1 - Vaga Oficial', transporte:'VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'219720136-8', genero:'FEMININO' },
-    { consultor:'RENATA SOARES', jira:'VWF-96878', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'DOUGLAS DE OLIVEIRA ARTIGOU', matricula:'WE805480', opsId:'OPS167944', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-13', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'2 - Reposição - NO SHOW', transporte:'FRETADO + VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'099343667-62', genero:'MASCULINO', noShow:'DOUGLAS DE OLIVEIRA ARTIGOU', motivoAtraso:'NO SHOW/ET', observacao:'No Show de 05/01/2026. Admissão reprogramada para 12/01/2026' },
-    { consultor:'RENATA SOARES', jira:'VWF-96877', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'MOISES VICTOR SILVA CARVALHO', matricula:'WE805515', opsId:'OPS167945', statusUniforme:'ENVIADO', dataAdmRealizada:'2026-01-05', etapa:'Contrato Assinado', statusVaga:'Finalizada No Prazo', tipoVaga:'1 - Vaga Oficial', transporte:'FRETADO + VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'226815437-89', genero:'MASCULINO' },
-    { consultor:'LIDIANE SILVA', jira:'VWF-96860', codigoHub:'SOC-RJ2', regional:'RIO/ES', local:'Rod. Washington Luiz, 3777 - Parque Sao Bento, Duque de Caxias - RJ, 25265-008', cargo:'Auxiliar de logística', turno:'F23', horario:'21:00-05:55', escala:'HA DE QUA-DOM 21:00-05:55 COM FOLGA EM SEG', colaborador:'PEDRO HENRIQUE DOMINGOS DE SOUZA', matricula:'WE805686', opsId:'OPS167964', statusUniforme:'', dataAdmRealizada:'2026-01-13', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'2 - Reposição - NO SHOW', transporte:'VALE TRANSPORTE', refeicao:'REFEITORIO', unidadeWecan:'DUQUE DE CAXIAS', cpf:'201177947-24', genero:'MASCULINO', noShow:'PEDRO HENRIQUE DOMINGOS DE SOUZA', motivoAtraso:'NO SHOW/ET', observacao:'No Show de 05/01/2026. Admissão reprogramada para 12/01/2026' },
-    { consultor:'ADRIAN NARDE', jira:'VWF-95570', codigoHub:'HUB-LSP-100', regional:'SPI', local:'Av. Nossa Senhora Auxiliadora, nº 901 - Bairro dos Fernandes, CEP 13.214-855', cargo:'Auxiliar de logística', turno:'F32', horario:'06:00-15:48', escala:'TER-SAB 5X2', colaborador:'IAGO TIRSO SILVA', matricula:'WE805231', opsId:'Ops149162', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Antecipada', tipoVaga:'1 - Vaga Oficial', transporte:'VOUCHER UBER + VT', refeicao:'R$35,50 por dia trabalhado', unidadeWecan:'JUNDIAI', cpf:'862877735-02', genero:'MASCULINO' },
-    { consultor:'FABIANA SANDER', jira:'VWF-88440', codigoHub:'HUB-LSP-105', regional:'SPI', local:'Avenida Comendador Aladino Selmi, 2.502 - Campinas - São Paulo - CEP 13478-710.', cargo:'Analista de logística', turno:'F2', horario:'08:00-16:20', escala:'SEG-SAB', colaborador:'ANDRELIZA BACH MURBACH', matricula:'WE805193', opsId:'Ops148393', statusUniforme:'ENVIADO', dataAdmRealizada:'2025-12-18', etapa:'Contrato Assinado', statusVaga:'Finalizada Atrasada', tipoVaga:'1 - Vaga Oficial', transporte:'OPÇÃO DE VT OU MOBILIDADE NO SWILE (CORPORATIVO)', refeicao:'R$150,00', unidadeWecan:'CAMPINAS', cpf:'353917738-81', genero:'FEMININO' },
-  ];
-  return base.map((v,i) => ({
-    id: 'v' + (i+1),
-    mes: v.regional === 'SPI' ? 'dezembro, 2025' : 'janeiro, 2026',
-    recebimento: '2025-12-01',
-    dataAdmSolicitada: v.dataAdmRealizada,
-    dataReprog: '',
-    novaDataETO: '',
-    modalidade: 'Temporário', tempo: '180 dias',
-    preferencia: 'Sem preferência', tipoProcesso: 'ONLINE', indicacao: 'NÃO',
-    cestaBasica: '', colete:'', bota:'', luva:'', gestorTurno:'', contatoGestorTurno:'',
-    salario:'R$ 2.350,00', cnpj:'42.446.277/0297-60', departamentoGI:'HUB-LSP-100_Jundiaí',
-    motivoAtraso:'', observacao:'', noShow:'', tipoProcessoDesistente:'',
-    email:'', telefone:'',
-    filaVoucherStatus: v.transporte.toUpperCase().includes('VOUCHER') ? 'pendente' : null,
-    filaVoucherMotivo: '',
-    ...v,
-  }));
+function consultoresConhecidos() {
+  return [...new Set(VAGAS.map(v => v.consultor).filter(Boolean))].sort();
 }
-let VAGAS = gerarVagas();
+
+async function carregarVagas() {
+  const resp = await apiCall('vagas', {});
+  VAGAS = resp.vagas;
+}
+
+async function atualizarDados() {
+  toast('Atualizando dados da planilha…', 'info');
+  try {
+    await carregarVagas();
+    popularFiltroConsultor();
+    const ativa = document.querySelector('.page.active');
+    if (ativa) navTo(ativa.id.replace('page-', ''));
+    toast('Dados atualizados!', 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
 
 // ══════════════════════════════════════════════
 //  ACESSO / ESCOPO
@@ -691,7 +711,7 @@ function vagasNoEscopo() {
 //  (salvarSessao, carregarSessaoSalva, limparSessaoSalva vêm do shared.js)
 // ══════════════════════════════════════════════
 
-function iniciarSessao(conta) {
+async function iniciarSessao(conta) {
   session = conta;
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('main').style.display = 'block';
@@ -701,6 +721,15 @@ function iniciarSessao(conta) {
   document.getElementById('nav-usuarios').style.display = ehMaster() ? 'flex' : 'none';
   document.getElementById('navgroup-voucherapp').style.display = ehMaster() ? 'block' : 'none';
   document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
+
+  document.getElementById('main').innerHTML = '<div style="padding:60px;text-align:center;color:var(--muted)">Carregando vagas da planilha…</div>';
+  try {
+    await carregarVagas();
+  } catch (e) {
+    document.getElementById('main').innerHTML = `<div style="padding:60px;text-align:center;color:var(--danger)">Não foi possível carregar a planilha.<br/><small>${e.message}</small></div>`;
+    return;
+  }
+  document.getElementById('main').innerHTML = MAIN_HTML_ORIGINAL;
   popularFiltroConsultor();
   navTo('dashboard');
 }
@@ -708,41 +737,49 @@ function iniciarSessao(conta) {
 // Sem sessão válida → volta pro login compartilhado, em vez de mostrar
 // uma tela de login própria deste sistema.
 function initApp() {
+  MAIN_HTML_ORIGINAL = document.getElementById('main').innerHTML;
   const salva = carregarSessaoSalva();
   if (salva) iniciarSessao(salva);
   else window.location.href = 'index.html';
 }
 
 function logout() {
+  apiCall('logout', {}).catch(() => {});
   limparSessaoSalva();
   window.location.href = 'index.html';
 }
 
 function popularFiltroConsultor() {
   const sel = document.getElementById('filtro-consultor');
-  const consultores = podeVerTudo() ? CONSULTORES : [session.nome];
+  const consultores = podeVerTudo() ? consultoresConhecidos() : [session.nome];
   sel.innerHTML = '<option value="">Todos os consultores</option>' + consultores.map(c => `<option>${c}</option>`).join('');
-  sel.parentElement.style.display = (podeVerTudo()) ? 'block' : 'none';
+  sel.parentElement.style.display = podeVerTudo() ? 'block' : 'none';
 }
 
 // ══════════════════════════════════════════════
-//  USUÁRIOS — acessos ao sistema de Seleção & Admissão (e ao hub)
-//  Lista compartilhada com index.html via shared.js / localStorage.
+//  USUÁRIOS — acessos ao sistema; gerenciados pelo Code.gs, aba Usuários_Sistema.
 // ══════════════════════════════════════════════
-function renderUsuarios() {
-  const lista = carregarUsuarios();
-  document.getElementById('tbody-usuarios').innerHTML = lista.map(u => `
-    <tr>
-      <td><strong>${u.nome}</strong></td>
-      <td>${u.email}</td>
-      <td><span class="pill muted">${PERFIL_LABEL[u.perfil] || u.perfil}</span></td>
-      <td>${u.ativo === false ? '<span class="pill vaga-atrasada">INATIVO</span>' : '<span class="pill uniforme-enviado">ATIVO</span>'}</td>
-      <td class="actions-cell">
-        <button class="btn btn-ghost btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>Editar</button>
-        <button class="btn btn-ghost btn-sm" onclick="toggleUsuarioAtivo('${u.id}')">${u.ativo === false ? 'Ativar' : 'Desativar'}</button>
-        <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${u.id}','${u.nome}')">Excluir</button>
-      </td>
-    </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state">Nenhum usuário cadastrado</div></td></tr>`;
+async function renderUsuarios() {
+  const tbody = document.getElementById('tbody-usuarios');
+  tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--muted)">Carregando…</td></tr>';
+  try {
+    const resp = await apiCall('listarUsuarios', {});
+    const lista = resp.usuarios;
+    tbody.innerHTML = lista.map(u => `
+      <tr>
+        <td><strong>${u.nome}</strong></td>
+        <td>${u.email}</td>
+        <td><span class="pill muted">${PERFIL_LABEL[u.perfil] || u.perfil}</span></td>
+        <td>${u.ativo === false ? '<span class="pill vaga-atrasada">INATIVO</span>' : '<span class="pill uniforme-enviado">ATIVO</span>'}</td>
+        <td class="actions-cell">
+          <button class="btn btn-ghost btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>Editar</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleUsuarioAtivo('${u.id}')">${u.ativo === false ? 'Ativar' : 'Desativar'}</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${u.id}','${u.nome}')">Excluir</button>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state">Nenhum usuário cadastrado</div></td></tr>`;
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:16px;color:var(--danger)">${e.message}</td></tr>`;
+  }
 }
 
 function abrirModalUsuario(u) {
@@ -755,47 +792,43 @@ function abrirModalUsuario(u) {
   abrirModal('modal-usuario');
 }
 
-function salvarUsuario() {
+async function salvarUsuario() {
   const id = document.getElementById('u-id').value;
   const nome = document.getElementById('u-nome').value.trim();
   const email = document.getElementById('u-email').value.trim().toLowerCase();
   const senha = document.getElementById('u-senha').value;
   const perfil = document.getElementById('u-perfil').value;
+  const btn = document.getElementById('btn-salvar-usuario');
 
   if (!nome || !email) { toast('Preencha nome e e-mail.', 'error'); return; }
-
-  const lista = carregarUsuarios();
-  if (id) {
-    const u = lista.find(x => x.id === id);
-    if (!u) { toast('Usuário não encontrado.', 'error'); return; }
-    u.nome = nome; u.email = email; u.perfil = perfil;
-    if (senha) u.senha = senha;
-  } else {
-    if (lista.some(x => x.email.toLowerCase() === email)) { toast('Já existe um usuário com esse e-mail.', 'error'); return; }
-    if (!senha) { toast('Defina uma senha para o novo usuário.', 'error'); return; }
-    lista.push({ id: gerarIdUsuario(), nome, email, senha, perfil, ativo: true });
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  try {
+    await apiCall('salvarUsuario', { usuario: { id: id || undefined, nome, email, senha: senha || undefined, perfil } });
+    fecharModal('modal-usuario');
+    await renderUsuarios();
+    toast('Usuário salvo! Já pode fazer login com esse acesso.', 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar';
   }
-  salvarUsuarios(lista);
-  fecharModal('modal-usuario');
-  renderUsuarios();
-  toast('Usuário salvo! Já pode fazer login com esse acesso.', 'success');
 }
 
-function toggleUsuarioAtivo(id) {
-  const lista = carregarUsuarios();
-  const u = lista.find(x => x.id === id);
-  if (!u) return;
-  u.ativo = u.ativo === false ? true : false;
-  salvarUsuarios(lista);
-  renderUsuarios();
-  toast(u.ativo ? 'Usuário ativado.' : 'Usuário desativado.', 'success');
+async function toggleUsuarioAtivo(id) {
+  try {
+    const resp = await apiCall('toggleUsuario', { id });
+    await renderUsuarios();
+    toast(resp.ativo ? 'Usuário ativado.' : 'Usuário desativado.', 'success');
+  } catch (e) { toast(e.message, 'error'); }
 }
 
-function excluirUsuario(id, nome) {
+async function excluirUsuario(id, nome) {
   if (!confirm(`Excluir o acesso de ${nome}? Essa ação não pode ser desfeita.`)) return;
-  salvarUsuarios(carregarUsuarios().filter(x => x.id !== id));
-  renderUsuarios();
-  toast('Usuário excluído.', 'success');
+  try {
+    await apiCall('excluirUsuario', { id });
+    await renderUsuarios();
+    toast('Usuário excluído.', 'success');
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ══════════════════════════════════════════════
@@ -854,39 +887,51 @@ function escopoLabel() {
 // ══════════════════════════════════════════════
 let chartRegional=null, chartStatus=null, chartUniforme=null;
 
+function regionalPill(regional) {
+  const r = (regional || '').toUpperCase();
+  const cls = r === 'SPI' ? 'regional-sp' : r === 'RIO/ES' ? 'regional-rj' : r.startsWith('CO') ? 'regional-co' : 'regional-spm';
+  return `<span class="pill ${cls}">${regional || '—'}</span>`;
+}
+
 function renderDashboard() {
   document.getElementById('scope-banner-dash').innerHTML = escopoLabel();
   const dados = vagasNoEscopo();
 
+  const REGIONAIS = ['SPI','RIO/ES','CO/N','SPM'];
+
   const total = dados.length;
   const finalizadas = dados.filter(v => (v.statusVaga||'').startsWith('Finalizada')).length;
-  const noShow = dados.filter(v => v.noShow).length;
+  const emAndamento = dados.filter(v => (v.statusVaga||'').startsWith('Em Andamento')).length;
   const pendentesVoucher = VAGAS.filter(v => v.filaVoucherStatus === 'pendente').length;
 
   const kpis = [
     { label:'Total de Vagas', value: total, cls:'teal', sub:'no escopo atual' },
     { label:'Finalizadas', value: finalizadas, cls:'green', sub:'processo concluído' },
-    { label:'Com No Show', value: noShow, cls:'red', sub:'atenção necessária' },
+    { label:'Em Andamento', value: emAndamento, cls:'blue', sub:'em processo' },
   ];
-  if (podeAutorizarVoucher()) kpis.push({ label:'Pendentes de Voucher', value: pendentesVoucher, cls:'blue', sub:'aguardando autorização' });
+  if (podeAutorizarVoucher()) kpis.push({ label:'Pendentes de Voucher', value: pendentesVoucher, cls:'red', sub:'aguardando autorização' });
   document.getElementById('kpi-cards').innerHTML = kpis.map(k => `
     <div class="card"><div class="card-label">${k.label}</div><div class="card-value ${k.cls}">${k.value}</div><div class="card-sub">${k.sub}</div></div>`).join('');
 
-  // Regional donut
-  const porRegional = { 'SPI':0, 'RIO/ES':0 };
-  dados.forEach(v => porRegional[v.regional] = (porRegional[v.regional]||0)+1);
+  // Regional donut — 4 regionais
+  const porRegional = {};
+  REGIONAIS.forEach(r => porRegional[r] = 0);
+  dados.forEach(v => { if (v.regional) porRegional[v.regional] = (porRegional[v.regional]||0)+1; });
+  const regLabels = REGIONAIS.filter(r => porRegional[r] > 0);
+  const regData   = regLabels.map(r => porRegional[r]);
+  const regColors = { 'SPI':'#63ccb0','RIO/ES':'#c084fc','CO/N':'#f59e0b','SPM':'#60a5fa' };
   document.getElementById('badge-regional').textContent = total + ' vagas';
   const ctxR = document.getElementById('chart-regional').getContext('2d');
   if (chartRegional) chartRegional.destroy();
-  chartRegional = new Chart(ctxR, { type:'doughnut', data:{ labels:['SPI (HUBs)','RIO/ES (SOC)'], datasets:[{ data:[porRegional['SPI'],porRegional['RIO/ES']], backgroundColor:['#63ccb0','#c084fc'], borderWidth:0, hoverOffset:6 }] },
+  chartRegional = new Chart(ctxR, { type:'doughnut', data:{ labels:regLabels, datasets:[{ data:regData, backgroundColor:regLabels.map(r=>regColors[r]||'#8891b4'), borderWidth:0, hoverOffset:6 }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8891b4', font:{size:11}, padding:12 } } } } });
 
   // Ranking consultores
   const porConsultor = {};
-  dados.forEach(v => porConsultor[v.consultor] = (porConsultor[v.consultor]||0)+1);
+  dados.forEach(v => { if (v.consultor) porConsultor[v.consultor] = (porConsultor[v.consultor]||0)+1; });
   const rank = Object.entries(porConsultor).sort((a,b)=>b[1]-a[1]).map(([nome,count])=>({nome,count}));
   const max = rank[0]?.count || 1;
-  document.getElementById('rank-consultores').innerHTML = rank.map((r,i) => {
+  document.getElementById('rank-consultores').innerHTML = rank.slice(0,10).map((r,i) => {
     const posClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
     return `<li><span class="rank-pos ${posClass}">${i+1}</span><span class="rank-name">${r.nome}</span>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(r.count/max*100)}%"></div></div>
@@ -902,24 +947,28 @@ function renderDashboard() {
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
       scales:{ x:{ ticks:{ color:'#8891b4', font:{size:10}, stepSize:1 }, grid:{ color:'rgba(46,51,80,.4)' } }, y:{ ticks:{ color:'#8891b4', font:{size:10} }, grid:{ display:false } } } } });
 
-  // Uniforme por regional (stacked-ish bar)
-  const uniGroups = { 'SPI':{ENVIADO:0,PENDENTE:0}, 'RIO/ES':{ENVIADO:0,PENDENTE:0} };
+  // Status do Uniforme por regional — "enviado" = texto contém ENVIADO ou SAÍDA (lote enviado)
+  const uniGroups = {};
+  REGIONAIS.forEach(r => uniGroups[r] = {ENVIADO:0,PENDENTE:0});
   dados.forEach(v => {
-    const st = v.statusUniforme === 'ENVIADO' ? 'ENVIADO' : 'PENDENTE';
-    if (uniGroups[v.regional]) uniGroups[v.regional][st]++;
+    const rg = v.regional;
+    if (!uniGroups[rg]) return;
+    const su = (v.statusUniforme || '').toUpperCase();
+    const enviado = su.includes('ENVIADO') || su.includes('SAÍDA') || su.includes('SAIDA') || su.includes('UNIFORME WECAN');
+    uniGroups[rg][enviado ? 'ENVIADO' : 'PENDENTE']++;
   });
   const ctxU = document.getElementById('chart-uniforme').getContext('2d');
   if (chartUniforme) chartUniforme.destroy();
-  chartUniforme = new Chart(ctxU, { type:'bar', data:{ labels:['SPI (HUBs)','RIO/ES (SOC)'], datasets:[
-      { label:'Enviado', data:[uniGroups['SPI'].ENVIADO, uniGroups['RIO/ES'].ENVIADO], backgroundColor:'rgba(34,197,94,.6)', borderRadius:4 },
-      { label:'Pendente', data:[uniGroups['SPI'].PENDENTE, uniGroups['RIO/ES'].PENDENTE], backgroundColor:'rgba(245,158,11,.6)', borderRadius:4 },
+  chartUniforme = new Chart(ctxU, { type:'bar', data:{ labels: REGIONAIS, datasets:[
+      { label:'Enviado', data: REGIONAIS.map(r=>uniGroups[r].ENVIADO), backgroundColor:'rgba(34,197,94,.6)', borderRadius:4 },
+      { label:'Pendente', data: REGIONAIS.map(r=>uniGroups[r].PENDENTE), backgroundColor:'rgba(245,158,11,.6)', borderRadius:4 },
     ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8891b4', font:{size:11} } } },
       scales:{ x:{ ticks:{ color:'#8891b4', font:{size:11} }, grid:{ display:false } }, y:{ ticks:{ color:'#8891b4', font:{size:10}, stepSize:1 }, grid:{ color:'rgba(46,51,80,.4)' } } } } });
 
   // No show table
   const ns = dados.filter(v => v.noShow);
-  document.getElementById('tb-noshow').innerHTML = ns.map(v => `
-    <tr><td>${v.colaborador}</td><td>${v.consultor}</td><td><span class="pill ${v.regional==='SPI'?'regional-sp':'regional-rj'}">${v.regional}</span></td>
+  document.getElementById('tb-noshow').innerHTML = ns.slice(0,50).map(v => `
+    <tr><td>${v.colaborador||'—'}</td><td>${v.consultor||'—'}</td><td>${regionalPill(v.regional)}</td>
     <td>${v.motivoAtraso||'—'}</td><td class="text-truncate" style="max-width:320px">${v.observacao||'—'}</td></tr>`).join('')
     || '<tr><td colspan="5" class="text-muted" style="padding:16px">Nenhum registro de no show no escopo atual</td></tr>';
 }
@@ -944,20 +993,31 @@ function renderVagas() {
   });
 
   document.getElementById('tbody-vagas').innerHTML = dados.map(v => {
-    const uniPill = v.statusUniforme === 'ENVIADO' ? '<span class="pill uniforme-enviado">ENVIADO</span>' : '<span class="pill uniforme-pendente">PENDENTE</span>';
-    const statusCls = v.statusVaga === 'Finalizada No Prazo' ? 'vaga-noprazo' : v.statusVaga === 'Finalizada Antecipada' ? 'vaga-antecipada' : v.statusVaga === 'Finalizada Atrasada' ? 'vaga-atrasada' : 'muted';
+    const su = (v.statusUniforme || '').toUpperCase();
+    const uniEnviado = su.includes('ENVIADO') || su.includes('SAÍDA') || su.includes('SAIDA') || su.includes('UNIFORME WECAN');
+    const uniPill = uniEnviado
+      ? `<span class="pill uniforme-enviado" title="${v.statusUniforme||''}">${v.statusUniforme ? v.statusUniforme.slice(0,12) + (v.statusUniforme.length>12?'…':'') : 'ENVIADO'}</span>`
+      : `<span class="pill uniforme-pendente">${v.statusUniforme || 'PENDENTE'}</span>`;
+    const statusCls = v.statusVaga === 'Finalizada No Prazo' ? 'vaga-noprazo'
+      : v.statusVaga === 'Finalizada Antecipada' ? 'vaga-antecipada'
+      : v.statusVaga === 'Finalizada Atrasada' ? 'vaga-atrasada'
+      : (v.statusVaga||'').startsWith('Em Andamento') ? 'regional-co'
+      : v.statusVaga === 'Cancelada' ? 'muted'
+      : 'muted';
     const isVoucher = (v.transporte||'').toUpperCase().includes('VOUCHER');
-    return `<tr onclick="abrirModalVaga('${v.id}')">
-      <td>${v.jira}</td>
-      <td>${v.consultor}</td>
-      <td><span class="pill ${v.regional==='SPI'?'regional-sp':'regional-rj'}">${v.regional==='SPI'?'SP':'RJ'}</span></td>
-      <td><strong>${v.colaborador}</strong></td>
-      <td>${v.cargo}</td>
-      <td><span class="text-truncate" title="${v.local}">${v.local}</span></td>
+    const jiraEsc = (v.jira||'').replace(/'/g,"\\'");
+    const localEsc = (v.local||'').replace(/"/g,'&quot;');
+    return `<tr onclick="abrirModalVaga('${jiraEsc}')">
+      <td>${v.jira||'—'}</td>
+      <td>${v.consultor||'—'}</td>
+      <td>${regionalPill(v.regional)}</td>
+      <td><strong>${v.colaborador||'—'}</strong></td>
+      <td>${v.cargo||'—'}</td>
+      <td><span class="text-truncate" title="${localEsc}">${v.local||'—'}</span></td>
       <td>${uniPill}</td>
       <td><span class="pill ${statusCls}">${v.statusVaga||'—'}</span></td>
       <td>${isVoucher ? `<span class="pill voucher">${v.transporte}</span>` : `<span class="text-muted">${v.transporte||'—'}</span>`}</td>
-      <td class="actions-cell"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirModalVaga('${v.id}')">Editar</button></td>
+      <td class="actions-cell"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirModalVaga('${jiraEsc}')">Editar</button></td>
     </tr>`;
   }).join('') || `<tr><td colspan="10"><div class="empty-state"><div class="ico">📭</div>Nenhuma vaga encontrada com esses filtros</div></td></tr>`;
 
@@ -974,23 +1034,24 @@ function switchTab(tab) {
 
 function preencherSelectConsultor() {
   const sel = document.getElementById('v-consultor');
-  const lista = podeVerTudo() ? CONSULTORES : [session.nome];
+  const lista = podeVerTudo() ? consultoresConhecidos() : [session.nome];
   sel.innerHTML = lista.map(c => `<option ${c===session.nome?'selected':''}>${c}</option>`).join('');
   sel.disabled = !podeVerTudo();
 }
 
-function abrirModalVaga(id) {
+function abrirModalVaga(jira) {
   switchTab('vaga');
   preencherSelectConsultor();
-  const v = id ? VAGAS.find(x => x.id === id) : null;
+  const v = jira ? VAGAS.find(x => x.jira === jira || x.id === jira) : null;
 
-  if (v && !podeVerTudo() && v.consultor !== session.nome) { toast('Você não tem permissão para editar esta vaga.', 'error'); return; }
+  if (v && !podeVerTudo() && (v.consultor||'').toUpperCase() !== session.nome.toUpperCase()) { toast('Você não tem permissão para editar esta vaga.', 'error'); return; }
 
   document.getElementById('mv-title').textContent = v ? 'Editar Vaga' : 'Nova Vaga';
   document.getElementById('mv-subtitle').textContent = v ? `${v.colaborador} · ${v.jira}` : 'Preencha os dados do processo de seleção e admissão';
-  document.getElementById('v-id').value = v ? v.id : '';
+  document.getElementById('v-id').value = v ? (v.jira || v.id) : '';
+  document.getElementById('v-jiraOriginal').value = v ? (v.jira || '') : ''; // chave para localizar a linha na planilha
 
-  const set = (elId, val) => document.getElementById(elId).value = val || '';
+  const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
   set('v-consultor', v ? v.consultor : session.nome);
   if (v && podeVerTudo()) document.getElementById('v-consultor').value = v.consultor;
   set('v-jira', v?.jira); set('v-codigoHub', v?.codigoHub); set('v-regional', v?.regional || 'SPI'); set('v-mes', v?.mes);
@@ -1003,11 +1064,12 @@ function abrirModalVaga(id) {
   set('v-preferencia', v?.preferencia || 'Sem preferência'); set('v-tipoProcesso', v?.tipoProcesso || 'ONLINE');
 
   set('v-recebimento', v?.recebimento); set('v-dataAdmSolicitada', v?.dataAdmSolicitada); set('v-dataReprog', v?.dataReprog);
-  set('v-novaDataETO', v?.novaDataETO); set('v-dataAdmRealizada', v?.dataAdmRealizada); set('v-etapa', v?.etapa || 'Em andamento');
-  set('v-statusVaga', v?.statusVaga); set('v-tipoVaga', v?.tipoVaga || '1 - Vaga Oficial'); set('v-salario', v?.salario); set('v-cnpj', v?.cnpj); set('v-departamentoGI', v?.departamentoGI);
+  set('v-novaDataETO', v?.novaDataETO); set('v-dataAdmRealizada', v?.dataAdmRealizada);
+  set('v-etapa', v?.etapa || 'R&S'); set('v-statusVaga', v?.statusVaga); set('v-tipoVaga', v?.tipoVaga || '1 - Vaga Oficial');
+  set('v-salario', v?.salario); set('v-cnpj', v?.cnpj); set('v-departamentoGI', v?.departamentoGI);
 
   set('v-transporte', v?.transporte || 'VALE TRANSPORTE'); set('v-refeicao', v?.refeicao); set('v-cestaBasica', v?.cestaBasica);
-  set('v-colete', v?.colete); set('v-bota', v?.bota); set('v-luva', v?.luva);
+  set('v-colete', v?.colete); set('v-bota', String(v?.bota||'')); set('v-luva', v?.luva);
   set('v-gestorTurno', v?.gestorTurno); set('v-contatoGestorTurno', v?.contatoGestorTurno); set('v-unidadeWecan', v?.unidadeWecan);
 
   set('v-noShow', v?.noShow); set('v-motivoAtraso', v?.motivoAtraso); set('v-observacao', v?.observacao); set('v-tipoProcessoDesistente', v?.tipoProcessoDesistente);
@@ -1039,8 +1101,8 @@ function renderTimelineModal(v) {
   wrap.style.display = 'block';
 }
 
-function salvarVaga() {
-  const id = document.getElementById('v-id').value;
+async function salvarVaga() {
+  const jiraOriginal = document.getElementById('v-jiraOriginal').value; // Jira antes de qualquer edição
   const get = elId => document.getElementById(elId).value;
   const transporte = get('v-transporte');
   const isVoucher = transporte.toUpperCase().includes('VOUCHER');
@@ -1060,24 +1122,47 @@ function salvarVaga() {
     noShow:get('v-noShow'), motivoAtraso:get('v-motivoAtraso'), observacao:get('v-observacao'), tipoProcessoDesistente:get('v-tipoProcessoDesistente'),
   };
 
+  if (!dadosForm.jira) { toast('Informe o Código do Jira.', 'error'); return; }
   if (!dadosForm.colaborador) { toast('Informe o nome do colaborador.', 'error'); return; }
 
-  if (id) {
-    const v = VAGAS.find(x => x.id === id);
-    const eraVoucher = (v.transporte||'').toUpperCase().includes('VOUCHER');
-    Object.assign(v, dadosForm);
-    if (isVoucher && !eraVoucher) { v.filaVoucherStatus = 'pendente'; v.filaVoucherMotivo=''; toast('Salvo! Colaborador adicionado à fila de autorização de Voucher.', 'info'); }
-    else if (!isVoucher && eraVoucher) { v.filaVoucherStatus = null; toast('Salvo! Transporte deixou de ser Voucher — removido da fila.', 'info'); }
-    else toast('Vaga atualizada com sucesso!', 'success');
-  } else {
-    const novo = { id:'v'+(VAGAS.length+1+Math.floor(Math.random()*1000)), ...dadosForm, filaVoucherStatus: isVoucher ? 'pendente':null, filaVoucherMotivo:'' };
-    VAGAS.push(novo);
-    toast(isVoucher ? 'Vaga criada! Colaborador adicionado à fila de autorização de Voucher.' : 'Vaga criada com sucesso!', isVoucher ? 'info':'success');
-  }
+  const btn = document.getElementById('btn-salvar-vaga');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  try {
+    const resp = await apiCall('salvarVaga', { vaga: dadosForm, idOriginalJira: jiraOriginal || dadosForm.jira });
+    const vagaSalva = resp.vaga;
+    vagaSalva.id = vagaSalva.jira;
 
-  fecharModal('modal-vaga');
-  renderVagas();
-  atualizarBadgeFila();
+    // Detectar se era voucher antes (pra avisar sobre a fila)
+    const vagaAnterior = VAGAS.find(x => x.jira === jiraOriginal);
+    const eraVoucher = vagaAnterior ? (vagaAnterior.transporte||'').toUpperCase().includes('VOUCHER') : false;
+
+    // Preservar status da fila de voucher (gerenciado só localmente)
+    vagaSalva.filaVoucherStatus = vagaAnterior?.filaVoucherStatus ?? (isVoucher ? 'pendente' : null);
+    vagaSalva.filaVoucherMotivo = vagaAnterior?.filaVoucherMotivo ?? '';
+    vagaSalva.filaVoucherAutorizadoPor = vagaAnterior?.filaVoucherAutorizadoPor ?? '';
+    if (isVoucher && !eraVoucher) vagaSalva.filaVoucherStatus = 'pendente';
+    if (!isVoucher && eraVoucher) vagaSalva.filaVoucherStatus = null;
+
+    if (resp.criado) {
+      VAGAS.push(vagaSalva);
+    } else {
+      const idx = VAGAS.findIndex(x => x.jira === (jiraOriginal || dadosForm.jira));
+      if (idx !== -1) VAGAS[idx] = vagaSalva; else VAGAS.push(vagaSalva);
+    }
+
+    fecharModal('modal-vaga');
+    renderVagas();
+    atualizarBadgeFila();
+
+    if (resp.criado) toast(isVoucher ? 'Vaga criada! Colaborador adicionado à fila de Voucher.' : 'Vaga criada com sucesso!', isVoucher ? 'info' : 'success');
+    else if (isVoucher && !eraVoucher) toast('Salvo! Colaborador adicionado à fila de autorização de Voucher.', 'info');
+    else if (!isVoucher && eraVoucher) toast('Salvo! Transporte deixou de ser Voucher — removido da fila.', 'info');
+    else toast('Vaga atualizada com sucesso!', 'success');
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar Vaga';
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1097,28 +1182,33 @@ function renderQueue() {
   const lista = VAGAS.filter(v => v.filaVoucherStatus === queueFilter);
   const list = document.getElementById('queue-list');
   if (!lista.length) { list.innerHTML = `<div class="empty-state"><div class="ico">📬</div>Nenhum colaborador nesta categoria</div>`; return; }
-  list.innerHTML = lista.map(v => `
+  list.innerHTML = lista.map(v => {
+    const jiraEsc = (v.jira||'').replace(/'/g,"\\'");
+    return `
     <div class="queue-card">
-      <div class="qc-main"><strong>${v.colaborador}</strong><span>${v.consultor} · ${v.regional} · ${v.cargo} · Matrícula ${v.matricula||'—'}</span></div>
-      <span class="qc-transp">${v.transporte}</span>
+      <div class="qc-main"><strong>${v.colaborador||'—'}</strong><span>${v.consultor||'—'} · ${v.regional||'—'} · ${v.cargo||'—'} · Matrícula ${v.matricula||'—'}</span></div>
+      <span class="qc-transp">${v.transporte||'—'}</span>
       ${queueFilter === 'pendente' ? `
         <div class="qc-actions">
-          <button class="btn btn-success btn-sm" onclick="autorizarVoucher('${v.id}')">Aprovar</button>
-          <button class="btn btn-danger btn-sm" onclick="rejeitarVoucher('${v.id}')">Rejeitar</button>
+          <button class="btn btn-success btn-sm" onclick="autorizarVoucher('${jiraEsc}')">Aprovar</button>
+          <button class="btn btn-danger btn-sm" onclick="rejeitarVoucher('${jiraEsc}')">Rejeitar</button>
         </div>` : queueFilter === 'aprovado' ? `<span class="pill uniforme-enviado">Pré-aprovado por ${v.filaVoucherAutorizadoPor||'—'}</span>`
         : `<span class="pill noshow">${v.filaVoucherMotivo || 'Rejeitado'}</span>`}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
-function autorizarVoucher(id) {
-  const v = VAGAS.find(x => x.id === id);
+function autorizarVoucher(jira) {
+  const v = VAGAS.find(x => x.jira === jira);
+  if (!v) return;
   v.filaVoucherStatus = 'aprovado';
   v.filaVoucherAutorizadoPor = session.nome;
   toast('Pré-aprovado! Vai ativar de verdade quando aparecer no Template (admissão confirmada).', 'success');
   renderQueue(); atualizarBadgeFila();
 }
-function rejeitarVoucher(id) {
+function rejeitarVoucher(jira) {
   const motivo = prompt('Motivo da rejeição (ex: colaborador trocou de benefício):') || 'Rejeitado';
-  const v = VAGAS.find(x => x.id === id);
+  const v = VAGAS.find(x => x.jira === jira);
+  if (!v) return;
   v.filaVoucherStatus = 'rejeitado';
   v.filaVoucherMotivo = motivo;
   toast('Pendente rejeitado.', 'error');

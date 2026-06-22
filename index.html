@@ -95,12 +95,11 @@
       <div class="login-error" id="login-error"></div>
       <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@wecanbr.com.br"/></div>
       <div class="form-group"><label>Senha</label><input type="password" id="login-senha" placeholder="••••••"/></div>
-      <button class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
+      <button class="btn btn-primary" id="btn-entrar" onclick="fazerLogin()">Entrar</button>
     </div>
 
     <div class="demo-note">
-      <strong>Ambiente de teste:</strong> a validação real ainda não está conectada à planilha. Contas de demonstração:<br/>
-      <code>edivan.costa@wecanbr.com.br</code> / <code>Edivan027@</code> (Outro/Master) · qualquer outra conta de exemplo usa a senha <code>123456</code>. Novos acessos criados pelo Master (tela Usuários) também funcionam aqui.
+      <strong>Conectado à planilha real:</strong> login validado pelo Apps Script. Conta inicial do Master: <code>edivan.costa@wecanbr.com.br</code> / <code>Edivan027@</code> (tipo "Outro"). Os demais acessos (Equipe/Gestor/Onsite) são os cadastrados na aba <code>Usuários_Sistema</code> — crie ou edite pela tela "Usuários", dentro do Seleção &amp; Admissão.
     </div>
   </div>
 </div>
@@ -123,10 +122,11 @@ function voltarParaTipo() {
   document.getElementById('tipo-acesso-select').value = '';
 }
 
-function fazerLogin() {
+async function fazerLogin() {
   const email = document.getElementById('login-email').value.trim().toLowerCase();
   const senha = document.getElementById('login-senha').value;
   const err = document.getElementById('login-error');
+  const btn = document.getElementById('btn-entrar');
   err.style.display = 'none';
 
   if (!tipoSelecionado) {
@@ -134,25 +134,29 @@ function fazerLogin() {
     err.style.display = 'block';
     return;
   }
+  if (!email || !senha) {
+    err.textContent = 'Informe e-mail e senha.';
+    err.style.display = 'block';
+    return;
+  }
 
-  const conta = carregarUsuarios().find(u => u.email.toLowerCase() === email);
-  if (!conta || conta.senha !== senha) {
-    err.textContent = 'E-mail ou senha incorretos.';
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  try {
+    const resp = await apiCall('login', { email, senha });
+    const conta = resp.sessao;
+    if (conta.perfil !== tipoSelecionado) {
+      err.textContent = `Essa conta não corresponde ao tipo de acesso selecionado (${PERFIL_LABEL[tipoSelecionado]}). Confira e tente de novo.`;
+      err.style.display = 'block';
+      return;
+    }
+    salvarSessao(conta);
+    window.location.href = 'admissao.html';
+  } catch (e) {
+    err.textContent = e.message || 'E-mail ou senha incorretos.';
     err.style.display = 'block';
-    return;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
   }
-  if (conta.ativo === false) {
-    err.textContent = 'Este acesso está desativado. Fale com um administrador.';
-    err.style.display = 'block';
-    return;
-  }
-  if (conta.perfil !== tipoSelecionado) {
-    err.textContent = `Essa conta não corresponde ao tipo de acesso selecionado (${PERFIL_LABEL[tipoSelecionado]}). Confira e tente de novo.`;
-    err.style.display = 'block';
-    return;
-  }
-  salvarSessao(conta);
-  window.location.href = 'admissao.html';
 }
 document.addEventListener('keydown', e => {
   const step = document.getElementById('step-credenciais');
