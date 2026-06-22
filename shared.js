@@ -29,8 +29,11 @@ function carregarSessaoSalva() {
 // fn   = nome da função PostgreSQL (ex: 'wc_login')
 // args = objeto com os parâmetros da função
 async function rpc(fn, args) {
-  const sessao = carregarSessaoSalva();
-  if (args.p_token === undefined) args.p_token = (sessao && sessao.token) || '';
+  // wc_login não tem p_token — só adiciona nas demais funções
+  if (fn !== 'wc_login' && fn !== 'wc_logout' && args.p_token === undefined) {
+    const sessao = carregarSessaoSalva();
+    args.p_token = (sessao && sessao.token) || '';
+  }
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
