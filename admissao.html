@@ -304,6 +304,19 @@
   .mt-10 { margin-top:10px; } .mt-16 { margin-top: 16px; }
   .section-divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
 
+  /* ── IMPORTAÇÃO CADASTROS ── */
+  .import-instructions { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12.5px; color:var(--muted); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .import-instructions p { margin:0; }
+  .import-drop { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:2px dashed var(--border); border-radius:10px; padding:28px 20px; cursor:pointer; transition:border-color .15s; min-height:90px; }
+  .import-drop:hover { border-color:var(--accent); }
+  .import-drop span { font-size:13px; color:var(--muted); pointer-events:none; }
+  .import-preview-table { width:100%; border-collapse:collapse; font-size:11.5px; margin-top:14px; }
+  .import-preview-table th { background:var(--surface2); padding:6px 10px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); }
+  .import-preview-table td { padding:5px 10px; border-bottom:1px solid var(--border); }
+  .import-preview-table tr.row-ok td:first-child { border-left:3px solid var(--success); }
+  .import-preview-table tr.row-err td:first-child { border-left:3px solid var(--danger); }
+  .import-summary { font-size:12px; color:var(--muted); margin-top:8px; }
+
   /* ── SELEÇÃO EM MASSA ── */
   .col-sel { width:36px; text-align:center; padding:0 !important; }
   .row-checkbox { width:15px; height:15px; accent-color:var(--danger); cursor:pointer; }
@@ -1200,11 +1213,17 @@
 
 <!-- ══ MODAL CENTRO DE CUSTO ══ -->
 <div class="modal-backdrop" id="modal-cc">
-  <div class="modal">
+  <div class="modal" style="width:700px;max-width:97vw">
     <div class="modal-head">
       <h2 id="modal-cc-title">Novo Centro de Custo</h2>
       <p id="modal-cc-sub">Preencha os dados do centro de custo</p>
     </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="cc-form"   onclick="switchTabCad('cc','form')">📝 Formulário</button>
+      <button class="tab-btn"        data-tab="cc-import" onclick="switchTabCad('cc','import')">📥 Importar Planilha</button>
+    </div>
+    <!-- ABA FORMULÁRIO -->
+    <div class="tab-content active" id="tab-cc-form">
     <div class="modal-body">
       <input type="hidden" id="cc-id"/>
       <div class="modal-section-label">Identificação</div>
@@ -1214,15 +1233,11 @@
           <input type="text" id="cc-cod" placeholder="Gerado automaticamente"/>
           <small style="color:var(--muted);font-size:11px">Gerado automaticamente. Pode ser editado.</small>
         </div>
-        <div class="form-group">
-          <label>Cliente</label>
+        <div class="form-group"><label>Cliente</label>
           <input type="text" id="cc-cliente" placeholder="SPX LOGISTICA LTDA" value="SPX LOGISTICA LTDA"/>
         </div>
       </div>
-      <div class="form-group">
-        <label>Descrição</label>
-        <input type="text" id="cc-descricao" placeholder="Descrição do centro de custo"/>
-      </div>
+      <div class="form-group"><label>Descrição</label><input type="text" id="cc-descricao" placeholder="Descrição do centro de custo"/></div>
       <div class="modal-section-label">Status</div>
       <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:14px">
         <span style="flex:1;font-size:13px;font-weight:600">Centro de custo ativo</span>
@@ -1235,16 +1250,13 @@
       </div>
       <div class="modal-section-label">Endereço</div>
       <div class="form-row-2">
-        <div class="form-group">
-          <label>CEP</label>
+        <div class="form-group"><label>CEP</label>
           <div style="position:relative">
-            <input type="text" id="cc-cep" placeholder="00000-000" maxlength="9"
-              oninput="cadFormatarCEP(this)" onblur="cadBuscarCEP('cc')"/>
+            <input type="text" id="cc-cep" placeholder="00000-000" maxlength="9" oninput="cadFormatarCEP(this)" onblur="cadBuscarCEP('cc')"/>
             <span id="cc-cep-spinner" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:14px;display:none">⟳</span>
           </div>
         </div>
-        <div class="form-group">
-          <label>UF</label>
+        <div class="form-group"><label>UF</label>
           <select id="cc-uf"><option value="">—</option>
             <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
             <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
@@ -1269,16 +1281,41 @@
       <button class="btn btn-ghost" onclick="fecharModalCC()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-cc" onclick="salvarCC()">Salvar</button>
     </div>
+    </div><!-- /tab-cc-form -->
+    <!-- ABA IMPORTAR -->
+    <div class="tab-content" id="tab-cc-import">
+      <div class="modal-body">
+        <div class="import-instructions">
+          <p>Baixe o modelo, preencha e envie. Registros com mesmo Código serão atualizados.</p>
+          <button class="btn btn-ghost btn-sm" onclick="baixarModeloXLSX('cc')">⬇️ Baixar modelo .xlsx</button>
+        </div>
+        <label class="import-drop" id="drop-cc" ondragover="event.preventDefault()" ondrop="handleDropImport(event,'cc')">
+          <span>📂 Arraste o arquivo ou clique para selecionar</span>
+          <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileImport(this,'cc')"/>
+        </label>
+        <div id="import-cc-preview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModalCC()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-importar-cc" onclick="executarImportacao('cc')" style="display:none">📥 Importar</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ══ MODAL CLIENTE ══ -->
 <div class="modal-backdrop" id="modal-cliente">
-  <div class="modal" style="max-width:700px">
+  <div class="modal" style="width:960px;max-width:97vw">
     <div class="modal-head">
       <h2 id="modal-cli-title">Novo Cliente</h2>
       <p id="modal-cli-sub">Preencha os dados do cliente</p>
     </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="cli-form"   onclick="switchTabCad('cli','form')">📝 Formulário</button>
+      <button class="tab-btn"        data-tab="cli-import" onclick="switchTabCad('cli','import')">📥 Importar Planilha</button>
+    </div>
+    <!-- ABA FORMULÁRIO -->
+    <div class="tab-content active" data-tab="cli-form" id="tab-cli-form">
     <div class="modal-body">
       <input type="hidden" id="cli-id"/>
       <div class="modal-section-label">Identificação</div>
@@ -1370,16 +1407,41 @@
       <button class="btn btn-ghost" onclick="fecharModalCliente()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-cli" onclick="salvarCliente()">Salvar</button>
     </div>
+    </div><!-- /tab-cli-form -->
+    <!-- ABA IMPORTAR -->
+    <div class="tab-content" data-tab="cli-import" id="tab-cli-import">
+      <div class="modal-body" id="import-cli-body">
+        <div class="import-instructions">
+          <p>Baixe o modelo, preencha e envie. Clientes existentes (mesmo Código) serão atualizados.</p>
+          <button class="btn btn-ghost btn-sm" onclick="baixarModeloXLSX('clientes')">⬇️ Baixar modelo .xlsx</button>
+        </div>
+        <label class="import-drop" id="drop-cli" ondragover="event.preventDefault()" ondrop="handleDropImport(event,'cli')">
+          <span>📂 Arraste o arquivo ou clique para selecionar</span>
+          <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileImport(this,'cli')"/>
+        </label>
+        <div id="import-cli-preview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModalCliente()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-importar-cli" onclick="executarImportacao('cli')" style="display:none">📥 Importar</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ══ MODAL DEPARTAMENTO ══ -->
 <div class="modal-backdrop" id="modal-depto">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="width:580px;max-width:97vw">
     <div class="modal-head">
       <h2 id="modal-dep-title">Novo Departamento</h2>
       <p id="modal-dep-sub">Preencha os dados do departamento</p>
     </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTabCad('dep','form')">📝 Formulário</button>
+      <button class="tab-btn"        onclick="switchTabCad('dep','import')">📥 Importar Planilha</button>
+    </div>
+    <!-- ABA FORMULÁRIO -->
+    <div class="tab-content active" id="tab-dep-form">
     <div class="modal-body">
       <input type="hidden" id="dep-id"/>
       <div class="modal-section-label">Cliente</div>
@@ -1391,12 +1453,31 @@
       <div class="form-group"><label>Código</label><input type="text" id="dep-codigo" placeholder="Código do departamento"/></div>
       <div class="form-group"><label>Descrição</label><input type="text" id="dep-descricao" placeholder="Descrição do departamento"/></div>
       <div class="form-group"><label>Observações</label>
-        <textarea id="dep-observacoes" rows="4" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical" placeholder="Observações adicionais…"></textarea>
+        <textarea id="dep-observacoes" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical" placeholder="Observações adicionais…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModalDepto()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-dep" onclick="salvarDepto()">Salvar</button>
+    </div>
+    </div><!-- /tab-dep-form -->
+    <!-- ABA IMPORTAR -->
+    <div class="tab-content" id="tab-dep-import">
+      <div class="modal-body">
+        <div class="import-instructions">
+          <p>Baixe o modelo, preencha e envie. Departamentos com mesmo Código serão atualizados.</p>
+          <button class="btn btn-ghost btn-sm" onclick="baixarModeloXLSX('deptos')">⬇️ Baixar modelo .xlsx</button>
+        </div>
+        <label class="import-drop" id="drop-dep" ondragover="event.preventDefault()" ondrop="handleDropImport(event,'dep')">
+          <span>📂 Arraste o arquivo ou clique para selecionar</span>
+          <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileImport(this,'dep')"/>
+        </label>
+        <div id="import-dep-preview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModalDepto()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-importar-dep" onclick="executarImportacao('dep')" style="display:none">📥 Importar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3075,6 +3156,208 @@ async function excluirSelecionadas() {
   if (btn) { btn.disabled = false; btn.textContent = '🗑️ Excluir selecionadas'; }
   const ok = n - erros;
   toast(erros === 0 ? `${ok} vaga(s) excluída(s).` : `${ok} excluída(s), ${erros} com erro.`, erros ? 'error' : 'success');
+}
+
+// ══════════════════════════════════════════════
+//  IMPORTAÇÃO DE CADASTROS via XLSX
+// ══════════════════════════════════════════════
+
+// Mapeamento colunas planilha → campos internos
+const IMPORT_SCHEMA = {
+  cc: {
+    rpc: 'wc_salvar_cc',
+    param: 'p_cc',
+    required: ['descricao'],
+    cols: { 'Código (COD)':'cod', 'Cliente':'cliente', 'Descrição':'descricao', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Complemento':'complemento', 'Bairro':'bairro', 'Cidade':'cidade', 'Ativo':'ativo' },
+    modelo: [['Código (COD)','Cliente','Descrição','CEP','UF','Logradouro','Número','Complemento','Bairro','Cidade','Ativo'],['CC-0001','SPX LOGISTICA LTDA','HUB Campinas','13000-000','SP','Rua das Flores','100','','Centro','Campinas','SIM']],
+  },
+  cli: {
+    rpc: 'wc_salvar_cliente',
+    param: 'p_cliente',
+    required: ['razao_social'],
+    cols: { 'Código':'codigo', 'Razão Social':'razao_social', 'Nome Fantasia':'nome_fantasia', 'CNPJ':'cnpj', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Bairro':'bairro', 'Cidade':'cidade', 'Contato':'contato', 'E-mail':'email', 'Grupo Econômico':'grupo_nome', 'Ativo':'ativo' },
+    modelo: [['Código','Razão Social','Nome Fantasia','CNPJ','CEP','UF','Logradouro','Número','Bairro','Cidade','Contato','E-mail','Grupo Econômico','Ativo'],['','SPX LOGISTICA LTDA','SHOPEE ANANINDEUA','42.446.277/0213-51','67113-320','PA','Passagem São Pedro','6','Coqueiro','Ananindeua','Ana Luiza','ana@shopee.com','SHOPEE','SIM']],
+  },
+  dep: {
+    rpc: 'wc_salvar_depto',
+    param: 'p_depto',
+    required: ['descricao'],
+    cols: { 'Código do Cliente':'cli_codigo', 'Código':'codigo', 'Descrição':'descricao', 'Observações':'observacoes' },
+    modelo: [['Código do Cliente','Código','Descrição','Observações'],['CC-0001','1','LM Hub_PA_Belém','']],
+  },
+};
+
+let _importData = {}; // { cc: [...rows], cli: [...rows], dep: [...rows] }
+
+function switchTabCad(prefix, tab) {
+  // Tabs do modal (cc, cli, dep)
+  const modal = document.getElementById(`modal-${prefix==='dep'?'depto':prefix==='cli'?'cliente':'cc'}`);
+  if (!modal) return;
+  modal.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i === (tab==='form'?0:1)));
+  const formTab   = modal.querySelector(`#tab-${prefix}-form`);
+  const importTab = modal.querySelector(`#tab-${prefix}-import`);
+  if (formTab)   formTab.classList.toggle('active', tab==='form');
+  if (importTab) importTab.classList.toggle('active', tab==='import');
+}
+
+function baixarModeloXLSX(tipo) {
+  const key = tipo==='clientes'?'cli':tipo==='cc'?'cc':'dep';
+  const schema = IMPORT_SCHEMA[key];
+  // Gerar CSV simples como fallback sem dependência de lib
+  const rows = schema.modelo;
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `modelo_${key}.csv`; a.click();
+  toast('Modelo baixado (CSV). Abra no Excel e salve como .xlsx se preferir.','success');
+}
+
+function handleDropImport(e, prefix) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) processarArquivoImport(file, prefix);
+}
+
+function handleFileImport(input, prefix) {
+  const file = input.files[0];
+  if (file) processarArquivoImport(file, prefix);
+  input.value = '';
+}
+
+async function processarArquivoImport(file, prefix) {
+  const schema = IMPORT_SCHEMA[prefix];
+  const preview = document.getElementById(`import-${prefix}-preview`);
+  const btnImp  = document.getElementById(`btn-importar-${prefix}`);
+  if (!preview) return;
+  preview.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:10px 0">⏳ Lendo arquivo…</p>';
+  if (btnImp) btnImp.style.display = 'none';
+
+  try {
+    const rows = await lerArquivoImport(file);
+    if (!rows.length) { preview.innerHTML = '<p style="color:var(--danger);font-size:12px">Arquivo vazio ou sem dados.</p>'; return; }
+
+    const header = rows[0].map(h => (h||'').toString().trim());
+    const dataRows = rows.slice(1).filter(r => r.some(c => c !== null && c !== ''));
+    if (!dataRows.length) { preview.innerHTML = '<p style="color:var(--danger);font-size:12px">Nenhuma linha de dados encontrada.</p>'; return; }
+
+    // Mapear colunas
+    const colMap = {}; // índice → campo interno
+    header.forEach((h, i) => { if (schema.cols[h]) colMap[i] = schema.cols[h]; });
+
+    const registros = dataRows.map(row => {
+      const obj = {};
+      Object.entries(colMap).forEach(([i, campo]) => {
+        let v = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : '';
+        if (campo === 'ativo') v = !['NAO','NÃO','0','FALSE','INATIVO'].includes(v.toUpperCase());
+        obj[campo] = v || undefined;
+      });
+      return obj;
+    });
+
+    // Validar
+    const validados = registros.map((r, i) => ({
+      ...r, _linha: i+2,
+      _erro: schema.required.some(f => !r[f]) ? `Campo obrigatório faltando: ${schema.required.find(f=>!r[f])}` : null
+    }));
+
+    _importData[prefix] = validados;
+    const ok  = validados.filter(r=>!r._erro).length;
+    const err = validados.filter(r=> r._erro).length;
+
+    // Renderizar prévia (max 20 linhas)
+    const cols = Object.values(schema.cols).filter(c=>c!=='ativo');
+    const amostra = validados.slice(0,20);
+    preview.innerHTML = `
+      <div class="import-summary">${ok} registro(s) válido(s)${err?` · <span style="color:var(--danger)">${err} com erro</span>`:''} · mostrando ${amostra.length} de ${validados.length}</div>
+      <div style="overflow-x:auto"><table class="import-preview-table">
+        <thead><tr><th>#</th>${cols.map(c=>`<th>${c}</th>`).join('')}<th>Status</th></tr></thead>
+        <tbody>${amostra.map(r=>`
+          <tr class="${r._erro?'row-err':'row-ok'}">
+            <td>${r._linha}</td>
+            ${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}
+            <td>${r._erro?`<span style="color:var(--danger);font-size:11px">${r._erro}</span>`:'<span style="color:var(--success)">✓</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+
+    if (ok > 0 && btnImp) { btnImp.style.display = 'inline-flex'; btnImp.textContent = `📥 Importar ${ok} registro(s)`; }
+  } catch(e) {
+    preview.innerHTML = `<p style="color:var(--danger);font-size:12px">Erro ao ler arquivo: ${e.message}</p>`;
+  }
+}
+
+async function lerArquivoImport(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    const isCsv = file.name.toLowerCase().endsWith('.csv');
+    reader.onload = e => {
+      try {
+        if (isCsv) {
+          const text = e.target.result;
+          const rows = text.split(/\r?\n/).filter(l=>l.trim()).map(l =>
+            l.split(',').map(c => c.replace(/^"|"$/g,'').replace(/""/g,'"').trim())
+          );
+          resolve(rows);
+        } else {
+          // XLSX via SheetJS (carregado sob demanda)
+          if (typeof XLSX === 'undefined') {
+            // Carregar SheetJS dinamicamente
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            s.onload = () => {
+              const data = new Uint8Array(e.target.result);
+              const wb = XLSX.read(data, {type:'array'});
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              resolve(XLSX.utils.sheet_to_json(ws, {header:1, defval:''}));
+            };
+            s.onerror = () => reject(new Error('Erro ao carregar leitor XLSX.'));
+            document.head.appendChild(s);
+          } else {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type:'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            resolve(XLSX.utils.sheet_to_json(ws, {header:1, defval:''}));
+          }
+        }
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler arquivo.'));
+    if (isCsv) reader.readAsText(file, 'UTF-8');
+    else        reader.readAsArrayBuffer(file);
+  });
+}
+
+async function executarImportacao(prefix) {
+  const schema   = IMPORT_SCHEMA[prefix];
+  const registros = (_importData[prefix]||[]).filter(r=>!r._erro);
+  if (!registros.length) return;
+  const btn = document.getElementById(`btn-importar-${prefix}`);
+  if (btn) { btn.disabled=true; btn.textContent='Importando…'; }
+
+  let ok=0, erros=0;
+  for (const r of registros) {
+    const payload = {...r};
+    delete payload._linha; delete payload._erro;
+    try {
+      await rpc(schema.rpc, {[schema.param]: payload});
+      ok++;
+    } catch(e) { erros++; }
+  }
+
+  if (btn) { btn.disabled=false; btn.style.display='none'; }
+  document.getElementById(`import-${prefix}-preview`).innerHTML = '';
+  _importData[prefix] = [];
+
+  // Recarregar dados
+  if (prefix==='cc')  { await carregarCentrosCusto(); await carregarOperacoes(); }
+  if (prefix==='cli') await carregarClientes();
+  if (prefix==='dep') await carregarDeptos();
+
+  const msg = erros===0 ? `${ok} registro(s) importado(s) com sucesso!` : `${ok} importado(s), ${erros} com erro.`;
+  toast(msg, erros?'error':'success');
+
+  // Voltar para aba de formulário
+  switchTabCad(prefix,'form');
 }
 
 initApp();
