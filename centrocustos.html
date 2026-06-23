@@ -668,6 +668,12 @@ async function initApp() {
   document.getElementById('btn-novo-depto').style.display    = podeCriar ? 'flex' : 'none';
 
   await atualizarDados();
+
+  // Navegar para seção indicada pelo hash da URL (ex: centrocustos.html#clientes)
+  const hash = window.location.hash.replace('#','');
+  if (hash && document.getElementById('page-'+hash)) {
+    navTo(hash);
+  }
 }
 
 async function atualizarDados() {
