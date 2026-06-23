@@ -303,6 +303,106 @@
   .text-muted { color: var(--muted); font-size: 12px; }
   .mt-10 { margin-top:10px; } .mt-16 { margin-top: 16px; }
   .section-divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+
+  /* ── TEMAS ── */
+  body.tema-claro {
+    --bg:#f0f2f5; --surface:#ffffff; --surface2:#f5f7fa; --surface3:#eaedf1;
+    --border:#d0d5dd; --text:#1a1a2e; --muted:#6b7280; --brand:#ffffff;
+  }
+  body.tema-claro nav a:hover { background: #f0f2f5; }
+  body.tema-preto {
+    --bg:#000000; --surface:#0d0d0d; --surface2:#1a1a1a; --surface3:#242424;
+    --border:#2e2e2e; --text:#e8e8e8; --muted:#888888;
+  }
+
+  /* ── TEMA TOGGLES ── */
+  .tema-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .tema-opt {
+    display:flex; align-items:center; gap:8px; padding:9px 14px;
+    background:var(--surface2); border:2px solid var(--border);
+    border-radius:8px; cursor:pointer; font-size:12.5px; font-family:var(--font);
+    color:var(--muted); font-weight:600; transition:all .15s;
+  }
+  .tema-opt:hover { border-color:var(--accent); color:var(--text); }
+  .tema-opt.active { border-color:var(--accent); color:var(--accent); background:rgba(99,204,176,.1); }
+  .tema-preview { width:16px; height:16px; border-radius:4px; border:2px solid var(--border); flex-shrink:0; }
+
+  /* ── HOME G-CLICK ── */
+  .home-wrap { max-width:1100px; }
+  .home-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:28px; gap:16px; flex-wrap:wrap;
+  }
+  .home-greeting h1 { font-size:24px; font-weight:900; }
+  .home-greeting p  { color:var(--muted); font-size:13px; margin-top:4px; }
+  .home-time { font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border); padding:5px 12px; border-radius:20px; white-space:nowrap; }
+
+  /* Grid de módulos estilo G-Click */
+  .modules-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap:16px; margin-bottom:28px;
+  }
+  .module-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:22px 20px 18px;
+    cursor:pointer; transition:all .2s; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .module-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:var(--mc-color, var(--accent));
+  }
+  .module-card:hover {
+    transform:translateY(-3px);
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+    border-color:var(--mc-color, var(--accent));
+  }
+  .module-card .mc-icon { font-size:28px; }
+  .module-card .mc-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; font-weight:700; }
+  .module-card .mc-value { font-size:36px; font-weight:900; color:var(--mc-color, var(--accent)); line-height:1; }
+  .module-card .mc-sub { font-size:12px; color:var(--muted); }
+  .module-card .mc-badge {
+    position:absolute; top:14px; right:14px;
+    background:var(--mc-color, var(--accent)); color:#fff;
+    font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px;
+    display:none;
+  }
+  .module-card .mc-badge.visible { display:block; }
+  .module-card .mc-arrow {
+    margin-top:auto; font-size:11px; color:var(--muted);
+    display:flex; align-items:center; gap:4px;
+  }
+  .module-card:hover .mc-arrow { color:var(--mc-color, var(--accent)); }
+
+  /* Seção de atividade recente */
+  .home-sections { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:20px; }
+  @media(max-width:900px){ .home-sections { grid-template-columns:1fr; } }
+  .home-section { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .home-section h3 { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+  .home-section h3 a { font-size:11px; color:var(--accent); text-decoration:none; font-weight:600; }
+  .activity-row {
+    display:flex; align-items:center; gap:12px; padding:8px 0;
+    border-bottom:1px solid var(--border); font-size:12.5px;
+  }
+  .activity-row:last-child { border-bottom:none; }
+  .activity-row .ar-ico { width:30px; height:30px; border-radius:8px; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .activity-row .ar-main { flex:1; min-width:0; }
+  .activity-row .ar-title { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .activity-row .ar-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .activity-row .ar-right { text-align:right; flex-shrink:0; }
+
+  /* Scope banner operações */
+  .ops-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .ops-chip { background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-size:10.5px; padding:2px 9px; border-radius:20px; font-weight:600; }
+
+  /* Ops grid no modal de usuário */
+  .ops-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .ops-item { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:12.5px; cursor:pointer; transition:border-color .15s; }
+  .ops-item:hover { border-color:var(--accent); }
+  .ops-item input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; cursor:pointer; }
+  .ops-item .op-label { flex:1; }
+  .ops-item .op-reg { font-size:10.5px; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -315,6 +415,9 @@
     <span>WeCan BR · Consolidado</span>
   </div>
   <nav id="nav">
+    <!-- Home sempre primeiro -->
+    <a onclick="navTo('home')" data-page="home"><span class="ico">🏠</span> Início</a>
+
     <div class="nav-group" id="navgroup-selecao">
       <button class="nav-group-header" onclick="toggleNavGroup('selecao')">
         <span>Seleção &amp; Admissão</span><span class="chevron">▾</span>
@@ -323,6 +426,7 @@
         <a class="active" onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
         <a onclick="navTo('vagas')" data-page="vagas"><span class="ico">▤</span> Vagas / Admissões</a>
         <a onclick="navTo('voucher')" data-page="voucher" id="nav-voucher"><span class="ico">⇄</span> Fila de Voucher <span class="count-badge alert" id="nav-voucher-count">0</span></a>
+        <a onclick="navTo('indicacoes')" data-page="indicacoes" id="nav-indicacoes"><span class="ico">📋</span> Indicações <span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
         <a onclick="navTo('usuarios')" data-page="usuarios" id="nav-usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
       </div>
     </div>
@@ -365,6 +469,58 @@
 
 <!-- MAIN -->
 <div id="main" style="display:none">
+
+  <!-- ══ HOME ══ -->
+  <div class="page" id="page-home">
+    <div class="home-wrap">
+      <div class="home-header">
+        <div class="home-greeting">
+          <h1 id="home-saudacao">Olá! 👋</h1>
+          <p id="home-subtitulo">Veja o que está pendente para você hoje</p>
+          <div class="ops-chips" id="home-ops-chips"></div>
+        </div>
+        <span class="home-time" id="home-hora">—</span>
+      </div>
+
+      <!-- Grid de módulos -->
+      <div class="modules-grid" id="modules-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">⏳ Carregando módulos…</div>
+      </div>
+
+      <!-- Atividade recente -->
+      <div class="home-sections">
+        <div class="home-section">
+          <h3>▤ Vagas Recentes <a onclick="navTo('vagas')">Ver todas →</a></h3>
+          <div id="home-vagas-recentes"><div style="color:var(--muted);font-size:12.5px;padding:12px 0">Carregando…</div></div>
+        </div>
+        <div class="home-section">
+          <h3>📋 Indicações Recentes <a onclick="navTo('indicacoes')">Ver todas →</a></h3>
+          <div id="home-ind-recentes"><div style="color:var(--muted);font-size:12.5px;padding:12px 0">Carregando…</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ INDICAÇÕES ══ -->
+  <div class="page" id="page-indicacoes">
+    <div class="page-header">
+      <div>
+        <h1>📋 Indicações de Currículos</h1>
+        <p>Currículos enviados pelos líderes das operações</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="busca-ind" placeholder="Buscar por candidato, líder, operação…" oninput="renderIndicacoes()"/>
+      <select id="filtro-ind-status" onchange="renderIndicacoes()">
+        <option value="">Todos os status</option>
+        <option value="pendente">Pendente</option>
+        <option value="recebido">Recebido</option>
+        <option value="concluido">Concluído</option>
+        <option value="rejeitado">Rejeitado</option>
+      </select>
+    </div>
+    <div id="lista-indicacoes"></div>
+  </div>
 
   <!-- ══ DASHBOARD ══ -->
   <div class="page active" id="page-dashboard">
@@ -490,7 +646,7 @@
     </div>
     <div class="table-wrap">
       <table class="main-table">
-        <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo de acesso</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo de acesso</th><th>Operações</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tbody-usuarios"></tbody>
       </table>
     </div>
@@ -539,8 +695,19 @@
 
       <!-- Cor de tema -->
       <div class="suporte-card">
-        <h3>Cor de Destaque</h3>
-        <p>Personalize a cor principal da interface</p>
+        <h3>Tema da Interface</h3>
+        <p>Escolha o modo visual do sistema. Salvo por usuário.</p>
+        <div class="tema-row" id="tema-btns">
+          <button class="tema-opt active" data-tema="escuro" onclick="aplicarTema('escuro')">
+            <span class="tema-preview" style="background:#150a20"></span> 🌙 Escuro
+          </button>
+          <button class="tema-opt" data-tema="claro" onclick="aplicarTema('claro')">
+            <span class="tema-preview" style="background:#f0f2f5;border-color:#d0d5dd"></span> ☀️ Claro
+          </button>
+          <button class="tema-opt" data-tema="preto" onclick="aplicarTema('preto')">
+            <span class="tema-preview" style="background:#000;border-color:#2e2e2e"></span> ⬛ Preto
+          </button>
+        </div>
         <div class="color-grid" id="color-swatches">
           <!-- Preenchido via JS -->
         </div>
@@ -585,7 +752,7 @@
     </div>
     <div class="table-wrap">
       <table class="main-table">
-        <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo de acesso</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Tipo de acesso</th><th>Operações</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tbody-suporte-usuarios"></tbody>
       </table>
     </div>
@@ -781,31 +948,53 @@
 
 <!-- MODAL USUÁRIO (compartilhado entre Usuários e Suporte) -->
 <div class="modal-backdrop" id="modal-usuario">
-  <div class="modal" style="width:520px">
+  <div class="modal" style="width:580px">
     <div class="modal-head">
       <h2 id="mu-title">Novo Usuário</h2>
-      <p>Defina o perfil e os sistemas que esse usuário pode acessar</p>
+      <p>Defina o perfil, os sistemas e as operações que este usuário gerencia</p>
     </div>
-    <div style="padding:0 26px 6px">
-      <input type="hidden" id="u-id"/>
+
+    <!-- Sub-abas do modal de usuário -->
+    <div style="display:flex;gap:0;padding:0 26px;border-bottom:1px solid var(--border);overflow-x:auto">
+      <button class="tab-btn active" data-mutab="dados"     onclick="switchMuTab('dados')">Dados</button>
+      <button class="tab-btn"        data-mutab="operacoes" onclick="switchMuTab('operacoes')">Operações</button>
+      <button class="tab-btn"        data-mutab="sistemas"  onclick="switchMuTab('sistemas')">Sistemas</button>
+    </div>
+
+    <input type="hidden" id="u-id"/>
+
+    <!-- Dados -->
+    <div class="tab-content active" data-mutab="dados">
       <div class="form-group"><label>Nome</label><input type="text" id="u-nome" placeholder="NOME COMPLETO"/></div>
       <div class="form-group"><label>E-mail</label><input type="email" id="u-email" placeholder="nome@wecanbr.com.br"/></div>
       <div class="form-group"><label>Senha</label><input type="text" id="u-senha" placeholder="Deixe em branco para manter a atual"/></div>
       <div class="form-group">
         <label>Tipo de acesso</label>
         <select id="u-perfil">
-          <option value="equipe">Consultor (Equipe)</option>
-          <option value="gestor">Gestor</option>
-          <option value="onsite">Onsite</option>
-          <option value="master">Master</option>
+          <option value="equipe">Consultor (Equipe) — vê só suas vagas e operações</option>
+          <option value="gestor">Gestor — vê tudo de todas as operações</option>
+          <option value="onsite">Onsite — vê vagas das suas operações + autoriza Voucher</option>
+          <option value="master">Master — acesso total</option>
         </select>
       </div>
-      <hr class="section-divider"/>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:700;">Acesso aos Sistemas</div>
-      <div class="sistemas-grid" id="sistemas-permissoes">
-        <!-- Preenchido via JS com sistemas cadastrados -->
-      </div>
     </div>
+
+    <!-- Operações -->
+    <div class="tab-content" data-mutab="operacoes">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:16px">
+        Selecione quais operações este usuário é responsável.<br/>
+        Equipe e Onsite só verão vagas e indicações dessas operações.<br/>
+        <strong style="color:var(--text)">Gestores e Masters veem tudo independente desta seleção.</strong>
+      </p>
+      <div class="ops-grid" id="ops-grid"></div>
+    </div>
+
+    <!-- Sistemas -->
+    <div class="tab-content" data-mutab="sistemas">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:16px">Sistemas que este usuário pode acessar. Novos módulos aparecem aqui automaticamente.</p>
+      <div class="sistemas-grid" id="sistemas-permissoes"></div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-usuario" onclick="salvarUsuario()">Salvar</button>
@@ -853,6 +1042,36 @@
   </div>
 </div>
 
+<!-- MODAL INDICAÇÃO (atualizar status) -->
+<div class="modal-backdrop" id="modal-indicacao">
+  <div class="modal" style="width:480px">
+    <div class="modal-head">
+      <h2>Atualizar Indicação</h2>
+      <p id="ind-modal-sub">—</p>
+    </div>
+    <div style="padding:0 26px 6px">
+      <input type="hidden" id="ind-id"/>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="ind-status">
+          <option value="pendente">Pendente</option>
+          <option value="recebido">Recebido</option>
+          <option value="concluido">Concluído</option>
+          <option value="rejeitado">Rejeitado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Motivo / Feedback para o Líder</label>
+        <textarea id="ind-motivo" rows="3" placeholder="Descreva o motivo ou o próximo passo…"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-indicacao')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-ind" onclick="salvarIndicacao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="shared.js"></script>
@@ -862,34 +1081,36 @@
 // ══════════════════════════════════════════════
 let session = null;
 let VAGAS   = [];
+let OPERACOES = [];
+let INDICACOES = [];
 let _MAIN_HTML = '';
 let _importRows = [];
+let _TEMA_ATUAL = 'escuro';
 
 const VOUCHER_APP_URL = 'voucher.html';
 const REGIONAIS       = ['SPI','RIO/ES','CO/N','SPM'];
 
-// Sistemas dinâmicos — adicione aqui novos sistemas futuros
-// { id, nome, descricao } — id será usado como chave em permissoes do usuário
 const SISTEMAS_DISPONIVEIS = [
-  { id: 'selecao_admissao', nome: 'Seleção & Admissão', descricao: 'Acesso ao módulo de vagas, admissões e fila de Voucher' },
-  { id: 'voucher_integrado', nome: 'Voucher · Sistema Integrado', descricao: 'Acesso ao sistema de controle de voucher de transporte' },
-  // Futuros sistemas serão adicionados aqui e aparecerão automaticamente no modal de usuário
+  { id: 'selecao_admissao',  nome: 'Seleção & Admissão',     descricao: 'Vagas, admissões e fila de Voucher' },
+  { id: 'voucher_integrado', nome: 'Voucher · Integrado',    descricao: 'Sistema de controle de vouchers' },
+  { id: 'estoque_epis',      nome: 'Estoque de EPIs',        descricao: 'Colete, bota e luva por unidade' },
+  { id: 'indicacoes',        nome: 'Indicações de Currículos', descricao: 'Portal de currículos dos líderes' },
 ];
 
 // ── helpers de acesso ─────────────────────────
-function podeVerTudo()        { return session && ['gestor','master'].includes(session.perfil); }
-function podeAutorizarVoucher(){ return session && ['gestor','master','onsite'].includes(session.perfil); }
-function ehMaster()           { return session && session.perfil === 'master'; }
-function vagasNoEscopo()      {
-  if (podeVerTudo() || (session && session.perfil === 'onsite')) return VAGAS;
+function podeVerTudo()         { return session && ['gestor','master'].includes(session.perfil); }
+function podeAutorizarVoucher(){ return session && ['gestor','master','onsite','equipe'].includes(session.perfil); }
+function ehMaster()            { return session && session.perfil === 'master'; }
+function vagasNoEscopo()       {
+  if (podeVerTudo()) return VAGAS;
   return VAGAS.filter(v => (v.consultor||'').toUpperCase() === (session.nome||'').toUpperCase());
 }
 function consultoresConhecidos() {
   return [...new Set(VAGAS.map(v => v.consultor).filter(Boolean))].sort();
 }
 function escopoLabel() {
-  return podeVerTudo() || (session && session.perfil === 'onsite')
-    ? `Visualizando <b>todas as vagas</b> (perfil ${PERFIL_LABEL[session.perfil].toLowerCase()})`
+  return podeVerTudo()
+    ? `Visualizando <b>todas as vagas</b> (perfil ${PERFIL_LABEL[session.perfil]?.toLowerCase()})`
     : `Visualizando apenas as <b>${vagasNoEscopo().length} vagas</b> sob sua responsabilidade`;
 }
 
@@ -899,8 +1120,32 @@ function regionalPill(r) {
   const cls = u==='SPI'?'regional-sp':u==='RIO/ES'?'regional-rj':u.startsWith('CO')?'regional-co':'regional-spm';
   return `<span class="pill ${cls}">${r||'—'}</span>`;
 }
+function pillStatus(s) {
+  const m = { pendente:'pill-pendente', recebido:'pill-recebido', concluido:'pill-concluido', rejeitado:'pill-rejeitado' };
+  const l = { pendente:'Pendente', recebido:'Recebido', concluido:'Concluído', rejeitado:'Rejeitado' };
+  return `<span class="pill ${m[s]||'muted'}">${l[s]||s}</span>`;
+}
 
-// ── Carregar vagas ────────────────────────────
+// ── TEMAS ──────────────────────────────────────
+function aplicarTema(tema, salvar=true) {
+  _TEMA_ATUAL = tema;
+  document.body.classList.remove('tema-claro','tema-preto');
+  if (tema === 'claro') document.body.classList.add('tema-claro');
+  if (tema === 'preto') document.body.classList.add('tema-preto');
+  document.querySelectorAll('.tema-opt').forEach(el => el.classList.toggle('active', el.dataset.tema === tema));
+  if (salvar) {
+    try { localStorage.setItem('wecan_tema', tema); } catch(e) {}
+    rpc('wc_salvar_config', { p_chave:'tema', p_valor:tema }).catch(()=>{});
+  }
+}
+function carregarTema() {
+  try {
+    const t = localStorage.getItem('wecan_tema');
+    if (t) aplicarTema(t, false);
+  } catch(e) {}
+}
+
+// ── Carregar dados ────────────────────────────
 async function carregarVagas() {
   const resp = await rpc('wc_listar_vagas', {});
   VAGAS = (resp.vagas || []).map(v => ({
@@ -930,10 +1175,24 @@ async function carregarFilaVoucher() {
   window._filaHistorico = resp.historico || [];
 }
 
+async function carregarOperacoes() {
+  try {
+    const r = await rpc('wc_listar_operacoes', {});
+    OPERACOES = r.operacoes || [];
+  } catch(e) {}
+}
+
+async function carregarIndicacoes() {
+  try {
+    const r = await rpc('wc_listar_indicacoes', {});
+    INDICACOES = r.indicacoes || [];
+  } catch(e) { INDICACOES = []; }
+}
+
 async function atualizarDados() {
   toast('Atualizando dados…', 'info');
   try {
-    await carregarVagas(); await carregarFilaVoucher();
+    await Promise.all([carregarVagas(), carregarFilaVoucher(), carregarIndicacoes()]);
     popularFiltroConsultor();
     const ativa = document.querySelector('.page.active');
     if (ativa) navTo(ativa.id.replace('page-',''));
@@ -947,13 +1206,11 @@ async function iniciarSessao(conta) {
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('user-nome').textContent  = session.nome;
   document.getElementById('user-perfil').textContent = PERFIL_LABEL[session.perfil];
-
-  // Avatar inicial
   const initials = (session.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
   const avEl = document.getElementById('user-avatar');
   avEl.textContent = initials;
-
   document.getElementById('nav-voucher').style.display      = podeAutorizarVoucher() ? 'flex' : 'none';
+  document.getElementById('nav-indicacoes').style.display   = 'flex';
   document.getElementById('nav-usuarios').style.display     = ehMaster() ? 'flex' : 'none';
   document.getElementById('navgroup-voucherapp').style.display = ehMaster() ? 'block' : 'none';
   document.getElementById('nav-suporte-usuarios').style.display = ehMaster() ? 'flex' : 'none';
@@ -962,21 +1219,22 @@ async function iniciarSessao(conta) {
 
   const main = document.getElementById('main');
   main.style.display = 'block';
-  main.innerHTML = '<div style="padding:60px;text-align:center;color:var(--muted)">⏳ Carregando vagas…</div>';
+  main.innerHTML = '<div style="padding:60px;text-align:center;color:var(--muted)">⏳ Carregando dados…</div>';
   try {
-    await carregarVagas(); await carregarFilaVoucher();
+    await Promise.all([carregarVagas(), carregarFilaVoucher(), carregarOperacoes(), carregarIndicacoes()]);
   } catch(e) {
-    main.innerHTML = `<div style="padding:60px;text-align:center;color:var(--danger)">Erro ao carregar dados.<br/><small>${e.message}</small></div>`;
+    main.innerHTML = `<div style="padding:60px;text-align:center;color:var(--danger)">Erro ao carregar.<br/><small>${e.message}</small></div>`;
     return;
   }
   main.innerHTML = _MAIN_HTML;
   popularFiltroConsultor();
   iniciarConfiguracoes();
-  navTo('dashboard');
+  navTo('home');
 }
 
 async function initApp() {
   _MAIN_HTML = document.getElementById('main').innerHTML;
+  carregarTema();
   const s = carregarSessaoSalva();
   if (!s) { window.location.href = 'index.html'; return; }
   session = s;
@@ -998,12 +1256,14 @@ function navTo(id) {
   page.classList.add('active');
   const link = document.querySelector(`[data-page="${id}"]`);
   if (link) link.classList.add('active');
-  if (id==='dashboard')         renderDashboard();
-  if (id==='vagas')             renderVagas();
-  if (id==='voucher')           renderQueue();
-  if (id==='usuarios')          renderUsuarios('tbody-usuarios');
-  if (id==='suporte-usuarios')  renderUsuarios('tbody-suporte-usuarios');
-  if (id==='configuracoes')     renderConfiguracoes();
+  if (id==='home')          renderHome();
+  if (id==='dashboard')     renderDashboard();
+  if (id==='vagas')         renderVagas();
+  if (id==='voucher')       renderQueue();
+  if (id==='indicacoes')    renderIndicacoes();
+  if (id==='usuarios')      renderUsuarios('tbody-usuarios');
+  if (id==='suporte-usuarios') renderUsuarios('tbody-suporte-usuarios');
+  if (id==='configuracoes') renderConfiguracoes();
   atualizarBadgeFila();
 }
 function toggleNavGroup(nome) { document.getElementById('navgroup-'+nome).classList.toggle('collapsed'); }
@@ -1033,7 +1293,187 @@ function popularFiltroConsultor() {
   sel.parentElement.style.display = podeVerTudo() ? 'block' : 'none';
 }
 
-// ── DASHBOARD ─────────────────────────────────
+function atualizarBadgeFila() {
+  const n = VAGAS.filter(v=>v.filaVoucherStatus==='pendente').length;
+  const el = document.getElementById('nav-voucher-count'); if (el) el.textContent=n;
+  const ni = INDICACOES.filter(i=>i.status==='pendente').length;
+  const eli = document.getElementById('nav-ind-count');
+  if (eli) { eli.textContent=ni; eli.style.display=ni>0?'inline-flex':'none'; }
+}
+
+// ── HOME (estilo G-Click) ─────────────────────
+async function renderHome() {
+  // Hora e saudação
+  const h = new Date().getHours();
+  const saud = h<12 ? 'Bom dia' : h<18 ? 'Boa tarde' : 'Boa noite';
+  const greet = document.getElementById('home-saudacao');
+  const sub   = document.getElementById('home-subtitulo');
+  const hora  = document.getElementById('home-hora');
+  if (greet) greet.textContent = `${saud}, ${session.nome.split(' ')[0]}! 👋`;
+  if (sub)   sub.textContent   = podeVerTudo() ? 'Aqui está o resumo geral de todas as operações' : 'Aqui estão as pendências das suas operações';
+  if (hora)  hora.textContent  = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+
+  // Chips de operações do usuário
+  const chipsEl = document.getElementById('home-ops-chips');
+  if (chipsEl) {
+    if (podeVerTudo()) {
+      chipsEl.innerHTML = '<span class="ops-chip">🌐 Todas as operações</span>';
+    } else if (session._operacoes?.length) {
+      chipsEl.innerHTML = session._operacoes.map(o=>`<span class="ops-chip">${o.nome}</span>`).join('');
+    }
+  }
+
+  // Contadores via RPC
+  let cnt = { vagas_andamento:0, voucher_pendente:0, indicacoes_pendentes:0 };
+  try {
+    const r = await rpc('wc_home_resumo', {});
+    cnt = r.contadores || cnt;
+    // Salvar operações do usuário na sessão para os chips
+    if (r.operacoes) session._operacoes = r.operacoes;
+    if (chipsEl && !podeVerTudo() && r.operacoes?.length) {
+      chipsEl.innerHTML = r.operacoes.map(o=>`<span class="ops-chip">${o.nome}</span>`).join('');
+    }
+  } catch(e) {
+    cnt.vagas_andamento     = vagasNoEscopo().filter(v=>(v.statusVaga||'').includes('Andamento')).length;
+    cnt.voucher_pendente    = VAGAS.filter(v=>v.filaVoucherStatus==='pendente').length;
+    cnt.indicacoes_pendentes = INDICACOES.filter(i=>i.status==='pendente').length;
+  }
+
+  // Módulos clicáveis
+  const modulos = [
+    {
+      icon:'▤', label:'Vagas em Andamento', value:cnt.vagas_andamento,
+      sub:'processo ativo', color:'#63ccb0', page:'vagas',
+      badge: cnt.vagas_andamento > 0,
+    },
+    {
+      icon:'⇄', label:'Fila de Voucher', value:cnt.voucher_pendente,
+      sub:'aguardando aprovação', color:'#4f7cff', page:'voucher',
+      badge: cnt.voucher_pendente > 0,
+      hidden: !podeAutorizarVoucher(),
+    },
+    {
+      icon:'📋', label:'Indicações Pendentes', value:cnt.indicacoes_pendentes,
+      sub:'aguardando análise', color:'#f59e0b', page:'indicacoes',
+      badge: cnt.indicacoes_pendentes > 0,
+    },
+    {
+      icon:'◆', label:'Dashboard', value:'',
+      sub:'visão geral e gráficos', color:'#a855f7', page:'dashboard',
+    },
+    {
+      icon:'📦', label:'Estoque de EPIs', value:'',
+      sub:'colete, bota e luva', color:'#ec4899', page:'estoque',
+      external:'estoque.html',
+    },
+    {
+      icon:'⚙️', label:'Configurações', value:'',
+      sub:'tema, foto e preferências', color:'#8891b4', page:'configuracoes',
+    },
+  ].filter(m => !m.hidden);
+
+  const grid = document.getElementById('modules-grid');
+  if (grid) {
+    grid.innerHTML = modulos.map(m => `
+      <div class="module-card" style="--mc-color:${m.color}"
+           onclick="${m.external ? `window.open('${m.external}')` : `navTo('${m.page}')`}">
+        <div class="mc-badge ${m.badge?'visible':''}">${m.value || ''}</div>
+        <div class="mc-icon">${m.icon}</div>
+        <div class="mc-label">${m.label}</div>
+        ${m.value!=='' ? `<div class="mc-value">${m.value}</div>` : ''}
+        <div class="mc-sub">${m.sub}</div>
+        <div class="mc-arrow">Acessar <span>→</span></div>
+      </div>`).join('');
+  }
+
+  // Vagas recentes
+  const vagasEl = document.getElementById('home-vagas-recentes');
+  if (vagasEl) {
+    const recentes = vagasNoEscopo().slice(0,5);
+    vagasEl.innerHTML = recentes.length
+      ? recentes.map(v => `
+          <div class="activity-row" onclick="abrirModalVaga('${(v.jira||'').replace(/'/g,"\\'")}')" style="cursor:pointer">
+            <div class="ar-ico">▤</div>
+            <div class="ar-main">
+              <div class="ar-title">${v.colaborador || v.jira || '—'}</div>
+              <div class="ar-sub">${v.consultor||'—'} · ${v.regional||'—'}</div>
+            </div>
+            <div class="ar-right">${v.statusVaga ? `<span class="pill muted" style="font-size:9.5px">${v.statusVaga.split(' ').slice(-2).join(' ')}</span>` : ''}</div>
+          </div>`).join('')
+      : '<div style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma vaga no seu escopo</div>';
+  }
+
+  // Indicações recentes
+  const indEl = document.getElementById('home-ind-recentes');
+  if (indEl) {
+    const recentes = INDICACOES.slice(0,5);
+    indEl.innerHTML = recentes.length
+      ? recentes.map(i => `
+          <div class="activity-row">
+            <div class="ar-ico">📋</div>
+            <div class="ar-main">
+              <div class="ar-title">${i.nome_candidato||'—'}</div>
+              <div class="ar-sub">${i.nome_lider||'—'} · ${i.operacao||'—'}</div>
+            </div>
+            <div class="ar-right">${pillStatus(i.status)}</div>
+          </div>`).join('')
+      : '<div style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma indicação no seu escopo</div>';
+  }
+}
+
+// ── INDICAÇÕES ────────────────────────────────
+function renderIndicacoes() {
+  const busca  = (document.getElementById('busca-ind')?.value||'').toLowerCase();
+  const filtro = document.getElementById('filtro-ind-status')?.value||'';
+  let lista = [...INDICACOES];
+  if (busca)  lista = lista.filter(i => [i.nome_candidato,i.nome_lider,i.operacao,i.cargo_indicado].some(f=>(f||'').toLowerCase().includes(busca)));
+  if (filtro) lista = lista.filter(i => i.status===filtro);
+  const el = document.getElementById('lista-indicacoes');
+  if (!el) return;
+  if (!lista.length) {
+    el.innerHTML=`<div class="empty-state"><div class="ico">📭</div>${busca||filtro?'Nenhuma indicação encontrada com esse filtro':'Nenhuma indicação no seu escopo ainda'}</div>`;
+    return;
+  }
+  el.innerHTML = lista.map(i => `
+    <div class="queue-card">
+      <div class="qc-main">
+        <strong>${i.nome_candidato||'—'}</strong>
+        <span>${i.nome_lider||'—'} · ${i.operacao||'—'} · ${i.cargo_indicado||'—'}</span>
+        ${i.motivo ? `<div style="font-size:11.5px;color:var(--muted);margin-top:4px;font-style:italic">"${i.motivo}"</div>` : ''}
+      </div>
+      ${pillStatus(i.status)}
+      <div class="qc-actions">
+        ${i.anexo_url ? `<a href="${i.anexo_url}" target="_blank" class="btn btn-ghost btn-sm">📎 Currículo</a>` : ''}
+        <button class="btn btn-primary btn-sm" onclick='abrirModalIndicacao(${JSON.stringify(i)})'>Atualizar</button>
+      </div>
+    </div>`).join('');
+}
+
+function abrirModalIndicacao(i) {
+  document.getElementById('ind-id').value = i.id;
+  document.getElementById('ind-modal-sub').textContent = `${i.nome_candidato} — indicado por ${i.nome_lider}`;
+  document.getElementById('ind-status').value  = i.status || 'pendente';
+  document.getElementById('ind-motivo').value  = i.motivo || '';
+  abrirModal('modal-indicacao');
+}
+
+async function salvarIndicacao() {
+  const btn    = document.getElementById('btn-salvar-ind');
+  const id     = document.getElementById('ind-id').value;
+  const status = document.getElementById('ind-status').value;
+  const motivo = document.getElementById('ind-motivo').value.trim();
+  btn.disabled=true; btn.textContent='Salvando…';
+  try {
+    await rpc('wc_atualizar_indicacao', { p_id:id, p_status:status, p_motivo:motivo });
+    const idx = INDICACOES.findIndex(x => x.id===id);
+    if (idx>=0) { INDICACOES[idx].status=status; INDICACOES[idx].motivo=motivo; }
+    fecharModal('modal-indicacao');
+    renderIndicacoes();
+    atualizarBadgeFila();
+    toast('Indicação atualizada!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled=false; btn.textContent='Salvar'; }
+}
 let chartRegional=null, chartStatus=null, chartUniforme=null;
 function renderDashboard() {
   const d = document.getElementById('scope-banner-dash');
@@ -1470,21 +1910,32 @@ async function rejeitarVoucher(jira) {
 // ── USUÁRIOS ──────────────────────────────────
 async function renderUsuarios(tbodyId='tbody-usuarios') {
   const tbody = document.getElementById(tbodyId); if (!tbody) return;
-  tbody.innerHTML='<tr><td colspan="5" style="padding:20px;color:var(--muted)">Carregando…</td></tr>';
+  tbody.innerHTML='<tr><td colspan="6" style="padding:20px;color:var(--muted)">Carregando…</td></tr>';
   try {
     const resp = await rpc('wc_listar_usuarios', {});
-    tbody.innerHTML = (resp.usuarios||[]).map(u=>`
-      <tr>
-        <td><strong>${u.nome}</strong></td><td>${u.email}</td>
+    tbody.innerHTML = (resp.usuarios||[]).map(u=>{
+      const ops = (u.operacoes||[]).map(o=>`<span class="pill muted" style="font-size:9.5px">${o.nome}</span>`).join(' ') || '<span style="color:var(--muted);font-size:11px">Todas</span>';
+      return `<tr>
+        <td><strong>${u.nome}</strong></td>
+        <td>${u.email}</td>
         <td><span class="pill muted">${PERFIL_LABEL[u.perfil]||u.perfil}</span></td>
+        <td style="max-width:200px">${ops}</td>
         <td>${u.ativo===false?'<span class="pill noshow">INATIVO</span>':'<span class="pill vaga-noprazo">ATIVO</span>'}</td>
         <td class="actions-cell">
           <button class="btn btn-ghost btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>Editar</button>
           <button class="btn btn-ghost btn-sm" onclick="toggleUsuarioAtivo('${u.id}')">${u.ativo===false?'Ativar':'Desativar'}</button>
           <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${u.id}','${(u.nome||'').replace(/'/g,"\\'")}')">Excluir</button>
         </td>
-      </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state">Nenhum usuário</div></td></tr>`;
-  } catch(e) { tbody.innerHTML=`<tr><td colspan="5" style="color:var(--danger);padding:16px">${e.message}</td></tr>`; }
+      </tr>`;
+    }).join('') || `<tr><td colspan="6"><div class="empty-state">Nenhum usuário</div></td></tr>`;
+  } catch(e) { tbody.innerHTML=`<tr><td colspan="6" style="color:var(--danger);padding:16px">${e.message}</td></tr>`; }
+}
+
+// Sub-abas do modal de usuário
+function switchMuTab(tab) {
+  document.querySelectorAll('[data-mutab]').forEach(el => {
+    el.classList.toggle('active', el.dataset.mutab === tab);
+  });
 }
 
 function abrirModalUsuario(u) {
@@ -1494,22 +1945,37 @@ function abrirModalUsuario(u) {
   document.getElementById('u-email').value = u ? u.email : '';
   document.getElementById('u-senha').value = '';
   document.getElementById('u-perfil').value= u ? u.perfil : 'equipe';
+  switchMuTab('dados');
 
-  // Renderizar sistemas dinâmicos
-  const container=document.getElementById('sistemas-permissoes');
-  const perms=u?.permissoes||{};
-  container.innerHTML=SISTEMAS_DISPONIVEIS.map(s=>`
-    <div class="sistema-row">
-      <div class="sistema-info">
-        <strong>${s.nome}</strong>
-        <span>${s.descricao}</span>
-      </div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="perm-${s.id}" ${perms[s.id]!==false?'checked':''}>
-        <span class="slider"></span>
-      </label>
-    </div>
-  `).join('');
+  // Renderizar operações com checkboxes
+  const opsGrid = document.getElementById('ops-grid');
+  const userOps = new Set((u?.operacoes||[]).map(o=>o.id));
+  if (opsGrid) {
+    if (!OPERACOES.length) {
+      opsGrid.innerHTML='<p style="color:var(--muted);font-size:12.5px">Nenhuma operação cadastrada ainda. Aguarde o carregamento.</p>';
+    } else {
+      opsGrid.innerHTML = OPERACOES.map(o=>`
+        <label class="ops-item">
+          <input type="checkbox" data-op-id="${o.id}" ${userOps.has(o.id)?'checked':''}/>
+          <div class="op-label">${o.nome}</div>
+          <span class="op-reg">${o.regional||''}</span>
+        </label>`).join('');
+    }
+  }
+
+  // Renderizar sistemas com toggles
+  const container = document.getElementById('sistemas-permissoes');
+  const perms = u?.permissoes||{};
+  if (container) {
+    container.innerHTML = SISTEMAS_DISPONIVEIS.map(s=>`
+      <div class="sistema-row">
+        <div class="sistema-info"><strong>${s.nome}</strong><span>${s.descricao}</span></div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="perm-${s.id}" ${perms[s.id]!==false?'checked':''}>
+          <span class="slider"></span>
+        </label>
+      </div>`).join('');
+  }
 
   abrirModal('modal-usuario');
 }
@@ -1523,17 +1989,20 @@ async function salvarUsuario() {
   const btn   = document.getElementById('btn-salvar-usuario');
   if (!nome||!email) { toast('Informe nome e e-mail.','error'); return; }
 
-  // Coletar permissões
-  const permissoes={};
-  SISTEMAS_DISPONIVEIS.forEach(s=>{
-    permissoes[s.id]=document.getElementById('perm-'+s.id)?.checked||false;
+  // Operações selecionadas
+  const operacoes = [...document.querySelectorAll('#ops-grid input[data-op-id]:checked')]
+    .map(i => i.dataset.opId);
+
+  // Sistemas
+  const permissoes = {};
+  SISTEMAS_DISPONIVEIS.forEach(s => {
+    permissoes[s.id] = document.getElementById('perm-'+s.id)?.checked || false;
   });
 
   btn.disabled=true; btn.textContent='Salvando…';
   try {
-    await rpc('wc_salvar_usuario', { p_usuario:{ id:id||undefined, nome, email, senha:senha||undefined, perfil:perf, permissoes } });
+    await rpc('wc_salvar_usuario', { p_usuario:{ id:id||undefined, nome, email, senha:senha||undefined, perfil:perf, permissoes, operacoes } });
     fecharModal('modal-usuario');
-    // Atualizar ambas as tabelas se visíveis
     await renderUsuarios('tbody-usuarios');
     await renderUsuarios('tbody-suporte-usuarios');
     toast('Usuário salvo!','success');
@@ -1590,14 +2059,12 @@ async function carregarConfiguracoes() {
     const resp=await rpc('wc_carregar_config',{});
     if (resp.config) {
       const cfg=resp.config;
-      // Cor de tema
       if (cfg.cor_tema) aplicarCorTema(cfg.cor_tema,false);
-      // Logo
+      if (cfg.tema)     aplicarTema(cfg.tema, false);
       if (cfg.logo_empresa) aplicarLogoSidebar(cfg.logo_empresa);
-      // Avatar do usuário atual
-      if (cfg.foto_perfil) aplicarAvatarSidebar(cfg.foto_perfil);
+      if (cfg.foto_perfil)  aplicarAvatarSidebar(cfg.foto_perfil);
     }
-  } catch(e) { /* silencioso — configs opcionais */ }
+  } catch(e) { /* silencioso */ }
 }
 
 function selecionarCor(cor) {
@@ -1619,7 +2086,8 @@ async function salvarCorTema() {
   const cor=document.getElementById('cfg-color-custom').value;
   try {
     await rpc('wc_salvar_config',{p_chave:'cor_tema',p_valor:cor});
-    toast('Cor de tema salva!','success');
+    await rpc('wc_salvar_config',{p_chave:'tema',p_valor:_TEMA_ATUAL});
+    toast('Tema e cor salvos!','success');
   } catch(e) { toast(e.message,'error'); }
 }
 
