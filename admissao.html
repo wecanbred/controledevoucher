@@ -3162,31 +3162,6 @@ async function excluirSelecionadas() {
 //  IMPORTAÇÃO DE CADASTROS via XLSX
 // ══════════════════════════════════════════════
 
-// Mapeamento colunas planilha → campos internos
-const IMPORT_SCHEMA = {
-  cc: {
-    rpc: 'wc_salvar_cc',
-    param: 'p_cc',
-    required: ['descricao'],
-    cols: { 'Código (COD)':'cod', 'Cliente':'cliente', 'Descrição':'descricao', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Complemento':'complemento', 'Bairro':'bairro', 'Cidade':'cidade', 'Ativo':'ativo' },
-    modelo: [['Código (COD)','Cliente','Descrição','CEP','UF','Logradouro','Número','Complemento','Bairro','Cidade','Ativo'],['CC-0001','SPX LOGISTICA LTDA','HUB Campinas','13000-000','SP','Rua das Flores','100','','Centro','Campinas','SIM']],
-  },
-  cli: {
-    rpc: 'wc_salvar_cliente',
-    param: 'p_cliente',
-    required: ['razao_social'],
-    cols: { 'Código':'codigo', 'Razão Social':'razao_social', 'Nome Fantasia':'nome_fantasia', 'CNPJ':'cnpj', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Bairro':'bairro', 'Cidade':'cidade', 'Contato':'contato', 'E-mail':'email', 'Grupo Econômico':'grupo_nome', 'Ativo':'ativo' },
-    modelo: [['Código','Razão Social','Nome Fantasia','CNPJ','CEP','UF','Logradouro','Número','Bairro','Cidade','Contato','E-mail','Grupo Econômico','Ativo'],['','SPX LOGISTICA LTDA','SHOPEE ANANINDEUA','42.446.277/0213-51','67113-320','PA','Passagem São Pedro','6','Coqueiro','Ananindeua','Ana Luiza','ana@shopee.com','SHOPEE','SIM']],
-  },
-  dep: {
-    rpc: 'wc_salvar_depto',
-    param: 'p_depto',
-    required: ['descricao'],
-    cols: { 'Código do Cliente':'cli_codigo', 'Código':'codigo', 'Descrição':'descricao', 'Observações':'observacoes' },
-    modelo: [['Código do Cliente','Código','Descrição','Observações'],['CC-0001','1','LM Hub_PA_Belém','']],
-  },
-};
-
 let _importData = {}; // { cc: [...rows], cli: [...rows], dep: [...rows] }
 
 function switchTabCad(prefix, tab) {
