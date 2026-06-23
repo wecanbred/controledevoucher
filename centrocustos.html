@@ -140,6 +140,8 @@ table.main-table td{padding:9px 12px;vertical-align:middle}
   </div>
   <nav>
     <a class="active" onclick="navTo('lista')" data-page="lista"><span class="ico">☰</span> Centros de Custo</a>
+    <a onclick="navTo('clientes')" data-page="clientes"><span class="ico">🏭</span> Clientes</a>
+    <a onclick="navTo('departamentos')" data-page="departamentos"><span class="ico">🗂️</span> Departamentos</a>
     <a onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
   </nav>
   <div class="sidebar-user">
@@ -222,6 +224,67 @@ table.main-table td{padding:9px 12px;vertical-align:middle}
         <div id="dash-ufs"></div>
       </div>
     </div>
+  </div>
+
+  <!-- ══ CLIENTES ══ -->
+  <div class="page" id="page-clientes">
+    <div class="page-header">
+      <div>
+        <h1>🏭 Clientes</h1>
+        <p>Cadastro de clientes vinculados aos centros de custo</p>
+      </div>
+      <button class="btn btn-primary" id="btn-novo-cliente" onclick="abrirModalCliente(null)">+ Novo Cliente</button>
+    </div>
+    <div class="cards-grid">
+      <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-cli-total">—</div><div class="card-sub">clientes cadastrados</div></div>
+      <div class="card"><div class="card-label">Ativos</div><div class="card-value green" id="kpi-cli-ativos">—</div><div class="card-sub">em operação</div></div>
+      <div class="card"><div class="card-label">Inativos</div><div class="card-value red" id="kpi-cli-inativos">—</div><div class="card-sub">desativados</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="busca-cli" placeholder="Buscar por código, razão social, cidade…" oninput="renderClientes()"/>
+      <select id="filtro-cli-status" onchange="renderClientes()">
+        <option value="">Todos os status</option>
+        <option value="ativo">Ativos</option>
+        <option value="inativo">Inativos</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead><tr>
+          <th>Código</th><th>Razão Social</th><th>Nome Fantasia</th><th>CNPJ</th>
+          <th>Cidade / UF</th><th>Grupo Econômico</th><th>Status</th><th>Ações</th>
+        </tr></thead>
+        <tbody id="tbody-clientes"></tbody>
+      </table>
+    </div>
+    <p id="clientes-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
+  </div>
+
+  <!-- ══ DEPARTAMENTOS ══ -->
+  <div class="page" id="page-departamentos">
+    <div class="page-header">
+      <div>
+        <h1>🗂️ Departamentos</h1>
+        <p>Cadastro de departamentos por cliente</p>
+      </div>
+      <button class="btn btn-primary" id="btn-novo-depto" onclick="abrirModalDepto(null)">+ Novo Departamento</button>
+    </div>
+    <div class="cards-grid">
+      <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-dep-total">—</div><div class="card-sub">departamentos cadastrados</div></div>
+      <div class="card"><div class="card-label">Clientes</div><div class="card-value" style="color:var(--voucher)" id="kpi-dep-clientes">—</div><div class="card-sub">clientes distintos</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="busca-dep" placeholder="Buscar por código, descrição, cliente…" oninput="renderDeptos()"/>
+    </div>
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead><tr>
+          <th>Código</th><th>Descrição</th><th>Cliente (Cód)</th><th>Observações</th><th>Ações</th>
+        </tr></thead>
+        <tbody id="tbody-deptos"></tbody>
+      </table>
+    </div>
+    <p id="deptos-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
   </div>
 
 </div><!-- /main -->
@@ -329,6 +392,258 @@ table.main-table td{padding:9px 12px;vertical-align:middle}
   </div>
 </div>
 
+<!-- MODAL CLIENTE -->
+<div class="modal-backdrop" id="modal-cliente">
+  <div class="modal" style="width:700px">
+    <div class="modal-head">
+      <h2 id="modal-cli-title">Novo Cliente</h2>
+      <p id="modal-cli-sub">Preencha os dados do cliente</p>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cli-id"/>
+
+      <div class="form-section">Identificação</div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Código</label>
+          <input type="text" id="cli-codigo" placeholder="Gerado automaticamente"/>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Razão Social</label>
+          <input type="text" id="cli-razao-social" placeholder="Razão Social completa"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome Fantasia</label>
+          <input type="text" id="cli-nome-fantasia" placeholder="Nome Fantasia"/>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:10px">
+          <div style="flex:1">
+            <label>Inscrição</label>
+            <input type="text" id="cli-inscricao" placeholder="00.000.000/0000-00"/>
+          </div>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Tipo de Inscrição</label>
+          <select id="cli-tipo-inscricao">
+            <option value="1 - CNPJ">1 - CNPJ</option>
+            <option value="2 - CPF">2 - CPF</option>
+            <option value="3 - CEI">3 - CEI</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ativo</label>
+          <div class="status-toggle" style="margin-bottom:0">
+            <label for="cli-ativo" style="font-size:13px;font-weight:600;cursor:pointer;flex:1">Ativo</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="cli-ativo" checked/>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Região</label>
+          <input type="text" id="cli-regiao" placeholder="ex: 222"/>
+        </div>
+      </div>
+
+      <div class="form-section">Endereço</div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>CEP</label>
+          <div class="cep-wrap">
+            <input type="text" id="cli-cep" placeholder="00000-000" maxlength="9"
+              oninput="formatarCEP(this)" onblur="buscarCEPCliente()"/>
+            <span class="cep-spinner" id="cep-spinner-cli">⟳</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Endereço</label>
+          <select id="cli-tipo-end">
+            <option>Passagem</option><option>Rua</option><option>Avenida</option>
+            <option>Travessa</option><option>Alameda</option><option>Praça</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Endereço (Logradouro)</label>
+          <input type="text" id="cli-logradouro" placeholder="Nome da rua/avenida"/>
+        </div>
+      </div>
+      <div class="form-row four">
+        <div class="form-group">
+          <label>Número</label>
+          <input type="text" id="cli-numero" placeholder="000"/>
+        </div>
+        <div class="form-group">
+          <label>Complemento</label>
+          <input type="text" id="cli-complemento" placeholder="Sala, Bloco…"/>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Bairro</label>
+          <input type="text" id="cli-bairro"/>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Cód. Cidade</label>
+          <input type="text" id="cli-cod-cidade" placeholder="00-00000"/>
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" id="cli-cidade"/>
+        </div>
+        <div class="form-group">
+          <label>UF</label>
+          <select id="cli-uf">
+            <option value="">—</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+            <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+            <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+            <option>SP</option><option>SE</option><option>TO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section">Contato</div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Telefone Livre</label>
+          <input type="text" id="cli-tel-livre" placeholder="(00) 00000-0000"/>
+        </div>
+        <div class="form-group">
+          <label>DDD + Número</label>
+          <input type="text" id="cli-tel-numero" placeholder="00 000000000"/>
+        </div>
+        <div class="form-group">
+          <label>Ramal</label>
+          <input type="text" id="cli-ramal" placeholder="000000"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fax</label>
+          <input type="text" id="cli-fax"/>
+        </div>
+        <div class="form-group">
+          <label>Caixa Postal</label>
+          <input type="text" id="cli-caixa-postal"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contato</label>
+          <input type="text" id="cli-contato" placeholder="Nome do responsável"/>
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="cli-email" placeholder="email@empresa.com"/>
+        </div>
+      </div>
+
+      <div class="form-section">Informações Fiscais / Adicionais</div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label>Inscrição Estadual</label>
+          <input type="text" id="cli-inscricao-estadual"/>
+        </div>
+        <div class="form-group">
+          <label>Inscrição Municipal</label>
+          <input type="text" id="cli-inscricao-municipal"/>
+        </div>
+        <div class="form-group">
+          <label>CCM (Mobiliário)</label>
+          <input type="text" id="cli-ccm"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Grupo Econômico (Cód)</label>
+          <input type="text" id="cli-grupo-cod" placeholder="00000"/>
+        </div>
+        <div class="form-group">
+          <label>Grupo Econômico (Nome)</label>
+          <input type="text" id="cli-grupo-nome" placeholder="SHOPEE"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Centro de Resultado (Cód)</label>
+          <input type="text" id="cli-centro-resultado-cod" placeholder="000"/>
+        </div>
+        <div class="form-group">
+          <label>Centro de Resultado (Nome)</label>
+          <input type="text" id="cli-centro-resultado-nome" placeholder="JUNDIAI"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Máscara para Centro de Custo</label>
+          <input type="text" id="cli-mascara-cc" placeholder="ex: ##.##.##"/>
+        </div>
+        <div class="form-group">
+          <label>Ctr Web</label>
+          <input type="text" id="cli-ctr-web" placeholder="000"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalCliente()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-cli" onclick="salvarCliente()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEPARTAMENTO -->
+<div class="modal-backdrop" id="modal-depto">
+  <div class="modal" style="width:520px">
+    <div class="modal-head">
+      <h2 id="modal-dep-title">Novo Departamento</h2>
+      <p id="modal-dep-sub">Preencha os dados do departamento</p>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dep-id"/>
+
+      <div class="form-section">Cliente</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Código do Cliente</label>
+          <input type="text" id="dep-cli-codigo" placeholder="Código do cliente"/>
+        </div>
+        <div class="form-group">
+          <label>Nome do Cliente</label>
+          <input type="text" id="dep-cli-nome" placeholder="Razão Social" disabled/>
+        </div>
+      </div>
+
+      <div class="form-section">Departamento</div>
+      <div class="form-group">
+        <label>Código</label>
+        <input type="text" id="dep-codigo" placeholder="Código do departamento"/>
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <input type="text" id="dep-descricao" placeholder="Descrição do departamento"/>
+      </div>
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="dep-observacoes" rows="4"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical"
+          placeholder="Observações adicionais…"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalDepto()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-dep" onclick="salvarDepto()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script src="shared.js"></script>
 <script>
@@ -348,7 +663,9 @@ async function initApp() {
 
   // Só master e gestor podem criar/editar
   const podeCriar = ['master','gestor'].includes(s.perfil);
-  document.getElementById('btn-novo').style.display = podeCriar ? 'flex' : 'none';
+  document.getElementById('btn-novo').style.display          = podeCriar ? 'flex' : 'none';
+  document.getElementById('btn-novo-cliente').style.display  = podeCriar ? 'flex' : 'none';
+  document.getElementById('btn-novo-depto').style.display    = podeCriar ? 'flex' : 'none';
 
   await atualizarDados();
 }
@@ -368,6 +685,8 @@ function navTo(id) {
   document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   document.querySelector(`nav a[data-page="${id}"]`)?.classList.add('active');
+  if (id==='clientes')     carregarClientes();
+  if (id==='departamentos') carregarDeptos();
 }
 
 async function logout() {
@@ -487,7 +806,9 @@ function fecharModal() {
 }
 
 document.addEventListener('click', e => {
-  if (e.target.classList.contains('modal-backdrop')) fecharModal();
+  if (e.target.id==='modal-cc')      fecharModal();
+  if (e.target.id==='modal-cliente') fecharModalCliente();
+  if (e.target.id==='modal-depto')   fecharModalDepto();
 });
 
 async function salvarCC() {
@@ -564,6 +885,273 @@ function toast(msg, tipo) {
   const el = document.getElementById('toast'); if(!el) return;
   el.textContent=msg; el.className='show'+(tipo?' '+tipo:'');
   clearTimeout(window._tt); window._tt=setTimeout(()=>el.className='',4500);
+}
+
+// ── CLIENTES ──────────────────────────────────
+let CLIENTES = [];
+let DEPTOS   = [];
+
+async function carregarClientes() {
+  try {
+    const r = await rpc('wc_listar_clientes', {});
+    CLIENTES = r.clientes || [];
+    renderClientes();
+    atualizarKPIsClientes();
+  } catch(e) { toast(e.message,'error'); }
+}
+
+function atualizarKPIsClientes() {
+  const total   = CLIENTES.length;
+  const ativos  = CLIENTES.filter(c=>c.ativo).length;
+  const inativos = total - ativos;
+  const el = id => document.getElementById(id);
+  if(el('kpi-cli-total'))   el('kpi-cli-total').textContent   = total;
+  if(el('kpi-cli-ativos'))  el('kpi-cli-ativos').textContent  = ativos;
+  if(el('kpi-cli-inativos'))el('kpi-cli-inativos').textContent= inativos;
+}
+
+function renderClientes() {
+  const busca  = (document.getElementById('busca-cli')?.value||'').toLowerCase();
+  const filtro = document.getElementById('filtro-cli-status')?.value||'';
+  let lista = [...CLIENTES];
+  if (busca)  lista = lista.filter(c => [c.codigo,c.razao_social,c.nome_fantasia,c.cidade,c.uf,c.cnpj].some(f=>(f||'').toLowerCase().includes(busca)));
+  if (filtro==='ativo')   lista = lista.filter(c=>c.ativo);
+  if (filtro==='inativo') lista = lista.filter(c=>!c.ativo);
+  const tbody = document.getElementById('tbody-clientes');
+  const count = document.getElementById('clientes-count');
+  if (!tbody) return;
+  if (!lista.length) {
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="ico">🏭</div>Nenhum cliente encontrado</div></td></tr>`;
+    if (count) count.textContent=''; return;
+  }
+  if (count) count.textContent=`${lista.length} cliente(s) exibido(s)`;
+  const pode = ['master','gestor'].includes(session?.perfil);
+  tbody.innerHTML = lista.map(c => `<tr>
+    <td><code style="font-size:11.5px;font-weight:700">${c.codigo||'—'}</code></td>
+    <td><strong>${c.razao_social||'—'}</strong></td>
+    <td>${c.nome_fantasia||'—'}</td>
+    <td>${c.cnpj||'—'}</td>
+    <td>${[c.cidade,c.uf].filter(Boolean).join(' / ')||'—'}</td>
+    <td>${c.grupo_nome||'—'}</td>
+    <td><span class="pill ${c.ativo?'pill-ativo':'pill-inativo'}">${c.ativo?'ATIVO':'INATIVO'}</span></td>
+    <td class="actions-cell">
+      ${pode?`<button class="btn btn-ghost btn-sm" onclick='abrirModalCliente(${JSON.stringify(c)})'>Editar</button>`:''}
+      ${pode?`<button class="btn btn-ghost btn-sm" onclick="toggleCliente('${c.id}')">${c.ativo?'Desativar':'Ativar'}</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function abrirModalCliente(c) {
+  const set = (id,val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+  document.getElementById('modal-cli-title').textContent = c ? 'Editar Cliente' : 'Novo Cliente';
+  document.getElementById('modal-cli-sub').textContent   = c ? `Código: ${c.codigo}` : 'Preencha os dados do cliente';
+  set('cli-id',             c?.id);
+  set('cli-codigo',         c?.codigo);
+  set('cli-razao-social',   c?.razao_social);
+  set('cli-nome-fantasia',  c?.nome_fantasia);
+  set('cli-inscricao',      c?.cnpj);
+  set('cli-tipo-inscricao', c?.tipo_inscricao || '1 - CNPJ');
+  set('cli-regiao',         c?.regiao);
+  set('cli-cep',            c?.cep);
+  set('cli-tipo-end',       c?.tipo_end);
+  set('cli-logradouro',     c?.logradouro);
+  set('cli-numero',         c?.numero);
+  set('cli-complemento',    c?.complemento);
+  set('cli-bairro',         c?.bairro);
+  set('cli-cod-cidade',     c?.cod_cidade);
+  set('cli-cidade',         c?.cidade);
+  set('cli-uf',             c?.uf);
+  set('cli-tel-livre',      c?.tel_livre);
+  set('cli-tel-numero',     c?.tel_numero);
+  set('cli-ramal',          c?.ramal);
+  set('cli-fax',            c?.fax);
+  set('cli-caixa-postal',   c?.caixa_postal);
+  set('cli-contato',        c?.contato);
+  set('cli-email',          c?.email);
+  set('cli-inscricao-estadual',  c?.inscricao_estadual);
+  set('cli-inscricao-municipal', c?.inscricao_municipal);
+  set('cli-ccm',            c?.ccm);
+  set('cli-grupo-cod',      c?.grupo_cod);
+  set('cli-grupo-nome',     c?.grupo_nome);
+  set('cli-centro-resultado-cod',  c?.centro_resultado_cod);
+  set('cli-centro-resultado-nome', c?.centro_resultado_nome);
+  set('cli-mascara-cc',     c?.mascara_cc);
+  set('cli-ctr-web',        c?.ctr_web);
+  const ativoEl = document.getElementById('cli-ativo');
+  if (ativoEl) ativoEl.checked = c ? c.ativo : true;
+  document.getElementById('modal-cliente').classList.add('open');
+}
+
+function fecharModalCliente() { document.getElementById('modal-cliente').classList.remove('open'); }
+
+async function salvarCliente() {
+  const btn = document.getElementById('btn-salvar-cli');
+  const g   = id => document.getElementById(id)?.value||'';
+  const cli = {
+    id: g('cli-id')||undefined,
+    codigo: g('cli-codigo').trim(),
+    razao_social: g('cli-razao-social').trim(),
+    nome_fantasia: g('cli-nome-fantasia').trim(),
+    cnpj: g('cli-inscricao').trim(),
+    tipo_inscricao: g('cli-tipo-inscricao'),
+    ativo: document.getElementById('cli-ativo')?.checked ?? true,
+    regiao: g('cli-regiao').trim(),
+    cep: g('cli-cep').trim(),
+    tipo_end: g('cli-tipo-end'),
+    logradouro: g('cli-logradouro').trim(),
+    numero: g('cli-numero').trim(),
+    complemento: g('cli-complemento').trim(),
+    bairro: g('cli-bairro').trim(),
+    cod_cidade: g('cli-cod-cidade').trim(),
+    cidade: g('cli-cidade').trim(),
+    uf: g('cli-uf'),
+    tel_livre: g('cli-tel-livre').trim(),
+    tel_numero: g('cli-tel-numero').trim(),
+    ramal: g('cli-ramal').trim(),
+    fax: g('cli-fax').trim(),
+    caixa_postal: g('cli-caixa-postal').trim(),
+    contato: g('cli-contato').trim(),
+    email: g('cli-email').trim(),
+    inscricao_estadual: g('cli-inscricao-estadual').trim(),
+    inscricao_municipal: g('cli-inscricao-municipal').trim(),
+    ccm: g('cli-ccm').trim(),
+    grupo_cod: g('cli-grupo-cod').trim(),
+    grupo_nome: g('cli-grupo-nome').trim(),
+    centro_resultado_cod: g('cli-centro-resultado-cod').trim(),
+    centro_resultado_nome: g('cli-centro-resultado-nome').trim(),
+    mascara_cc: g('cli-mascara-cc').trim(),
+    ctr_web: g('cli-ctr-web').trim(),
+  };
+  if (!cli.razao_social) { toast('Informe a Razão Social.','error'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  try {
+    await rpc('wc_salvar_cliente', { p_cliente: cli });
+    fecharModalCliente();
+    await carregarClientes();
+    toast('Cliente salvo!','success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='Salvar'; }
+}
+
+async function toggleCliente(id) {
+  try {
+    const r = await rpc('wc_toggle_cliente', { p_id: id });
+    await carregarClientes();
+    toast(r.ativo?'Cliente ativado.':'Cliente desativado.','success');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+async function buscarCEPCliente() {
+  const cep = document.getElementById('cli-cep').value.replace(/\D/g,'');
+  if (cep.length !== 8) return;
+  const spinner = document.getElementById('cep-spinner-cli');
+  if(spinner) spinner.classList.add('visible');
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const d = await r.json();
+    if (d.erro) { toast('CEP não encontrado.','error'); return; }
+    document.getElementById('cli-logradouro').value = d.logradouro||'';
+    document.getElementById('cli-bairro').value     = d.bairro||'';
+    document.getElementById('cli-cidade').value     = d.localidade||'';
+    document.getElementById('cli-uf').value         = d.uf||'';
+    document.getElementById('cli-numero').focus();
+  } catch(e) { toast('Erro ao buscar CEP.','error'); }
+  finally { if(spinner) spinner.classList.remove('visible'); }
+}
+
+// ── DEPARTAMENTOS ─────────────────────────────
+async function carregarDeptos() {
+  try {
+    const r = await rpc('wc_listar_deptos', {});
+    DEPTOS = r.deptos || [];
+    renderDeptos();
+    atualizarKPIsDeptos();
+  } catch(e) { toast(e.message,'error'); }
+}
+
+function atualizarKPIsDeptos() {
+  const total = DEPTOS.length;
+  const clientes = new Set(DEPTOS.map(d=>d.cli_codigo).filter(Boolean)).size;
+  const el = id => document.getElementById(id);
+  if(el('kpi-dep-total'))    el('kpi-dep-total').textContent    = total;
+  if(el('kpi-dep-clientes')) el('kpi-dep-clientes').textContent = clientes;
+}
+
+function renderDeptos() {
+  const busca = (document.getElementById('busca-dep')?.value||'').toLowerCase();
+  let lista = [...DEPTOS];
+  if (busca) lista = lista.filter(d=>[d.codigo,d.descricao,d.cli_codigo,d.cli_nome].some(f=>(f||'').toLowerCase().includes(busca)));
+  const tbody = document.getElementById('tbody-deptos');
+  const count = document.getElementById('deptos-count');
+  if (!tbody) return;
+  if (!lista.length) {
+    tbody.innerHTML=`<tr><td colspan="5"><div class="empty-state"><div class="ico">🗂️</div>Nenhum departamento encontrado</div></td></tr>`;
+    if(count) count.textContent=''; return;
+  }
+  if(count) count.textContent=`${lista.length} departamento(s) exibido(s)`;
+  const pode = ['master','gestor'].includes(session?.perfil);
+  tbody.innerHTML = lista.map(d=>`<tr>
+    <td><code style="font-size:11.5px;font-weight:700">${d.codigo||'—'}</code></td>
+    <td>${d.descricao||'—'}</td>
+    <td><code style="font-size:11px">${d.cli_codigo||'—'}</code></td>
+    <td style="max-width:220px;white-space:normal;font-size:12px;color:var(--muted)">${d.observacoes||'—'}</td>
+    <td class="actions-cell">
+      ${pode?`<button class="btn btn-ghost btn-sm" onclick='abrirModalDepto(${JSON.stringify(d)})'>Editar</button>`:''}
+      ${session?.perfil==='master'?`<button class="btn btn-danger btn-sm" onclick="excluirDepto('${d.id}','${(d.codigo||'').replace(/'/g,"\\'")}')">Excluir</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function abrirModalDepto(d) {
+  const set = (id,val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+  document.getElementById('modal-dep-title').textContent = d ? 'Editar Departamento' : 'Novo Departamento';
+  document.getElementById('modal-dep-sub').textContent   = d ? `Código: ${d.codigo}` : 'Preencha os dados do departamento';
+  set('dep-id',         d?.id);
+  set('dep-cli-codigo', d?.cli_codigo);
+  set('dep-cli-nome',   d?.cli_nome);
+  set('dep-codigo',     d?.codigo);
+  set('dep-descricao',  d?.descricao);
+  const obs = document.getElementById('dep-observacoes');
+  if (obs) obs.value = d?.observacoes||'';
+  document.getElementById('modal-depto').classList.add('open');
+  // Ao digitar código do cliente, tentar preencher nome
+  document.getElementById('dep-cli-codigo').oninput = function() {
+    const cod = this.value.trim();
+    const cli = CLIENTES.find(c=>c.codigo===cod);
+    document.getElementById('dep-cli-nome').value = cli?.razao_social||'';
+  };
+}
+
+function fecharModalDepto() { document.getElementById('modal-depto').classList.remove('open'); }
+
+async function salvarDepto() {
+  const btn = document.getElementById('btn-salvar-dep');
+  const g   = id => document.getElementById(id)?.value||'';
+  const dep = {
+    id:          g('dep-id')||undefined,
+    cli_codigo:  g('dep-cli-codigo').trim(),
+    codigo:      g('dep-codigo').trim(),
+    descricao:   g('dep-descricao').trim(),
+    observacoes: g('dep-observacoes').trim(),
+  };
+  if (!dep.descricao) { toast('Informe a descrição do departamento.','error'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  try {
+    await rpc('wc_salvar_depto', { p_depto: dep });
+    fecharModalDepto();
+    await carregarDeptos();
+    toast('Departamento salvo!','success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='Salvar'; }
+}
+
+async function excluirDepto(id, cod) {
+  if (!confirm(`Excluir o departamento ${cod}?`)) return;
+  try {
+    await rpc('wc_excluir_depto', { p_id: id });
+    await carregarDeptos();
+    toast('Departamento excluído.','success');
+  } catch(e) { toast(e.message,'error'); }
 }
 
 initApp();
