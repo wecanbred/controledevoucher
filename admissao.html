@@ -304,7 +304,19 @@
   .mt-10 { margin-top:10px; } .mt-16 { margin-top: 16px; }
   .section-divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
 
-  /* ── PAINEL DE COLUNAS ── */
+  /* ── páginas de cadastro fora do #main ── */
+  .page-ext {
+    display: none;
+    position: fixed;
+    top: 0; left: 220px; right: 0; bottom: 0;
+    background: var(--bg);
+    overflow-y: auto;
+    padding: 28px 32px;
+    z-index: 10;
+  }
+  .page-ext.active { display: block !important; }
+  /* Quando uma page-ext está ativa, o main some */
+  body.cad-active #main { display: none !important; }
   #col-picker-panel {
     display:none; position:fixed;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
@@ -472,16 +484,6 @@
       </div>
     </div>
 
-    <div class="nav-group" id="navgroup-cadastros" style="display:none">
-      <button class="nav-group-header" onclick="toggleNavGroup('cadastros')">
-        <span>Cadastros</span><span class="chevron">▾</span>
-      </button>
-      <div class="nav-group-items">
-        <a onclick="navTo('cad-clientes')"   data-page="cad-clientes"><span class="ico">🏭</span> Clientes</a>
-        <a onclick="navTo('cad-cc')"         data-page="cad-cc"><span class="ico">🏢</span> Centro de Custo</a>
-        <a onclick="navTo('cad-deptos')"     data-page="cad-deptos"><span class="ico">🗂️</span> Departamentos</a>
-      </div>
-    </div>
   </nav>
 
   <!-- SUPORTE — rodapé do menu, acima do usuário -->
@@ -492,6 +494,13 @@
     </div>
     <div class="nav-suporte-item" id="nav-suporte-usuarios" onclick="navTo('suporte-usuarios')" data-page="suporte-usuarios" style="display:none">
       <span class="ico">🛡️</span> Gestão de Usuários
+    </div>
+    <!-- Cadastros — só Master e Gestor -->
+    <div id="nav-suporte-cadastros" style="display:none">
+      <div style="padding:6px 18px 2px; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin-top:4px;">Cadastros</div>
+      <div class="nav-suporte-item" onclick="navTo('cad-clientes')" data-page="cad-clientes"><span class="ico">🏭</span> Clientes</div>
+      <div class="nav-suporte-item" onclick="navTo('cad-cc')"       data-page="cad-cc"><span class="ico">🏢</span> Centro de Custo</div>
+      <div class="nav-suporte-item" onclick="navTo('cad-deptos')"   data-page="cad-deptos"><span class="ico">🗂️</span> Departamentos</div>
     </div>
     <hr class="section-divider" style="margin:8px 18px;"/>
     <div class="sidebar-user">
@@ -800,96 +809,95 @@
         <tbody id="tbody-suporte-usuarios"></tbody>
       </table>
     </div>
-  <!-- ══ CADASTROS · CLIENTES ══ -->
-  <div class="page" id="page-cad-clientes">
-    <div class="page-header">
-      <div><h1>🏭 Clientes</h1><p>Cadastro de clientes vinculados aos centros de custo</p></div>
-      <button class="btn btn-primary" id="btn-novo-cliente" onclick="abrirModalCliente(null)">+ Novo Cliente</button>
-    </div>
-    <div class="cards-grid">
-      <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-cli-total">—</div><div class="card-sub">clientes cadastrados</div></div>
-      <div class="card"><div class="card-label">Ativos</div><div class="card-value" style="color:var(--success)" id="kpi-cli-ativos">—</div><div class="card-sub">em operação</div></div>
-      <div class="card"><div class="card-label">Inativos</div><div class="card-value" style="color:var(--danger)" id="kpi-cli-inativos">—</div><div class="card-sub">desativados</div></div>
-    </div>
-    <div class="toolbar">
-      <input type="text" id="busca-cli" placeholder="Buscar por código, razão social, cidade…" oninput="renderClientes()"/>
-      <select id="filtro-cli-status" onchange="renderClientes()">
-        <option value="">Todos os status</option>
-        <option value="ativo">Ativos</option>
-        <option value="inativo">Inativos</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table class="main-table">
-        <thead><tr>
-          <th>Código</th><th>Razão Social</th><th>Nome Fantasia</th><th>CNPJ</th>
-          <th>Cidade / UF</th><th>Grupo Econômico</th><th>Status</th><th>Ações</th>
-        </tr></thead>
-        <tbody id="tbody-clientes"></tbody>
-      </table>
-    </div>
-    <p id="clientes-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
-  </div>
-
-  <!-- ══ CADASTROS · CENTRO DE CUSTO ══ -->
-  <div class="page" id="page-cad-cc">
-    <div class="page-header">
-      <div><h1>🏢 Centro de Custo</h1><p>Gerencie os centros de custo da empresa</p></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="carregarCentrosCusto()">🔄 Atualizar</button>
-        <button class="btn btn-primary" id="btn-novo-cc" onclick="abrirModalCC(null)">+ Novo Centro de Custo</button>
-      </div>
-    </div>
-    <div class="cards-grid">
-      <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-cc-total">—</div><div class="card-sub">centros cadastrados</div></div>
-      <div class="card"><div class="card-label">Ativos</div><div class="card-value" style="color:var(--success)" id="kpi-cc-ativos">—</div><div class="card-sub">em operação</div></div>
-      <div class="card"><div class="card-label">Inativos</div><div class="card-value" style="color:var(--danger)" id="kpi-cc-inativos">—</div><div class="card-sub">desativados</div></div>
-    </div>
-    <div class="toolbar">
-      <input type="text" id="busca-cc" placeholder="Buscar por código, cliente, cidade…" oninput="renderCentrosCusto()"/>
-      <select id="filtro-cc-status" onchange="renderCentrosCusto()">
-        <option value="">Todos os status</option>
-        <option value="ativo">Ativos</option>
-        <option value="inativo">Inativos</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table class="main-table">
-        <thead><tr>
-          <th>Código</th><th>Cliente</th><th>Descrição</th><th>Endereço</th><th>Cidade / UF</th><th>Status</th><th>Ações</th>
-        </tr></thead>
-        <tbody id="tbody-cc"></tbody>
-      </table>
-    </div>
-    <p id="cc-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
-  </div>
-
-  <!-- ══ CADASTROS · DEPARTAMENTOS ══ -->
-  <div class="page" id="page-cad-deptos">
-    <div class="page-header">
-      <div><h1>🗂️ Departamentos</h1><p>Cadastro de departamentos por cliente</p></div>
-      <button class="btn btn-primary" id="btn-novo-depto" onclick="abrirModalDepto(null)">+ Novo Departamento</button>
-    </div>
-    <div class="cards-grid">
-      <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-dep-total">—</div><div class="card-sub">departamentos cadastrados</div></div>
-      <div class="card"><div class="card-label">Clientes</div><div class="card-value" style="color:var(--voucher)" id="kpi-dep-clientes">—</div><div class="card-sub">clientes distintos</div></div>
-    </div>
-    <div class="toolbar">
-      <input type="text" id="busca-dep" placeholder="Buscar por código, descrição, cliente…" oninput="renderDeptos()"/>
-    </div>
-    <div class="table-wrap">
-      <table class="main-table">
-        <thead><tr>
-          <th>Código</th><th>Descrição</th><th>Cliente (Cód)</th><th>Observações</th><th>Ações</th>
-        </tr></thead>
-        <tbody id="tbody-deptos"></tbody>
-      </table>
-    </div>
-    <p id="deptos-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
-  </div>
 
 </div><!-- /main -->
 
+
+<!-- ══ CADASTROS — fora do #main para não serem destruídas pelo _MAIN_HTML ══ -->
+<div class="page page-ext" id="page-cad-clientes" style="display:none">
+  <div class="page-header">
+    <div><h1>🏭 Clientes</h1><p>Cadastro de clientes vinculados aos centros de custo</p></div>
+    <button class="btn btn-primary" id="btn-novo-cliente" onclick="abrirModalCliente(null)">+ Novo Cliente</button>
+  </div>
+  <div class="cards-grid">
+    <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-cli-total">—</div><div class="card-sub">clientes cadastrados</div></div>
+    <div class="card"><div class="card-label">Ativos</div><div class="card-value" style="color:var(--success)" id="kpi-cli-ativos">—</div><div class="card-sub">em operação</div></div>
+    <div class="card"><div class="card-label">Inativos</div><div class="card-value" style="color:var(--danger)" id="kpi-cli-inativos">—</div><div class="card-sub">desativados</div></div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="busca-cli" placeholder="Buscar por código, razão social, cidade…" oninput="renderClientes()"/>
+    <select id="filtro-cli-status" onchange="renderClientes()">
+      <option value="">Todos os status</option>
+      <option value="ativo">Ativos</option>
+      <option value="inativo">Inativos</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table class="main-table">
+      <thead><tr>
+        <th>Código</th><th>Razão Social</th><th>Nome Fantasia</th><th>CNPJ</th>
+        <th>Cidade / UF</th><th>Grupo Econômico</th><th>Status</th><th>Ações</th>
+      </tr></thead>
+      <tbody id="tbody-clientes"></tbody>
+    </table>
+  </div>
+  <p id="clientes-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
+</div>
+
+<div class="page page-ext" id="page-cad-cc" style="display:none">
+  <div class="page-header">
+    <div><h1>🏢 Centro de Custo</h1><p>Gerencie os centros de custo da empresa</p></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="carregarCentrosCusto()">🔄 Atualizar</button>
+      <button class="btn btn-primary" id="btn-novo-cc" onclick="abrirModalCC(null)">+ Novo Centro de Custo</button>
+    </div>
+  </div>
+  <div class="cards-grid">
+    <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-cc-total">—</div><div class="card-sub">centros cadastrados</div></div>
+    <div class="card"><div class="card-label">Ativos</div><div class="card-value" style="color:var(--success)" id="kpi-cc-ativos">—</div><div class="card-sub">em operação</div></div>
+    <div class="card"><div class="card-label">Inativos</div><div class="card-value" style="color:var(--danger)" id="kpi-cc-inativos">—</div><div class="card-sub">desativados</div></div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="busca-cc" placeholder="Buscar por código, cliente, cidade…" oninput="renderCentrosCusto()"/>
+    <select id="filtro-cc-status" onchange="renderCentrosCusto()">
+      <option value="">Todos os status</option>
+      <option value="ativo">Ativos</option>
+      <option value="inativo">Inativos</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table class="main-table">
+      <thead><tr>
+        <th>Código</th><th>Cliente</th><th>Descrição</th><th>Endereço</th><th>Cidade / UF</th><th>Status</th><th>Ações</th>
+      </tr></thead>
+      <tbody id="tbody-cc"></tbody>
+    </table>
+  </div>
+  <p id="cc-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
+</div>
+
+<div class="page page-ext" id="page-cad-deptos" style="display:none">
+  <div class="page-header">
+    <div><h1>🗂️ Departamentos</h1><p>Cadastro de departamentos por cliente</p></div>
+    <button class="btn btn-primary" id="btn-novo-depto" onclick="abrirModalDepto(null)">+ Novo Departamento</button>
+  </div>
+  <div class="cards-grid">
+    <div class="card"><div class="card-label">Total</div><div class="card-value" id="kpi-dep-total">—</div><div class="card-sub">departamentos cadastrados</div></div>
+    <div class="card"><div class="card-label">Clientes</div><div class="card-value" style="color:var(--voucher)" id="kpi-dep-clientes">—</div><div class="card-sub">clientes distintos</div></div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="busca-dep" placeholder="Buscar por código, descrição, cliente…" oninput="renderDeptos()"/>
+  </div>
+  <div class="table-wrap">
+    <table class="main-table">
+      <thead><tr>
+        <th>Código</th><th>Descrição</th><th>Cliente (Cód)</th><th>Observações</th><th>Ações</th>
+      </tr></thead>
+      <tbody id="tbody-deptos"></tbody>
+    </table>
+  </div>
+  <p id="deptos-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
+</div>
 
 <!-- MODAL VAGA -->
 <div class="modal-backdrop" id="modal-vaga">
@@ -1637,7 +1645,7 @@ async function iniciarSessao(conta) {
   document.getElementById('nav-indicacoes').style.display   = 'flex';
   document.getElementById('nav-usuarios').style.display     = ehMaster() ? 'flex' : 'none';
   document.getElementById('navgroup-voucherapp').style.display  = ehMaster() ? 'block' : 'none';
-  document.getElementById('navgroup-cadastros').style.display = podeVerTudo() ? 'block' : 'none';
+  document.getElementById('nav-suporte-cadastros').style.display = podeVerTudo() ? 'block' : 'none';
   document.getElementById('nav-suporte-usuarios').style.display = ehMaster() ? 'flex' : 'none';
   if (ehMaster()) document.getElementById('cfg-logo-card').style.display = 'block';
   // botões de Cadastros (só aparecem depois que o _MAIN_HTML é reinserido, por isso via delegação)
@@ -1677,13 +1685,38 @@ async function logout() {
 
 // ── NAV ───────────────────────────────────────
 function navTo(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav a, .nav-suporte-item').forEach(a => a.classList.remove('active'));
+  const CAD_PAGES = ['cad-clientes','cad-cc','cad-deptos'];
+  const isCad = CAD_PAGES.includes(id);
+
+  // Esconder/mostrar #main e pages-ext conforme contexto
+  const mainEl = document.getElementById('main');
+  if (isCad) {
+    if (mainEl) mainEl.style.display = 'none';
+    document.body.classList.add('cad-active');
+  } else {
+    if (mainEl) mainEl.style.display = 'block';
+    document.body.classList.remove('cad-active');
+  }
+
+  // Desativar todas as pages (internas e externas)
+  document.querySelectorAll('.page, .page-ext').forEach(p => {
+    p.classList.remove('active');
+    if (p.classList.contains('page-ext')) p.style.display = 'none';
+  });
+
+  // Ativar a page correta
   const page = document.getElementById('page-' + id);
-  if (!page) return;
-  page.classList.add('active');
+  if (page) {
+    page.classList.add('active');
+    if (page.classList.contains('page-ext')) page.style.display = 'block';
+  }
+
+  // Highlight no nav
+  document.querySelectorAll('nav a, .nav-suporte-item').forEach(a => a.classList.remove('active'));
   const link = document.querySelector(`[data-page="${id}"]`);
   if (link) link.classList.add('active');
+
+  // Render do conteúdo
   if (id==='home')          renderHome();
   if (id==='dashboard')     renderDashboard();
   if (id==='vagas')         renderVagas();
@@ -1692,6 +1725,10 @@ function navTo(id) {
   if (id==='usuarios')      renderUsuarios('tbody-usuarios');
   if (id==='suporte-usuarios') renderUsuarios('tbody-suporte-usuarios');
   if (id==='configuracoes') renderConfiguracoes();
+  if (id==='cad-clientes')  carregarClientes();
+  if (id==='cad-cc')        carregarCentrosCusto();
+  if (id==='cad-deptos')    carregarDeptos();
+
   atualizarBadgeFila();
 }
 function toggleNavGroup(nome) { document.getElementById('navgroup-'+nome).classList.toggle('collapsed'); }
@@ -2683,16 +2720,6 @@ function toast(msg, tipo) {
 let CENTROS_CUSTO = [];
 let CLIENTES      = [];
 let DEPTOS        = [];
-
-// ── navTo: carregar dados ao entrar nas páginas de Cadastros ──
-// (injetado no navTo principal via extensão)
-const _navToOriginal = navTo;
-navTo = function(id) {
-  _navToOriginal(id);
-  if (id === 'cad-clientes') carregarClientes();
-  if (id === 'cad-cc')       carregarCentrosCusto();
-  if (id === 'cad-deptos')   carregarDeptos();
-};
 
 // ── CEP helpers ───────────────────────────────
 function cadFormatarCEP(input) {
