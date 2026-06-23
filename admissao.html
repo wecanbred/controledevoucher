@@ -927,17 +927,35 @@
         <div class="form-group"><label>Código do Jira</label><input type="text" id="v-jira" placeholder="VWF-00000"/></div>
       </div>
       <div class="form-row three">
-        <div class="form-group"><label>Código Hub/Soc</label><input type="text" id="v-codigoHub" placeholder="HUB-LSP-100"/></div>
+        <div class="form-group">
+          <label>Código Hub/Soc</label>
+          <select id="v-codigoHub" onchange="preencherLocalPorCC()">
+            <option value="">— selecione —</option>
+          </select>
+        </div>
         <div class="form-group"><label>Regional</label>
           <select id="v-regional"><option value="SPI">SPI</option><option value="CO/N">CO/N</option><option value="SPM">SPM</option><option value="RIO/ES">RIO/ES</option></select>
         </div>
         <div class="form-group"><label>Mês</label><input type="date" id="v-mes"/></div>
       </div>
-      <div class="form-group"><label>Local de Trabalho</label><input type="text" id="v-local" placeholder="Endereço completo"/></div>
+      <div class="form-group"><label>Local de Trabalho</label><input type="text" id="v-local" placeholder="Preenchido automaticamente pelo Hub/Soc"/></div>
       <div class="form-row three">
-        <div class="form-group"><label>Modalidade</label><input type="text" id="v-modalidade" placeholder="Temporário"/></div>
+        <div class="form-group"><label>Modalidade</label>
+          <select id="v-modalidade">
+            <option value="">— selecione —</option>
+            <option>CLT</option>
+            <option>Temporário</option>
+          </select>
+        </div>
         <div class="form-group"><label>Tempo</label><input type="text" id="v-tempo" placeholder="180 dias"/></div>
-        <div class="form-group"><label>Cargo</label><input type="text" id="v-cargo" placeholder="Auxiliar de logística"/></div>
+        <div class="form-group"><label>Cargo</label>
+          <select id="v-cargo">
+            <option value="">— selecione —</option>
+            <option>Auxiliar de logística</option>
+            <option>Líder de logística</option>
+            <option>Auxiliar de almoxarifado</option>
+          </select>
+        </div>
       </div>
       <div class="form-row three">
         <div class="form-group"><label>Turno</label><input type="text" id="v-turno" placeholder="F1"/></div>
@@ -1015,7 +1033,11 @@
         <div class="form-group"><label>Salário</label><input type="text" id="v-salario" placeholder="R$ 0,00"/></div>
         <div class="form-group"><label>CNPJ</label><input type="text" id="v-cnpj"/></div>
       </div>
-      <div class="form-group"><label>Departamento GI</label><input type="text" id="v-departamentoGI"/></div>
+      <div class="form-group"><label>Departamento GI</label>
+        <select id="v-departamentoGI">
+          <option value="">— selecione —</option>
+        </select>
+      </div>
     </div>
 
     <div class="tab-content" data-tab="beneficios">
@@ -2100,7 +2122,57 @@ function renderDashboard() {
     : `<tr><td colspan="5"><div class="empty-state">✅ Nenhum No Show registrado</div></td></tr>`;
 }
 
-// ── VAGAS ─────────────────────────────────────
+// ── SELECTS DINÂMICOS DO MODAL DE VAGA ────────
+function popularSelectCC() {
+  const sel = document.getElementById('v-codigoHub');
+  if (!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">— selecione —</option>' +
+    CENTROS_CUSTO.filter(c => c.ativo !== false).map(c =>
+      `<option value="${c.cod}" data-uf="${c.uf||''}" data-logradouro="${c.logradouro||''}" data-numero="${c.numero||''}" data-bairro="${c.bairro||''}" data-cidade="${c.cidade||''}">${c.cod} — ${c.descricao}</option>`
+    ).join('');
+  if (atual) sel.value = atual;
+}
+
+function preencherLocalPorCC() {
+  const sel  = document.getElementById('v-codigoHub');
+  const opt  = sel?.selectedOptions[0];
+  if (!opt || !opt.value) return;
+  // Montar endereço completo a partir dos atributos do CC
+  const partes = [
+    opt.dataset.logradouro,
+    opt.dataset.numero ? `Nº ${opt.dataset.numero}` : '',
+    opt.dataset.bairro,
+    opt.dataset.cidade,
+    opt.dataset.uf
+  ].filter(Boolean);
+  const local = document.getElementById('v-local');
+  if (local) local.value = partes.join(', ');
+  // Preencher UF/regional automaticamente
+  const uf = opt.dataset.uf;
+  if (uf) {
+    const regMap = { SP:'SPI', RJ:'RIO/ES', ES:'RIO/ES', AM:'CO/N', PA:'CO/N', MA:'CO/N' };
+    const reg = document.getElementById('v-regional');
+    if (reg && regMap[uf]) reg.value = regMap[uf];
+  }
+}
+
+function popularSelectDeptos() {
+  const sel = document.getElementById('v-departamentoGI');
+  if (!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">— selecione —</option>' +
+    DEPTOS.map(d => `<option value="${d.descricao}">${d.codigo ? d.codigo+' — ' : ''}${d.descricao}</option>`).join('');
+  if (atual) sel.value = atual;
+}
+
+// Garante que os arrays de CC e Deptos estão carregados ao abrir o modal
+async function garantirCadastrosCarregados() {
+  const proms = [];
+  if (!CENTROS_CUSTO.length) proms.push(carregarCentrosCusto());
+  if (!DEPTOS.length)        proms.push(carregarDeptos());
+  if (proms.length) await Promise.allSettled(proms);
+}
 function renderVagas() {
   const busca  = (document.getElementById('busca-vaga')?.value||'').toLowerCase();
   const reg    = document.getElementById('filtro-regional')?.value||'';
@@ -2229,11 +2301,16 @@ function checarVoucherFlag() {
   document.getElementById('voucher-flag').style.display = v.toUpperCase().includes('VOUCHER') ? 'flex' : 'none';
 }
 
-function abrirModalVaga(jiraOuNull) {
+async function abrirModalVaga(jiraOuNull) {
   const v = jiraOuNull ? VAGAS.find(x=>x.jira===jiraOuNull) : null;
   document.getElementById('mv-title').textContent    = v ? 'Editar Vaga' : 'Nova Vaga';
   document.getElementById('mv-subtitle').textContent = v ? `Jira: ${v.jira} · ${v.colaborador||'sem colaborador'}` : 'Preencha os dados do processo de seleção e admissão';
   switchTab('vaga');
+
+  // Garantir que CC e Deptos estão carregados antes de popular os selects
+  await garantirCadastrosCarregados();
+  popularSelectCC();
+  popularSelectDeptos();
 
   const set = (id, val) => { const el=document.getElementById(id); if (el) el.value=val||''; };
   set('v-id', v?.id||'');
