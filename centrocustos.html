@@ -1160,22 +1160,6 @@ async function excluirDepto(id, cod) {
   } catch(e) { toast(e.message,'error'); }
 }
 
-// Se esta página for aberta de dentro do sistema principal (iframe), esconde a sidebar repetida
-if (window.self !== window.top) {
-  document.addEventListener("DOMContentLoaded", () => {
-    // Esconde a barra lateral própria do centrocustos
-    const sb = document.getElementById('sidebar');
-    if (sb) sb.style.display = 'none';
-    
-    // Faz o conteúdo principal ocupar 100% do espaço disponível no painel direito
-    const mainContent = document.querySelector('main') || document.body;
-    if (mainContent) {
-      mainContent.style.marginLeft = '0';
-      mainContent.style.paddingLeft = '20px';
-    }
-  });
-}
-  
 initApp();
 </script>
 </body>

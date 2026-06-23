@@ -463,23 +463,20 @@
         <a onclick="abrirVoucherEm('exportar')" data-vp="exportar"><span class="ico">↓</span> Exportar Planilha</a>
         <a onclick="abrirVoucherEm('historico')" data-vp="historico"><span class="ico">🕐</span> Histórico</a>
         <a onclick="abrirVoucherEm('usuarios')" data-vp="usuarios"><span class="ico">👤</span> Usuários</a>
-        <div class="page" id="page-cadastros" style="display:none; padding:0; height:calc(100vh - 40px); width:100%;">
-  <iframe id="iframe-cadastros" src="" style="width:100%; height:100%; border:none; background:transparent;"></iframe>
-</div>
       </div>
     </div>
 
-  <div class="nav-group" id="navgroup-cadastros" style="display:none">
-  <button class="nav-group-header" onclick="toggleNavGroup('cadastros')">
-    <span>Cadastros</span><span class="chevron">▾</span>
-  </button>
-  <div class="nav-group-items">
-    <a onclick="navegarParaCadastro('centrocustos.html#clientes')" id="nav-cad-clientes"><span class="ico">🏭</span> Clientes</a>
-    <a onclick="navegarParaCadastro('centrocustos.html')" id="nav-cad-cc"><span class="ico">🏢</span> Centro de Custo</a>
-    <a onclick="navegarParaCadastro('centrocustos.html#departamentos')" id="nav-cad-deptos"><span class="ico">🗂️</span> Departamentos</a>
-  </div>
-</div>
-</nav>
+    <div class="nav-group" id="navgroup-cadastros" style="display:none">
+      <button class="nav-group-header" onclick="toggleNavGroup('cadastros')">
+        <span>Cadastros</span><span class="chevron">▾</span>
+      </button>
+      <div class="nav-group-items">
+        <a onclick="window.open('centrocustos.html#clientes')" id="nav-cad-clientes"><span class="ico">🏭</span> Clientes</a>
+        <a onclick="window.open('centrocustos.html')" id="nav-cad-cc"><span class="ico">🏢</span> Centro de Custo</a>
+        <a onclick="window.open('centrocustos.html#departamentos')" id="nav-cad-deptos"><span class="ico">🗂️</span> Departamentos</a>
+      </div>
+    </div>
+  </nav>
 
   <!-- SUPORTE — rodapé do menu, acima do usuário -->
   <div class="sidebar-footer">
@@ -2384,23 +2381,6 @@ function toast(msg, tipo) {
   window._toastTimer=setTimeout(()=>el.className='',4500);
 }
 
-  <!-- Final do seu arquivo admissao.html -->
-<script>
-  // ==========================================
-  // COLE O CÓDIGO DO PASSO 2 AQUI BEM NO INÍCIO:
-  // ==========================================
-  function navegarParaCadastro(url_destino) {
-    // Tarefa 1: Diz para o iframe qual página carregar
-    document.getElementById('iframe-cadastros').src = url_destino;
-    
-    // Tarefa 2: Mostra a tela de cadastros do lado da sidebar (e esconde o dashboard)
-    navTo('cadastros'); 
-  }
-
-  // ... o restante do seu código original continua aqui para baixo ...
-  // (aquela parte do dados.forEach, filtros, tabelas, etc.)
-</script>
-  
 // ── INIT ──────────────────────────────────────
 initApp();
 </script>
