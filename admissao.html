@@ -3203,13 +3203,27 @@ function switchTabCad(prefix, tab) {
 function baixarModeloXLSX(tipo) {
   const key = tipo==='clientes'?'cli':tipo==='cc'?'cc':'dep';
   const schema = IMPORT_SCHEMA[key];
-  // Gerar CSV simples como fallback sem dependência de lib
-  const rows = schema.modelo;
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `modelo_${key}.csv`; a.click();
-  toast('Modelo baixado (CSV). Abra no Excel e salve como .xlsx se preferir.','success');
+  const nomes = { cc:'modelo_centro_custo', cli:'modelo_clientes', dep:'modelo_departamentos' };
+
+  const gerarXLSX = () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(schema.modelo);
+    // Largura automática por coluna
+    ws['!cols'] = schema.modelo[0].map(h => ({ wch: Math.max(h.length, 18) }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
+    XLSX.writeFile(wb, `${nomes[key]}.xlsx`);
+    toast('Modelo baixado!', 'success');
+  };
+
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = gerarXLSX;
+    s.onerror = () => toast('Erro ao carregar leitor XLSX.', 'error');
+    document.head.appendChild(s);
+  } else {
+    gerarXLSX();
+  }
 }
 
 function handleDropImport(e, prefix) {
