@@ -306,19 +306,23 @@
 
   /* ── PAINEL DE COLUNAS ── */
   #col-picker-panel {
-    display:none; position:absolute; top:calc(100% + 6px); right:0;
+    display:none; position:fixed;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    padding:14px 16px; width:340px; z-index:500;
-    box-shadow:0 8px 30px rgba(0,0,0,.35);
+    padding:14px 16px; width:300px; z-index:9000;
+    box-shadow:0 8px 30px rgba(0,0,0,.45);
   }
   #col-picker-panel.open { display:block; }
-  #col-picker-panel h4 { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
-  .col-picker-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; max-height:320px; overflow-y:auto; }
-  .col-check-item { display:flex; align-items:center; gap:7px; padding:5px 8px; border-radius:6px; cursor:pointer; font-size:12.5px; color:var(--muted); transition:background .12s; }
+  #col-picker-panel h4 { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+  .col-picker-grid { display:flex; flex-direction:column; gap:2px; max-height:380px; overflow-y:auto; }
+  .col-check-item {
+    display:flex; align-items:center; gap:9px; padding:6px 8px;
+    border-radius:6px; cursor:pointer; font-size:12.5px; color:var(--muted);
+    transition:background .12s; white-space:nowrap; user-select:none;
+  }
   .col-check-item:hover { background:var(--surface2); color:var(--text); }
-  .col-check-item input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; cursor:pointer; }
+  .col-check-item input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; cursor:pointer; flex-shrink:0; }
   .col-check-item.checked { color:var(--text); }
-  .col-picker-actions { display:flex; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
+  .col-picker-actions { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
   .toolbar-right { position:relative; }
 
   /* ── TEMAS ── */
@@ -1709,9 +1713,20 @@ function renderVagas() {
 // ── SELETOR DE COLUNAS ────────────────────────
 function toggleColPicker() {
   const panel = document.getElementById('col-picker-panel');
-  if (!panel) return;
+  const btn   = document.getElementById('btn-col-picker');
+  if (!panel || !btn) return;
   const isOpen = panel.classList.toggle('open');
-  if (isOpen) renderColPicker();
+  if (isOpen) {
+    // Posicionar abaixo do botão usando coordenadas fixas na viewport
+    const rect = btn.getBoundingClientRect();
+    panel.style.top  = (rect.bottom + 6) + 'px';
+    // Ancoragem à direita: evitar sair da tela
+    const panelW = 300;
+    let left = rect.right - panelW;
+    if (left < 8) left = 8;
+    panel.style.left = left + 'px';
+    renderColPicker();
+  }
 }
 
 function renderColPicker() {
