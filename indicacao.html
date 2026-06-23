@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Indicação de Currículos — WeCan BR</title>
+<style>
+:root{
+  --bg:#150a20;--surface:#211132;--surface2:#2c1740;--border:#432a5c;
+  --accent:#63ccb0;--brand:#4f0672;--danger:#ef4444;--success:#22c55e;
+  --warning:#f59e0b;--voucher:#4f7cff;--text:#efe9f7;--muted:#a394bf;
+  --font:'Segoe UI',system-ui,sans-serif;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px 48px}
+.header{text-align:center;margin-bottom:32px}
+.header .logo-mark{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#63ccb0,#4aa890);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:#4f0672;margin:0 auto 14px}
+.header h1{font-size:24px;font-weight:900;letter-spacing:.5px}
+.header p{color:var(--muted);font-size:13.5px;margin-top:5px}
+.tabs-wrap{width:100%;max-width:580px;margin-bottom:20px}
+.tabs{display:flex;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px}
+.tab-btn{flex:1;padding:9px;border:none;border-radius:8px;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;color:var(--muted);background:transparent;transition:all .2s}
+.tab-btn.active{background:var(--surface2);color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.tab-btn:hover:not(.active){color:var(--text)}
+.card{width:100%;max-width:580px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 30px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 13px;font-size:13.5px;font-family:var(--font);outline:none;transition:border-color .15s}
+.form-group input::placeholder{color:var(--muted)}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.form-row{grid-template-columns:1fr}}
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:rgba(99,204,176,.05)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone .uz-ico{font-size:32px;margin-bottom:8px}
+.upload-zone .uz-title{font-size:13.5px;font-weight:600;margin-bottom:4px}
+.upload-zone .uz-sub{font-size:11.5px;color:var(--muted)}
+.upload-zone.has-file{border-color:var(--success);background:rgba(34,197,94,.05)}
+.file-info{display:none;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px}
+.file-info.visible{display:flex}
+.fi-ico{font-size:20px;flex-shrink:0}.fi-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-size{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.fi-remove{background:none;border:none;color:var(--danger);cursor:pointer;font-size:18px;flex-shrink:0;line-height:1}
+.btn-submit{width:100%;padding:13px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-family:var(--font);font-weight:700;background:var(--accent);color:var(--brand);transition:all .2s;margin-top:4px}
+.btn-submit:hover{background:#7adcc4;transform:translateY(-1px)}.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-size:13.5px;font-family:var(--font);font-weight:600;background:var(--surface2);color:var(--text);transition:all .2s;margin-top:10px}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.alert{border-radius:8px;padding:11px 14px;font-size:13px;margin-bottom:16px;display:none}
+.alert.error{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger)}
+.alert.success{background:rgba(34,197,94,.1);border:1px solid var(--success);color:var(--success)}
+.alert.info{background:rgba(79,124,255,.1);border:1px solid var(--voucher);color:#9db4ff}
+.success-state{text-align:center;padding:14px 0 4px;display:none}
+.success-state .ss-ico{font-size:52px;margin-bottom:16px}
+.success-state h2{font-size:20px;font-weight:800;color:var(--success);margin-bottom:8px}
+.success-state p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.email-bar{display:flex;gap:10px}
+.email-bar input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 13px;font-size:13.5px;font-family:var(--font);outline:none}
+.email-bar input:focus{border-color:var(--accent)}
+.email-bar button{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;background:var(--accent);color:var(--brand);white-space:nowrap}
+.email-bar button:hover{background:#7adcc4}.email-bar button:disabled{opacity:.5;cursor:not-allowed}
+.results-area{margin-top:22px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-card .sv{font-size:28px;font-weight:900}.stat-card .sl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.stat-card.pendente .sv{color:var(--warning)}.stat-card.recebido .sv{color:#7da4ff}
+.stat-card.concluido .sv{color:var(--success)}.stat-card.rejeitado .sv{color:var(--danger)}
+@media(max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.ind-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.ind-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.ind-card-nome{font-size:15px;font-weight:700}.ind-card-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.ind-card-motivo{background:rgba(99,204,176,.08);border:1px solid rgba(99,204,176,.2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--muted);margin-top:10px;font-style:italic}
+.ind-card-motivo b{color:var(--text);font-style:normal}
+.ind-card-footer{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ind-card-footer .data{font-size:11px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+.pill-pendente{background:rgba(245,158,11,.15);color:var(--warning)}
+.pill-recebido{background:rgba(79,124,255,.15);color:#7da4ff}
+.pill-concluido{background:rgba(34,197,94,.15);color:var(--success)}
+.pill-rejeitado{background:rgba(239,68,68,.15);color:var(--danger)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .ei{font-size:36px;margin-bottom:10px}
+.loader{display:flex;gap:6px;justify-content:center;padding:30px}
+.loader span{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:bounce .8s infinite alternate}
+.loader span:nth-child(2){animation-delay:.15s}.loader span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.section-title{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-mark">WC</div>
+  <h1>WeCan BR</h1>
+  <p>Indicação de Currículos — Portal dos Líderes</p>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-indicar" onclick="mostrarAba('indicar')">📋 Nova Indicação</button>
+    <button class="tab-btn" id="tab-consultar" onclick="mostrarAba('consultar')">🔍 Minhas Indicações</button>
+  </div>
+</div>
+
+<!-- ABA: INDICAR -->
+<div class="card" id="aba-indicar">
+  <div class="success-state" id="form-sucesso">
+    <div class="ss-ico">✅</div>
+    <h2>Indicação enviada!</h2>
+    <p>Recebemos o currículo de <strong id="sucesso-nome">—</strong>.<br/>
+    Acompanhe o status na aba <b>Minhas Indicações</b> usando seu e-mail.</p>
+    <button class="btn-submit" onclick="novaIndicacao()" style="max-width:280px;margin:0 auto">+ Indicar outro candidato</button>
+  </div>
+
+  <div id="form-wrap">
+    <div class="alert error" id="form-erro"></div>
+
+    <div class="form-group">
+      <label>Nome Completo do Candidato *</label>
+      <input type="text" id="f-candidato" placeholder="Nome do candidato indicado"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Operação *</label>
+        <input type="text" id="f-operacao" placeholder="Ex: HUB Campinas, SOC Manaus"/>
+      </div>
+      <div class="form-group">
+        <label>Cargo Indicado *</label>
+        <input type="text" id="f-cargo" placeholder="Ex: Auxiliar de Logística"/>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+    <div class="section-title">Seus dados (Líder responsável)</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Seu Nome *</label>
+        <input type="text" id="f-lider-nome" placeholder="Seu nome completo"/>
+      </div>
+      <div class="form-group">
+        <label>Seu E-mail *</label>
+        <input type="email" id="f-lider-email" placeholder="seu@email.com"/>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+    <div class="section-title">Currículo do candidato *</div>
+
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="f-arquivo" accept=".pdf,.jpg,.jpeg,.png,.webp" onchange="arquivoSelecionado(this)"/>
+      <div class="uz-ico">📎</div>
+      <div class="uz-title">Clique ou arraste o arquivo aqui</div>
+      <div class="uz-sub">PDF, JPG ou PNG — máximo 5 MB</div>
+    </div>
+    <div class="file-info" id="file-info">
+      <span class="fi-ico" id="fi-ico">📄</span>
+      <span class="fi-name" id="fi-name">—</span>
+      <span class="fi-size" id="fi-size"></span>
+      <button class="fi-remove" onclick="removerArquivo()" title="Remover">×</button>
+    </div>
+    <div class="alert info" id="form-info" style="margin-top:14px">⏳ Fazendo upload do currículo, aguarde…</div>
+
+    <button class="btn-submit" id="btn-enviar" onclick="enviarIndicacao()" style="margin-top:20px">Enviar Indicação</button>
+  </div>
+</div>
+
+<!-- ABA: CONSULTAR -->
+<div class="card" id="aba-consultar" style="display:none">
+  <div class="section-title" style="margin-bottom:10px">Informe seu e-mail para ver o status das suas indicações</div>
+  <div class="email-bar">
+    <input type="email" id="c-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')buscarIndicacoes()"/>
+    <button id="btn-buscar" onclick="buscarIndicacoes()">Buscar</button>
+  </div>
+  <div id="results-area" class="results-area"></div>
+</div>
+
+<script>
+const SUPABASE_URL  = 'https://omwilcuzcvgzyzqqrbkh.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9td2lsY3V6Y3Znenl6cXFyYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzI1MTIsImV4cCI6MjA5NzcwODUxMn0.S1pbFqZ4B5_TWMBq_r8BeQ9OOFzkj73aOoI6g3Y987Q';
+const BUCKET = 'curriculos';
+let _arquivo = null;
+
+async function rpcPublico(fn, args) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+    body: JSON.stringify(args)
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || `Erro HTTP ${r.status}`);
+  if (data?.ok === false) throw new Error(data.erro || 'Erro desconhecido.');
+  return data;
+}
+
+async function uploadArquivo(file) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const nome = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${nome}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+    body: file
+  });
+  if (!resp.ok) throw new Error('Erro ao enviar o arquivo. Tente novamente.');
+  return { url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${nome}`, nome: file.name };
+}
+
+function mostrarAba(id) {
+  document.getElementById('aba-indicar').style.display   = id === 'indicar'   ? 'block' : 'none';
+  document.getElementById('aba-consultar').style.display = id === 'consultar' ? 'block' : 'none';
+  document.getElementById('tab-indicar').classList.toggle('active',  id === 'indicar');
+  document.getElementById('tab-consultar').classList.toggle('active', id === 'consultar');
+  if (id === 'consultar') {
+    const email = document.getElementById('f-lider-email').value.trim();
+    if (email) document.getElementById('c-email').value = email;
+  }
+}
+
+function arquivoSelecionado(input) {
+  const file = input.files ? input.files[0] : input;
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { mostrarErro('Arquivo muito grande. Máximo: 5 MB.'); return; }
+  _arquivo = file;
+  document.getElementById('upload-zone').classList.add('has-file');
+  const ext = file.name.split('.').pop().toLowerCase();
+  document.getElementById('fi-ico').textContent  = ext === 'pdf' ? '📄' : '🖼️';
+  document.getElementById('fi-name').textContent = file.name;
+  document.getElementById('fi-size').textContent = formatarTamanho(file.size);
+  document.getElementById('file-info').classList.add('visible');
+}
+
+function removerArquivo() {
+  _arquivo = null;
+  document.getElementById('f-arquivo').value = '';
+  document.getElementById('upload-zone').classList.remove('has-file');
+  document.getElementById('file-info').classList.remove('visible');
+}
+
+function formatarTamanho(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+  return (b/1024/1024).toFixed(1) + ' MB';
+}
+
+function mostrarErro(msg) {
+  const el = document.getElementById('form-erro');
+  el.textContent = msg; el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function limparErro() { document.getElementById('form-erro').style.display = 'none'; }
+
+async function enviarIndicacao() {
+  limparErro();
+  const candidato  = document.getElementById('f-candidato').value.trim();
+  const operacao   = document.getElementById('f-operacao').value.trim();
+  const cargo      = document.getElementById('f-cargo').value.trim();
+  const liderNome  = document.getElementById('f-lider-nome').value.trim();
+  const liderEmail = document.getElementById('f-lider-email').value.trim().toLowerCase();
+  const btn = document.getElementById('btn-enviar');
+  const info = document.getElementById('form-info');
+
+  if (!candidato)  return mostrarErro('Informe o nome completo do candidato.');
+  if (!operacao)   return mostrarErro('Informe a operação.');
+  if (!cargo)      return mostrarErro('Informe o cargo indicado.');
+  if (!liderNome)  return mostrarErro('Informe seu nome.');
+  if (!liderEmail) return mostrarErro('Informe seu e-mail.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(liderEmail)) return mostrarErro('E-mail inválido.');
+  if (!_arquivo)   return mostrarErro('Selecione o currículo do candidato.');
+
+  btn.disabled = true; btn.textContent = 'Enviando…'; info.style.display = 'block';
+
+  try {
+    const upload = await uploadArquivo(_arquivo);
+    await rpcPublico('wc_criar_indicacao', {
+      p_nome_candidato: candidato, p_operacao: operacao, p_cargo: cargo,
+      p_nome_lider: liderNome, p_email_lider: liderEmail,
+      p_anexo_url: upload.url, p_anexo_nome: upload.nome
+    });
+    document.getElementById('sucesso-nome').textContent = candidato;
+    document.getElementById('form-wrap').style.display   = 'none';
+    document.getElementById('form-sucesso').style.display = 'block';
+    try { localStorage.setItem('wecan_lider_email', liderEmail); } catch(e) {}
+  } catch(err) {
+    mostrarErro(err.message || 'Erro ao enviar. Tente novamente.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar Indicação'; info.style.display = 'none';
+  }
+}
+
+function novaIndicacao() {
+  ['f-candidato','f-operacao','f-cargo','f-lider-nome'].forEach(id => document.getElementById(id).value = '');
+  removerArquivo(); limparErro();
+  document.getElementById('form-sucesso').style.display = 'none';
+  document.getElementById('form-wrap').style.display    = 'block';
+}
+
+async function buscarIndicacoes() {
+  const email = document.getElementById('c-email').value.trim().toLowerCase();
+  const btn   = document.getElementById('btn-buscar');
+  const area  = document.getElementById('results-area');
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    area.innerHTML = '<div class="alert error" style="display:block;margin-top:16px">Informe um e-mail válido.</div>';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Buscando…';
+  area.innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
+
+  try {
+    const resp  = await rpcPublico('wc_indicacoes_lider', { p_email: email });
+    const lista = resp.indicacoes || [];
+
+    if (!lista.length) {
+      area.innerHTML = `<div class="empty"><div class="ei">📭</div><p>Nenhuma indicação encontrada para <b>${email}</b>.</p><p style="margin-top:8px;font-size:12.5px">Verifique o e-mail ou envie sua primeira indicação.</p></div>`;
+      return;
+    }
+
+    try { localStorage.setItem('wecan_lider_email', email); } catch(e) {}
+
+    const cnt = { pendente:0, recebido:0, concluido:0, rejeitado:0 };
+    lista.forEach(i => { if (cnt[i.status] !== undefined) cnt[i.status]++; });
+    const lbl = { pendente:'Pendente', recebido:'Recebido', concluido:'Concluído', rejeitado:'Rejeitado' };
+
+    area.innerHTML = `
+      <div style="margin-top:20px">
+        <div class="section-title">${lista.length} indicação(ões) encontrada(s)</div>
+        <div class="stats-grid">
+          <div class="stat-card pendente"><div class="sv">${cnt.pendente}</div><div class="sl">Pendente${cnt.pendente!==1?'s':''}</div></div>
+          <div class="stat-card recebido"><div class="sv">${cnt.recebido}</div><div class="sl">Recebido${cnt.recebido!==1?'s':''}</div></div>
+          <div class="stat-card concluido"><div class="sv">${cnt.concluido}</div><div class="sl">Concluído${cnt.concluido!==1?'s':''}</div></div>
+          <div class="stat-card rejeitado"><div class="sv">${cnt.rejeitado}</div><div class="sl">Rejeitado${cnt.rejeitado!==1?'s':''}</div></div>
+        </div>
+        ${lista.map(i => {
+          const ext = (i.anexo_nome||'').toLowerCase();
+          const ico = ext.endsWith('.pdf') ? '📄' : '🖼️';
+          const motivoHtml = i.motivo
+            ? `<div class="ind-card-motivo"><b>Feedback:</b> ${i.motivo}</div>`
+            : i.status === 'pendente'
+              ? `<div class="ind-card-motivo" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2)">⏳ Aguardando análise da equipe de admissão.</div>`
+              : '';
+          const anexoHtml = i.anexo_url
+            ? `<a href="${i.anexo_url}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:5px">${ico} Ver currículo ↗</a>`
+            : '';
+          return `<div class="ind-card">
+            <div class="ind-card-header">
+              <div><div class="ind-card-nome">${i.nome_candidato}</div><div class="ind-card-sub">${i.cargo_indicado||'—'} · ${i.operacao||'—'}</div></div>
+              <span class="pill pill-${i.status}">${lbl[i.status]||i.status}</span>
+            </div>
+            ${motivoHtml}
+            <div class="ind-card-footer"><span class="data">Enviado em ${i.criado_em}</span>${anexoHtml}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch(err) {
+    area.innerHTML = `<div class="alert error" style="display:block;margin-top:16px">${err.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Buscar';
+  }
+}
+
+// Drag & Drop
+(function() {
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) arquivoSelecionado(file);
+  });
+})();
+
+// Init
+(function() {
+  try {
+    const email = localStorage.getItem('wecan_lider_email');
+    if (email) { document.getElementById('f-lider-email').value = email; document.getElementById('c-email').value = email; }
+  } catch(e) {}
+  const params = new URLSearchParams(location.search);
+  if (params.get('aba') === 'consultar') mostrarAba('consultar');
+})();
+</script>
+</body>
+</html>
