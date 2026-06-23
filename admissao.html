@@ -317,6 +317,21 @@
   .page-ext.active { display: block !important; }
   /* Quando uma page-ext está ativa, o main some */
   body.cad-active #main { display: none !important; }
+  /* ── SELEÇÃO EM MASSA ── */
+  .col-sel { width:36px; text-align:center; padding:0 !important; }
+  .row-checkbox { width:15px; height:15px; accent-color:var(--danger); cursor:pointer; }
+  .th-checkbox  { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; }
+  #bulk-bar {
+    display:none; position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:10px 18px; z-index:800;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);
+    align-items:center; gap:14px; font-size:13px; white-space:nowrap;
+  }
+  #bulk-bar.visible { display:flex; }
+  #bulk-bar strong { color:var(--text); }
+  .bulk-sep { width:1px; height:18px; background:var(--border); }
+
   #col-picker-panel {
     display:none; position:fixed;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
@@ -1415,6 +1430,16 @@
 
 <div id="toast"></div>
 
+<!-- BARRA DE SELEÇÃO EM MASSA — só aparece para Master -->
+<div id="bulk-bar">
+  <strong id="bulk-count">0 selecionadas</strong>
+  <div class="bulk-sep"></div>
+  <button class="btn btn-ghost btn-sm" onclick="selecionarTodasVisiveis()">Selecionar todas visíveis</button>
+  <button class="btn btn-ghost btn-sm" onclick="limparSelecao()">Limpar seleção</button>
+  <div class="bulk-sep"></div>
+  <button class="btn btn-danger btn-sm" onclick="excluirSelecionadas()">🗑️ Excluir selecionadas</button>
+</div>
+
 <script src="shared.js"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -2036,11 +2061,15 @@ function renderVagas() {
 
   // Colunas ativas nesta renderização
   const cols = COLUNAS_DISPONIVEIS.filter(c => _colunasAtivas.has(c.id));
-  const nCols = cols.length + 1; // +1 para coluna de ações
+  const isMaster = ehMaster();
+  const nCols = cols.length + 1 + (isMaster ? 1 : 0);
 
   // Reconstruir cabeçalho
   if (thead) {
-    thead.innerHTML = cols.map(c=>`<th>${c.label}</th>`).join('') + '<th>Ações</th>';
+    const chkTh = isMaster
+      ? `<th class="col-sel"><input type="checkbox" class="th-checkbox" id="chk-all" onclick="toggleSelecionarTodos(this)" title="Selecionar/desselecionar todas"></th>`
+      : '';
+    thead.innerHTML = chkTh + cols.map(c=>`<th>${c.label}</th>`).join('') + '<th>Ações</th>';
   }
 
   if (!lista.length) {
@@ -2052,13 +2081,20 @@ function renderVagas() {
   tbody.innerHTML = lista.map(v=>{
     const je=(v.jira||'').replace(/'/g,"\\'");
     const cells = cols.map(c=>`<td>${c.render(v)}</td>`).join('');
+    const chkTd = isMaster
+      ? `<td class="col-sel" onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox" data-jira="${v.jira||''}" onchange="onRowCheck()"></td>`
+      : '';
     return `<tr onclick="abrirModalVaga('${je}')">
+      ${chkTd}
       ${cells}
       <td class="actions-cell" onclick="event.stopPropagation()">
         <button class="btn btn-ghost btn-sm" onclick="abrirModalVaga('${je}')">Editar</button>
+        ${isMaster ? `<button class="btn btn-danger btn-sm" onclick="excluirVaga('${je}')">Excluir</button>` : ''}
       </td>
     </tr>`;
   }).join('');
+
+  atualizarBulkBar();
 }
 
 // ── SELETOR DE COLUNAS ────────────────────────
@@ -2992,6 +3028,80 @@ document.addEventListener('click', e=>{
 });
 
 // ── INIT ──────────────────────────────────────
+// ── EXCLUSÃO DE VAGAS (só Master) ────────────────
+function onRowCheck() { atualizarBulkBar(); }
+
+function atualizarBulkBar() {
+  if (!ehMaster()) return;
+  const selecionadas = document.querySelectorAll('.row-checkbox:checked');
+  const bar = document.getElementById('bulk-bar');
+  const countEl = document.getElementById('bulk-count');
+  if (!bar) return;
+  bar.classList.toggle('visible', selecionadas.length > 0);
+  if (countEl) countEl.textContent = `${selecionadas.length} selecionada(s)`;
+  // Atualiza estado do checkbox "selecionar todos"
+  const total = document.querySelectorAll('.row-checkbox').length;
+  const chkAll = document.getElementById('chk-all');
+  if (chkAll) {
+    chkAll.checked       = selecionadas.length === total && total > 0;
+    chkAll.indeterminate = selecionadas.length > 0 && selecionadas.length < total;
+  }
+}
+
+function toggleSelecionarTodos(chkAll) {
+  document.querySelectorAll('.row-checkbox').forEach(c => c.checked = chkAll.checked);
+  atualizarBulkBar();
+}
+
+function selecionarTodasVisiveis() {
+  document.querySelectorAll('.row-checkbox').forEach(c => c.checked = true);
+  const chkAll = document.getElementById('chk-all');
+  if (chkAll) { chkAll.checked = true; chkAll.indeterminate = false; }
+  atualizarBulkBar();
+}
+
+function limparSelecao() {
+  document.querySelectorAll('.row-checkbox').forEach(c => c.checked = false);
+  const chkAll = document.getElementById('chk-all');
+  if (chkAll) { chkAll.checked = false; chkAll.indeterminate = false; }
+  atualizarBulkBar();
+}
+
+async function excluirVaga(jira) {
+  if (!ehMaster()) return;
+  if (!confirm(`Excluir a vaga ${jira}?\n\nEsta ação é irreversível.`)) return;
+  try {
+    await rpc('wc_excluir_vaga', { p_jira: jira });
+    VAGAS = VAGAS.filter(v => v.jira !== jira);
+    renderVagas();
+    atualizarBadgeFila();
+    toast(`Vaga ${jira} excluída.`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function excluirSelecionadas() {
+  if (!ehMaster()) return;
+  const checks = document.querySelectorAll('.row-checkbox:checked');
+  if (!checks.length) return;
+  const jiras = [...checks].map(c => c.dataset.jira).filter(Boolean);
+  const n = jiras.length;
+  if (!confirm(`Excluir ${n} vaga(s) selecionada(s)?\n\n${jiras.slice(0,10).join(', ')}${n>10?'…':''}\n\nEsta ação é irreversível.`)) return;
+  const btn = document.querySelector('#bulk-bar .btn-danger');
+  if (btn) { btn.disabled = true; btn.textContent = `Excluindo…`; }
+  let erros = 0;
+  for (const jira of jiras) {
+    try {
+      await rpc('wc_excluir_vaga', { p_jira: jira });
+      VAGAS = VAGAS.filter(v => v.jira !== jira);
+    } catch(e) { erros++; }
+  }
+  renderVagas();
+  atualizarBadgeFila();
+  if (btn) { btn.disabled = false; btn.textContent = '🗑️ Excluir selecionadas'; }
+  const ok = n - erros;
+  toast(erros === 0 ? `${ok} vaga(s) excluída(s).` : `${ok} excluída(s), ${erros} com erro.`, erros ? 'error' : 'success');
+}
+
 initApp();
 </script>
 </body>
