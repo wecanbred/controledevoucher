@@ -1605,9 +1605,20 @@ const SISTEMAS_DISPONIVEIS = [
 function podeVerTudo()         { return session && ['gestor','master'].includes(session.perfil); }
 function podeAutorizarVoucher(){ return session && ['gestor','master','onsite','equipe'].includes(session.perfil); }
 function ehMaster()            { return session && session.perfil === 'master'; }
-function vagasNoEscopo()       {
+function vagasNoEscopo() {
   if (podeVerTudo()) return VAGAS;
-  return VAGAS.filter(v => (v.consultor||'').toUpperCase() === (session.nome||'').toUpperCase());
+  // Filtra por operações vinculadas ao usuário (Onsite) ou por e-mail/nome do consultor (Equipe)
+  if (session.perfil === 'onsite' && session._operacoes?.length) {
+    const ops = new Set(session._operacoes.map(o => (o.nome||'').toUpperCase()));
+    return VAGAS.filter(v => ops.has((v.regional||'').toUpperCase()) || ops.has((v.local||'').toUpperCase()));
+  }
+  // Equipe: filtra pelo e-mail do consultor (campo consultor_email) ou pelo nome como fallback
+  return VAGAS.filter(v => {
+    if (v.consultor_email && session.email) {
+      return v.consultor_email.toLowerCase() === session.email.toLowerCase();
+    }
+    return (v.consultor||'').toUpperCase() === (session.nome||'').toUpperCase();
+  });
 }
 function consultoresConhecidos() {
   return [...new Set(VAGAS.map(v => v.consultor).filter(Boolean))].sort();
@@ -1688,13 +1699,11 @@ async function carregarOperacoes() {
 
 async function carregarUsuariosSistema() {
   try {
-    // wc_listar_consultores retorna apenas id+nome+perfil, seguro para todos os perfis
     const resp = await rpc('wc_listar_consultores', {});
     USUARIOS_SISTEMA = (resp.usuarios || [])
-      .map(u => ({ id: u.id, nome: u.nome, perfil: u.perfil }))
+      .map(u => ({ id: u.id, nome: u.nome, perfil: u.perfil, email: u.email || '' }))
       .sort((a,b) => a.nome.localeCompare(b.nome));
   } catch(e) {
-    // Fallback: se a RPC ainda não existe no banco, usa nomes das vagas carregadas
     USUARIOS_SISTEMA = [];
   }
 }
@@ -1815,12 +1824,18 @@ function abrirVoucherEm(pagina) {
 function popularFiltroConsultor() {
   const sel = document.getElementById('filtro-consultor');
   if (!sel) return;
-  // Usa usuários do sistema se disponíveis, senão cai para nomes das vagas
+  // Usa usuários do sistema para montar o filtro com nome legível
   const lista = podeVerTudo()
     ? (USUARIOS_SISTEMA.length ? USUARIOS_SISTEMA.map(u=>u.nome) : consultoresConhecidos())
     : [session.nome];
   sel.innerHTML = '<option value="">Todos os consultores</option>' + lista.map(c=>`<option>${c}</option>`).join('');
   sel.parentElement.style.display = podeVerTudo() ? 'block' : 'none';
+}
+
+// Retorna o e-mail do usuário pelo nome (para amarrar vaga ao e-mail ao salvar)
+function emailPorNome(nome) {
+  const u = USUARIOS_SISTEMA.find(u => u.nome === nome);
+  return u?.email || '';
 }
 
 function atualizarBadgeFila() {
@@ -3141,26 +3156,54 @@ async function excluirSelecionadas() {
   if (!checks.length) return;
   const jiras = [...checks].map(c => c.dataset.jira).filter(Boolean);
   const n = jiras.length;
-  if (!confirm(`Excluir ${n} vaga(s) selecionada(s)?\n\n${jiras.slice(0,10).join(', ')}${n>10?'…':''}\n\nEsta ação é irreversível.`)) return;
+  if (!confirm(`Excluir ${n} vaga(s) selecionada(s)?\n\n${jiras.slice(0,10).join(', ')}${n>10?`\n…e mais ${n-10}`:''}.\n\nEsta ação é irreversível.`)) return;
+
   const btn = document.querySelector('#bulk-bar .btn-danger');
-  if (btn) { btn.disabled = true; btn.textContent = `Excluindo…`; }
-  let erros = 0;
-  for (const jira of jiras) {
-    try {
-      await rpc('wc_excluir_vaga', { p_jira: jira });
-      VAGAS = VAGAS.filter(v => v.jira !== jira);
-    } catch(e) { erros++; }
+  if (btn) { btn.disabled=true; btn.textContent=`Excluindo ${n}…`; }
+
+  try {
+    // 1 única RPC — sem loop, sem timeout
+    const r = await rpc('wc_excluir_vagas_lote', { p_jiras: jiras });
+    const excluidas = r.excluidas ?? n;
+    VAGAS = VAGAS.filter(v => !jiras.includes(v.jira));
+    renderVagas();
+    atualizarBadgeFila();
+    toast(`${excluidas} vaga(s) excluída(s).`, 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='🗑️ Excluir selecionadas'; }
   }
-  renderVagas();
-  atualizarBadgeFila();
-  if (btn) { btn.disabled = false; btn.textContent = '🗑️ Excluir selecionadas'; }
-  const ok = n - erros;
-  toast(erros === 0 ? `${ok} vaga(s) excluída(s).` : `${ok} excluída(s), ${erros} com erro.`, erros ? 'error' : 'success');
 }
 
 // ══════════════════════════════════════════════
 //  IMPORTAÇÃO DE CADASTROS via XLSX
 // ══════════════════════════════════════════════
+
+// Mapeamento colunas planilha → campos internos
+const IMPORT_SCHEMA = {
+  cc: {
+    rpc: 'wc_salvar_cc',
+    param: 'p_cc',
+    required: ['descricao'],
+    cols: { 'Código (COD)':'cod', 'Cliente':'cliente', 'Descrição':'descricao', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Complemento':'complemento', 'Bairro':'bairro', 'Cidade':'cidade', 'Ativo':'ativo' },
+    modelo: [['Código (COD)','Cliente','Descrição','CEP','UF','Logradouro','Número','Complemento','Bairro','Cidade','Ativo'],['CC-0001','SPX LOGISTICA LTDA','HUB Campinas','13000-000','SP','Rua das Flores','100','','Centro','Campinas','SIM']],
+  },
+  cli: {
+    rpc: 'wc_salvar_cliente',
+    param: 'p_cliente',
+    required: ['razao_social'],
+    cols: { 'Código':'codigo', 'Razão Social':'razao_social', 'Nome Fantasia':'nome_fantasia', 'CNPJ':'cnpj', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Bairro':'bairro', 'Cidade':'cidade', 'Contato':'contato', 'E-mail':'email', 'Grupo Econômico':'grupo_nome', 'Ativo':'ativo' },
+    modelo: [['Código','Razão Social','Nome Fantasia','CNPJ','CEP','UF','Logradouro','Número','Bairro','Cidade','Contato','E-mail','Grupo Econômico','Ativo'],['','SPX LOGISTICA LTDA','SHOPEE ANANINDEUA','42.446.277/0213-51','67113-320','PA','Passagem São Pedro','6','Coqueiro','Ananindeua','Ana Luiza','ana@shopee.com','SHOPEE','SIM']],
+  },
+  dep: {
+    rpc: 'wc_salvar_depto',
+    param: 'p_depto',
+    required: ['descricao'],
+    cols: { 'Código do Cliente':'cli_codigo', 'Código':'codigo', 'Descrição':'descricao', 'Observações':'observacoes' },
+    modelo: [['Código do Cliente','Código','Descrição','Observações'],['CC-0001','1','LM Hub_PA_Belém','']],
+  },
+};
 
 let _importData = {}; // { cc: [...rows], cli: [...rows], dep: [...rows] }
 
