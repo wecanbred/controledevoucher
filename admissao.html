@@ -2463,7 +2463,7 @@ function switchMuTab(tab) {
   });
 }
 
-function abrirModalUsuario(u) {
+async function abrirModalUsuario(u) {
   document.getElementById('mu-title').textContent = u ? 'Editar Usuário' : 'Novo Usuário';
   document.getElementById('u-id').value    = u ? u.id : '';
   document.getElementById('u-nome').value  = u ? u.nome : '';
