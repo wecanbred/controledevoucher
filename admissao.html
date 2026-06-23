@@ -1165,23 +1165,67 @@
 
 <!-- MODAL IMPORTAÇÃO EM LOTE -->
 <div class="modal-backdrop" id="modal-importacao">
-  <div class="modal" style="width:860px">
+  <div class="modal" style="width:920px">
     <div class="modal-head">
       <h2>📥 Importar Vagas em Lote</h2>
-      <p>Faça o upload de uma planilha Excel com o padrão do sistema para cadastrar várias vagas de uma vez</p>
+      <p>Preencha os padrões abaixo, baixe o modelo, complete e envie</p>
     </div>
     <div style="padding:0 26px 6px">
+
+      <!-- PADRÕES APLICADOS A TODAS AS LINHAS -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">
+          Valores padrão — aplicados a todas as linhas sem valor na planilha
+        </div>
+        <div class="form-row three">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Consultor Responsável</label>
+            <select id="imp-default-consultor">
+              <option value="">— nenhum padrão —</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Centro de Custo (Hub/Soc)</label>
+            <select id="imp-default-cc" onchange="impPreencherLocalDefault()">
+              <option value="">— nenhum padrão —</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Departamento GI</label>
+            <select id="imp-default-depto">
+              <option value="">— nenhum padrão —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Local de Trabalho (padrão)</label>
+            <input type="text" id="imp-default-local" placeholder="Preenchido ao selecionar o CC acima"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Regional (padrão)</label>
+            <select id="imp-default-regional">
+              <option value="">— nenhum padrão —</option>
+              <option>SPI</option><option>CO/N</option><option>SPM</option><option>RIO/ES</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSOS -->
       <div class="import-steps">
         <div class="import-step">
-          <h4>Passo 1 — Baixe o modelo</h4>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Preencha o arquivo Excel com as vagas e respeite as colunas do cabeçalho.</p>
+          <h4>Passo 1 — Baixe o modelo enxuto</h4>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px">
+            Modelo com apenas as colunas principais. Colunas com * são obrigatórias.
+          </p>
           <button class="btn btn-ghost btn-sm" onclick="baixarTemplateImportacao()">⬇️ Baixar modelo .xlsx</button>
         </div>
         <div class="import-step">
-          <h4>Passo 2 — Envie o arquivo</h4>
+          <h4>Passo 2 — Envie a planilha preenchida</h4>
           <label class="upload-zone">
-            📂 Selecionar planilha preenchida
-            <input type="file" id="import-file" accept=".xlsx,.xls" onchange="carregarPreviewImportacao(this)"/>
+            📂 Selecionar planilha
+            <input type="file" id="import-file" accept=".xlsx,.xls,.csv" onchange="carregarPreviewImportacao(this)"/>
           </label>
         </div>
       </div>
@@ -1189,7 +1233,7 @@
       <div id="import-preview-wrap" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <span class="text-muted" id="import-preview-count"></span>
-          <span style="font-size:12px;color:var(--muted)">Verifique os dados antes de confirmar</span>
+          <span style="font-size:12px;color:var(--muted)">Verifique antes de confirmar — 🟢 planilha · 🔵 padrão aplicado</span>
         </div>
         <div class="import-preview" id="import-preview-table"></div>
       </div>
@@ -2445,129 +2489,265 @@ async function salvarVaga() {
 
 // ── IMPORTAÇÃO EM LOTE ────────────────────────
 // Colunas aceitas no template (mesma ordem do CAMPO_MAP do migrar.html)
-const IMPORT_COLS = [
-  'consultor','jira','codigo_hub','regional','recebimento','mes','local_trabalho',
-  'modalidade','tempo','cargo','turno','horario','escala','preferencia','colaborador',
-  'status_uniforme','matricula','ops_id','data_adm_solicitada','data_reprog',
-  'nova_data_eto','data_adm_realizada','etapa','status_vaga','tipo_vaga','salario',
-  'cnpj','departamento_gi','transporte','refeicao','cesta_basica','gestor_turno',
-  'contato_gestor_turno','unidade_wecan','cpf','email_colaborador','telefone',
-  'indicacao','genero','tipo_processo','colete','bota','luva','no_show','motivo_atraso','observacao'
-];
-const IMPORT_COLS_LABEL = [
-  'Consultor','Jira*','Cód Hub','Regional','Recebimento','Mês','Local de Trabalho',
-  'Modalidade','Tempo','Cargo','Turno','Horário','Escala','Preferência','Colaborador',
-  'Status Uniforme','Matrícula','OPS ID','Data Adm Solicitada','Data Reprog',
-  'Nova Data ETO','Data Adm Realizada','Etapa','Status Vaga','Tipo Vaga','Salário',
-  'CNPJ','Departamento GI','Transporte','Refeição','Cesta Básica','Gestor Turno',
-  'Contato Gestor Turno','Unidade WeCan','CPF','E-mail Colaborador','Telefone',
-  'Indicação','Gênero','Tipo Processo','Colete','Bota','Luva','No Show','Motivo Atraso','Observação'
+// ── IMPORTAÇÃO DE VAGAS ──────────────────────
+// Colunas do modelo ENXUTO (as principais)
+const IMPORT_COLS_ENXUTO = [
+  { campo:'jira',                label:'Jira *',                obrig:true  },
+  { campo:'consultor',           label:'Consultor',             obrig:false },
+  { campo:'codigo_hub',          label:'Cód Hub/Soc',           obrig:false },
+  { campo:'regional',            label:'Regional',              obrig:false },
+  { campo:'local_trabalho',      label:'Local de Trabalho',     obrig:false },
+  { campo:'mes',                 label:'Mês (dd/mm/aaaa)',      obrig:false },
+  { campo:'modalidade',          label:'Modalidade',            obrig:false },
+  { campo:'cargo',               label:'Cargo',                 obrig:false },
+  { campo:'turno',               label:'Turno',                 obrig:false },
+  { campo:'horario',             label:'Horário',               obrig:false },
+  { campo:'escala',              label:'Escala',                obrig:false },
+  { campo:'colaborador',         label:'Colaborador',           obrig:false },
+  { campo:'cpf',                 label:'CPF',                   obrig:false },
+  { campo:'matricula',           label:'Matrícula',             obrig:false },
+  { campo:'recebimento',         label:'Recebimento (dd/mm/aaaa)', obrig:false },
+  { campo:'data_adm_solicitada', label:'Data Adm Solicitada',   obrig:false },
+  { campo:'status_vaga',         label:'Status da Vaga',        obrig:false },
+  { campo:'transporte',          label:'Transporte',            obrig:false },
+  { campo:'salario',             label:'Salário',               obrig:false },
+  { campo:'departamento_gi',     label:'Departamento GI',       obrig:false },
+  { campo:'cnpj',                label:'CNPJ',                  obrig:false },
+  { campo:'tipo_vaga',           label:'Tipo de Vaga',          obrig:false },
+  { campo:'observacao',          label:'Observação',            obrig:false },
 ];
 
-function baixarTemplateImportacao() {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([IMPORT_COLS_LABEL]);
-  // Estilo do cabeçalho (largura)
-  ws['!cols'] = IMPORT_COLS_LABEL.map(()=>({wch:18}));
-  XLSX.utils.book_append_sheet(wb, ws, 'Vagas');
-  XLSX.writeFile(wb, 'modelo_importacao_vagas.xlsx');
-}
+const IMPORT_CAMPOS_DATA = new Set(['mes','recebimento','data_adm_solicitada','data_reprog','nova_data_eto','data_adm_realizada']);
 
-function abrirImportacaoLote() {
-  document.getElementById('import-file').value='';
-  document.getElementById('import-preview-wrap').style.display='none';
-  document.getElementById('import-preview-table').innerHTML='';
-  document.getElementById('import-log').style.display='none';
-  document.getElementById('btn-confirmar-import').style.display='none';
-  _importRows=[];
+// Popular os selects de padrão ao abrir o modal
+async function abrirImportacaoLote() {
+  document.getElementById('import-file').value = '';
+  document.getElementById('import-preview-wrap').style.display = 'none';
+  document.getElementById('import-preview-table').innerHTML = '';
+  document.getElementById('import-log').style.display = 'none';
+  document.getElementById('btn-confirmar-import').style.display = 'none';
+  _importRows = [];
+
+  // Garantir que CC e Deptos estão carregados
+  await garantirCadastrosCarregados();
+
+  // Popular select de consultor
+  const selC = document.getElementById('imp-default-consultor');
+  selC.innerHTML = '<option value="">— nenhum padrão —</option>' +
+    USUARIOS_SISTEMA.map(u => `<option value="${u.nome}">${u.nome}</option>`).join('');
+  if (!podeVerTudo()) { selC.value = session.nome; selC.disabled = true; }
+  else selC.disabled = false;
+
+  // Popular select de CC
+  const selCC = document.getElementById('imp-default-cc');
+  selCC.innerHTML = '<option value="">— nenhum padrão —</option>' +
+    CENTROS_CUSTO.filter(c => c.ativo !== false).map(c =>
+      `<option value="${c.cod}" data-local="${[c.logradouro,c.numero?'Nº '+c.numero:'',c.bairro,c.cidade,c.uf].filter(Boolean).join(', ')}" data-uf="${c.uf||''}">${c.cod} — ${c.descricao}</option>`
+    ).join('');
+
+  // Popular select de depto
+  const selD = document.getElementById('imp-default-depto');
+  selD.innerHTML = '<option value="">— nenhum padrão —</option>' +
+    DEPTOS.map(d => `<option value="${d.descricao}">${d.codigo ? d.codigo+' — ' : ''}${d.descricao}</option>`).join('');
+
   abrirModal('modal-importacao');
 }
 
-function excelDateToISO(v) {
-  if (!v) return '';
-  if (typeof v==='string') {
-    const m=v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10);
-    return '';
-  }
-  if (typeof v==='number') {
-    const d=XLSX.SSF.parse_date_code(v); if (!d) return '';
-    return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
-  }
-  return '';
+function impPreencherLocalDefault() {
+  const sel = document.getElementById('imp-default-cc');
+  const opt = sel?.selectedOptions[0];
+  if (!opt?.value) return;
+  document.getElementById('imp-default-local').value = opt.dataset.local || '';
+  const uf = opt.dataset.uf;
+  const regMap = { SP:'SPI', RJ:'RIO/ES', ES:'RIO/ES', AM:'CO/N', PA:'CO/N', MA:'CO/N' };
+  if (uf && regMap[uf]) document.getElementById('imp-default-regional').value = regMap[uf];
+}
+
+function baixarTemplateImportacao() {
+  const cabecalho = IMPORT_COLS_ENXUTO.map(c => c.label);
+  const exemplo = [
+    '', // jira — deixar em branco para o usuário preencher
+    document.getElementById('imp-default-consultor')?.value || 'NOME DO CONSULTOR',
+    document.getElementById('imp-default-cc')?.value || 'CC-0001',
+    document.getElementById('imp-default-regional')?.value || 'SPI',
+    document.getElementById('imp-default-local')?.value || 'Endereço completo',
+    '', // mês
+    'Temporário',
+    'Auxiliar de logística',
+    'F1', '08:00-16:20', 'SEG-SAB',
+    '', '', '', '', '', // colaborador, cpf, matrícula, recebimento, data adm
+    'Em Andamento No Prazo',
+    'VALE TRANSPORTE',
+    '', // salário
+    document.getElementById('imp-default-depto')?.value || '',
+    '', '', '',
+  ];
+
+  const gerarXLSX = () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([cabecalho, exemplo]);
+    // Destacar coluna obrigatória
+    ws['!cols'] = IMPORT_COLS_ENXUTO.map(c => ({ wch: Math.max(c.label.length, 18) }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Vagas');
+    // Aba de referência com as listas de valores aceitos
+    const wsRef = XLSX.utils.aoa_to_sheet([
+      ['Modalidade', 'Cargo', 'Regional', 'Status da Vaga', 'Tipo de Vaga'],
+      ['CLT', 'Auxiliar de logística', 'SPI', 'Em Andamento No Prazo', '1 - Vaga Oficial'],
+      ['Temporário', 'Líder de logística', 'CO/N', 'Em Andamento Atrasada', '2 - Reposição - NO SHOW'],
+      ['', 'Auxiliar de almoxarifado', 'SPM', 'Finalizada No Prazo', '3 - Reposição - ETO'],
+      ['', '', 'RIO/ES', 'Finalizada Antecipada', ''],
+      ['', '', '', 'Finalizada Atrasada', ''],
+      ['', '', '', 'Cancelada', ''],
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsRef, 'Valores aceitos');
+    XLSX.writeFile(wb, 'modelo_vagas.xlsx');
+    toast('Modelo baixado!', 'success');
+  };
+
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = gerarXLSX;
+    document.head.appendChild(s);
+  } else { gerarXLSX(); }
 }
 
 function carregarPreviewImportacao(input) {
-  const file=input.files[0]; if (!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+  const file = input.files[0]; if (!file) return;
+
+  // Defaults do painel
+  const defConsultor = document.getElementById('imp-default-consultor')?.value || '';
+  const defCC        = document.getElementById('imp-default-cc')?.value || '';
+  const defLocal     = document.getElementById('imp-default-local')?.value || '';
+  const defRegional  = document.getElementById('imp-default-regional')?.value || '';
+  const defDepto     = document.getElementById('imp-default-depto')?.value || '';
+
+  const processar = (rows) => {
     if (!rows.length) { toast('Planilha vazia.','error'); return; }
+    const cabecalho = (rows[0]||[]).map(c => (c||'').toString().trim());
 
-    // Detectar cabeçalho
-    const cabecalho=(rows[0]||[]).map(c=>(c||'').toString().trim().toLowerCase());
-    const CAMPOS_DATA=new Set(['recebimento','mes','data_adm_solicitada','data_reprog','nova_data_eto','data_adm_realizada']);
+    // Mapear nome de coluna → índice
+    const colIdx = {};
+    IMPORT_COLS_ENXUTO.forEach(c => {
+      const label = c.label.replace(' *','');
+      const idx = cabecalho.findIndex(h => h.toLowerCase() === label.toLowerCase() ||
+        h.toLowerCase() === c.campo.toLowerCase());
+      if (idx >= 0) colIdx[c.campo] = idx;
+    });
 
-    _importRows=[];
-    const erros=[];
-    for (let i=1;i<rows.length;i++) {
-      const row=rows[i];
-      if (!row||row.every(c=>!c)) continue;
-      const obj={};
-      IMPORT_COLS.forEach((campo,idx)=>{
-        // Tentar pelo índice direto OU por nome de coluna
-        const v=row[idx];
-        if (CAMPOS_DATA.has(campo)) obj[campo]=excelDateToISO(v);
-        else obj[campo]=v!=null?String(v).trim():'';
+    _importRows = [];
+    const erros = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.every(c => !c)) continue;
+      const obj = { _defaults: {} }; // rastrear o que foi aplicado como padrão
+
+      IMPORT_COLS_ENXUTO.forEach(c => {
+        const idx = colIdx[c.campo] ?? -1;
+        let val = idx >= 0 && row[idx] != null ? String(row[idx]).trim() : '';
+        if (IMPORT_CAMPOS_DATA.has(c.campo)) val = excelDateToISO(row[idx] ?? '');
+        obj[c.campo] = val;
       });
-      if (!obj.jira) { erros.push(`Linha ${i+1}: Jira vazio — ignorada.`); continue; }
+
+      if (!obj.jira) { erros.push(`Linha ${i+1}: Jira vazio — ignorada`); continue; }
+
+      // Aplicar defaults onde a planilha não preencheu
+      const aplicarDefault = (campo, valor) => {
+        if (!obj[campo] && valor) { obj[campo] = valor; obj._defaults[campo] = true; }
+      };
+      aplicarDefault('consultor',       defConsultor);
+      aplicarDefault('codigo_hub',      defCC);
+      aplicarDefault('local_trabalho',  defLocal);
+      aplicarDefault('regional',        defRegional);
+      aplicarDefault('departamento_gi', defDepto);
+
       _importRows.push(obj);
     }
 
     // Preview
-    const wrap=document.getElementById('import-preview-wrap');
-    const countEl=document.getElementById('import-preview-count');
-    const tableEl=document.getElementById('import-preview-table');
-    wrap.style.display='block';
-    countEl.textContent=`${_importRows.length} vaga(s) encontradas para importar${erros.length?` · ${erros.length} ignoradas`:''}`;
+    const wrap    = document.getElementById('import-preview-wrap');
+    const countEl = document.getElementById('import-preview-count');
+    const tableEl = document.getElementById('import-preview-table');
+    wrap.style.display = 'block';
+    countEl.textContent = `${_importRows.length} vaga(s) prontas para importar${erros.length ? ` · ${erros.length} ignoradas` : ''}`;
 
-    const previewCols=['jira','consultor','regional','colaborador','cargo','status_vaga','transporte'];
-    tableEl.innerHTML=`<table><thead><tr>${previewCols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${
-      _importRows.slice(0,50).map(r=>`<tr>${previewCols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('')
-    }${_importRows.length>50?`<tr><td colspan="${previewCols.length}" style="color:var(--muted);padding:8px;">… e mais ${_importRows.length-50} linhas</td></tr>`:''}</tbody></table>`;
+    const previewCols = ['jira','consultor','codigo_hub','regional','colaborador','cargo','status_vaga','transporte'];
+    const previewLabels = { jira:'Jira', consultor:'Consultor', codigo_hub:'Hub/Soc', regional:'Regional', colaborador:'Colaborador', cargo:'Cargo', status_vaga:'Status', transporte:'Transporte' };
+    tableEl.innerHTML = `<table>
+      <thead><tr>${previewCols.map(c=>`<th>${previewLabels[c]||c}</th>`).join('')}</tr></thead>
+      <tbody>${_importRows.slice(0,50).map(r =>
+        `<tr>${previewCols.map(c => {
+          const isDefault = r._defaults?.[c];
+          const val = r[c] || '—';
+          return `<td style="${isDefault?'color:var(--voucher);font-style:italic':''}" title="${isDefault?'Valor padrão aplicado':''}">${val}</td>`;
+        }).join('')}</tr>`
+      ).join('')}
+      ${_importRows.length>50?`<tr><td colspan="${previewCols.length}" style="color:var(--muted);padding:8px">… e mais ${_importRows.length-50} linhas</td></tr>`:''}
+      </tbody></table>`;
 
-    document.getElementById('btn-confirmar-import').style.display=_importRows.length?'flex':'none';
-    if (erros.length) { const log=document.getElementById('import-log'); log.style.display='block'; log.textContent=erros.join('\n'); }
+    document.getElementById('btn-confirmar-import').style.display = _importRows.length ? 'flex' : 'none';
+    if (erros.length) {
+      const log = document.getElementById('import-log');
+      log.style.display = 'block';
+      log.textContent = erros.join('\n');
+    }
   };
-  reader.readAsArrayBuffer(file);
+
+  const isCsv = file.name.toLowerCase().endsWith('.csv');
+  const reader = new FileReader();
+  if (isCsv) {
+    reader.onload = e => {
+      const rows = e.target.result.split(/\r?\n/).filter(l=>l.trim())
+        .map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').replace(/""/g,'"').trim()));
+      processar(rows);
+    };
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    reader.onload = e => {
+      const lerXLSX = () => {
+        const wb = XLSX.read(e.target.result, {type:'array', cellDates:false});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        processar(XLSX.utils.sheet_to_json(ws, {header:1, defval:null}));
+      };
+      if (typeof XLSX === 'undefined') {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = lerXLSX;
+        document.head.appendChild(s);
+      } else { lerXLSX(); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
 }
 
 async function confirmarImportacao() {
   if (!_importRows.length) return;
-  const btn=document.getElementById('btn-confirmar-import');
-  const log=document.getElementById('import-log');
-  btn.disabled=true; btn.textContent='Importando…';
-  log.style.display='block'; log.textContent='';
-  let ok=0; let err=0;
-  const LOTE=50;
-  for (let i=0;i<_importRows.length;i+=LOTE) {
-    const lote=_importRows.slice(i,i+LOTE);
-    for (const vaga of lote) {
-      try {
-        await rpc('wc_salvar_vaga',{p_vaga:vaga,p_jira_original:vaga.jira});
-        ok++;
-      } catch(e) { err++; log.textContent+=`✗ ${vaga.jira}: ${e.message}\n`; }
+  const btn = document.getElementById('btn-confirmar-import');
+  const log = document.getElementById('import-log');
+  btn.disabled = true; btn.textContent = 'Importando…';
+  log.style.display = 'block'; log.textContent = '';
+  let ok = 0, err = 0;
+
+  for (const vaga of _importRows) {
+    // Remover campo de rastreamento antes de enviar
+    const { _defaults, ...payload } = vaga;
+    try {
+      await rpc('wc_salvar_vaga', { p_vaga: payload, p_jira_original: payload.jira });
+      ok++;
+    } catch(e) {
+      err++;
+      log.textContent += `✗ ${vaga.jira}: ${e.message}\n`;
     }
-    log.textContent=`✓ ${ok} importadas${err?` · ✗ ${err} erros`:''}\n`+log.textContent.replace(/^✓.*\n/,'');
-    log.scrollTop=0;
+    // Atualizar log a cada vaga
+    const progresso = `✓ ${ok} importadas${err ? ` · ✗ ${err} erros` : ''} (${ok+err}/${_importRows.length})\n`;
+    log.textContent = progresso + log.textContent.replace(/^✓.*\n/, '');
+    log.scrollTop = 0;
   }
-  log.textContent=`══ CONCLUÍDO ══\n✓ ${ok} vaga(s) importada(s)${err?`\n✗ ${err} erro(s) — veja acima`:''}\n\n`+log.textContent;
+
+  log.textContent = `══ CONCLUÍDO ══\n✓ ${ok} vaga(s) importada(s)${err ? `\n✗ ${err} erro(s)` : ''}\n\n` + log.textContent;
   await carregarVagas(); renderVagas(); atualizarBadgeFila();
-  btn.disabled=false; btn.textContent='✅ Importação concluída';
-  toast(`Importação: ${ok} vagas salvas${err?`, ${err} erros`:''}`, err?'info':'success');
+  btn.disabled = false; btn.textContent = '✅ Importação concluída';
+  toast(`${ok} vagas importadas${err ? `, ${err} erros` : ''}`, err ? 'info' : 'success');
 }
 
 // ── FILA DE VOUCHER ───────────────────────────
