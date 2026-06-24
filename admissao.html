@@ -3367,34 +3367,32 @@ async function abrirModalUsuario(u) {
   // Renderizar permissões por grupo hierárquico
   const container = document.getElementById('sistemas-permissoes');
   const perms = u?.permissoes || {};
-  const isGestorOuMaster = ['master','gestor'].includes(u?.perfil || 'equipe');
+  const isMasterPerfil = u?.perfil === 'master';
   if (container) {
-    container.innerHTML = PERMISSOES_GRUPOS.map(g => `
-      <div style="margin-bottom:16px">
-        <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--border)">${g.grupo}</div>
-        <div class="sistemas-grid">
-          ${g.itens.map(s => {
-            const isMasterPerfil = u?.perfil === 'master';
-            const disabled = s.em_breve || isMasterPerfil;
-            const checked  = isMasterPerfil ? true : (perms[s.id] === true);
-            return \`<div class="sistema-row" style="\${s.em_breve?'opacity:.4':''}">
-              <div class="sistema-info">
-                <strong>\${s.nome}\${s.em_breve?' <span style=\"font-size:9px;color:var(--muted);font-weight:400\">(em breve)</span>':''}</strong>
-                <span>\${s.descricao}</span>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="perm-\${s.id}" \${checked?'checked':''} \${disabled?'disabled':''}>
-                <span class="slider"></span>
-              </label>
-            </div>\`;
-          }).join('')}
-        </div>
-      </div>`).join('');
+    let html = '';
+    PERMISSOES_GRUPOS.forEach(function(g) {
+      html += '<div style="margin-bottom:16px">';
+      html += '<div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--border)">' + g.grupo + '</div>';
+      html += '<div class="sistemas-grid">';
+      g.itens.forEach(function(s) {
+        const disabled = s.em_breve || isMasterPerfil;
+        const checked  = isMasterPerfil ? true : (perms[s.id] === true);
+        const opacity  = s.em_breve ? 'opacity:.4' : '';
+        const emBreve  = s.em_breve ? ' <span style="font-size:9px;color:var(--muted);font-weight:400">(em breve)</span>' : '';
+        html += '<div class="sistema-row" style="' + opacity + '">';
+        html += '<div class="sistema-info"><strong>' + s.nome + emBreve + '</strong><span>' + s.descricao + '</span></div>';
+        html += '<label class="toggle-switch">';
+        html += '<input type="checkbox" id="perm-' + s.id + '"' + (checked ? ' checked' : '') + (disabled ? ' disabled' : '') + '>';
+        html += '<span class="slider"></span></label></div>';
+      });
+      html += '</div></div>';
+    });
+    container.innerHTML = html;
 
     // Atualiza toggles quando perfil muda
     document.getElementById('u-perfil').onchange = function() {
       const isMst = this.value === 'master';
-      PERMISSOES_GRUPOS.flatMap(g=>g.itens).forEach(s => {
+      PERMISSOES_GRUPOS.flatMap(function(g){return g.itens;}).forEach(function(s) {
         const inp = document.getElementById('perm-'+s.id);
         if (!inp) return;
         inp.disabled = isMst || !!s.em_breve;
