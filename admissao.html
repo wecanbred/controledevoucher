@@ -512,46 +512,66 @@
   .home-time { font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border); padding:5px 12px; border-radius:20px; white-space:nowrap; }
 
   /* Grid de módulos estilo G-Click */
-  .modules-grid, .home-module-grid {
+  /* ── HOME G-CLICK STYLE ── */
+  .modules-grid, .home-module-grid { display:block; margin-bottom:24px; }
+
+  /* Linha 1: cards KPI horizontais */
+  .home-kpi-row {
     display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap:18px; margin-bottom:32px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap:14px; margin-bottom:14px;
   }
-  /* Em telas muito largas, vai para 5 colunas */
-  @media (min-width: 1600px) {
-    .modules-grid, .home-module-grid { grid-template-columns: repeat(5, 1fr); }
-  }
-  .module-card {
+  .home-kpi-card {
     background:var(--surface); border:1px solid var(--border);
-    border-radius:16px; padding:26px 24px 20px;
-    cursor:pointer; transition:all .2s; position:relative; overflow:hidden;
-    display:flex; flex-direction:column; gap:12px; min-height:160px;
+    border-radius:14px; padding:20px 24px;
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; transition:all .18s; position:relative; overflow:hidden;
   }
-  .module-card::before {
-    content:''; position:absolute; top:0; left:0; right:0; height:4px;
-    background:var(--mc-color, var(--accent));
+  .home-kpi-card::after {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+    background:var(--mc-color, var(--accent)); border-radius:14px 0 0 14px;
   }
-  .module-card:hover {
-    transform:translateY(-4px);
-    box-shadow:0 12px 40px rgba(0,0,0,.3);
-    border-color:var(--mc-color, var(--accent));
+  .home-kpi-card:hover { border-color:var(--mc-color,var(--accent)); transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.25); }
+  .hkc-left  { display:flex; align-items:center; gap:16px; }
+  .hkc-icon  { font-size:36px; width:50px; text-align:center; flex-shrink:0; }
+  .hkc-label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:4px; }
+  .hkc-sub   { font-size:12px; color:var(--muted); }
+  .hkc-right { text-align:right; flex-shrink:0; }
+  .hkc-value { font-size:52px; font-weight:900; line-height:1; color:var(--mc-color,var(--accent)); }
+  .hkc-arrow { font-size:11px; color:var(--muted); margin-top:4px; }
+  .home-kpi-card:hover .hkc-arrow { color:var(--mc-color,var(--accent)); }
+
+  /* Linha 2: cards de navegação menores */
+  .home-nav-row {
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap:14px;
   }
-  .module-card .mc-icon { font-size:32px; }
-  .module-card .mc-label { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; font-weight:700; }
-  .module-card .mc-value { font-size:42px; font-weight:900; color:var(--mc-color, var(--accent)); line-height:1; }
-  .module-card .mc-sub { font-size:12.5px; color:var(--muted); }
-  .module-card .mc-badge {
-    position:absolute; top:16px; right:16px;
-    background:var(--mc-color, var(--accent)); color:#fff;
-    font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;
-    display:none;
+  .home-nav-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:18px 20px;
+    cursor:pointer; transition:all .18s; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; gap:6px;
   }
-  .module-card .mc-badge.visible { display:block; }
-  .module-card .mc-arrow {
-    margin-top:auto; font-size:12px; color:var(--muted);
-    display:flex; align-items:center; gap:4px;
+  .home-nav-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:var(--mc-color,var(--accent));
   }
-  .module-card:hover .mc-arrow { color:var(--mc-color, var(--accent)); }
+  .home-nav-card:hover { border-color:var(--mc-color,var(--accent)); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.2); }
+  .hnc-icon  { font-size:26px; margin-bottom:4px; }
+  .hnc-label { font-size:13px; font-weight:700; color:var(--text); }
+  .hnc-sub   { font-size:11.5px; color:var(--muted); flex:1; }
+  .hnc-arrow { font-size:11px; color:var(--muted); margin-top:6px; }
+  .home-nav-card:hover .hnc-arrow { color:var(--mc-color,var(--accent)); }
+
+  @media(max-width:768px) {
+    .home-kpi-row { grid-template-columns:1fr !important; }
+    .home-nav-row { grid-template-columns:1fr 1fr !important; }
+    .hkc-value { font-size:38px; }
+  }
+  @media(max-width:480px) {
+    .home-nav-row { grid-template-columns:1fr !important; }
+  }
 
   /* Seção de atividade recente */
   .home-sections { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-bottom:20px; }
@@ -2213,21 +2233,48 @@ async function renderHome() {
     },
   ].filter(m => !m.hidden);
 
-  const grid = document.getElementById('modules-grid');
-  if (grid) {
-    grid.innerHTML = modulos.map(m => `
-      <div class="module-card" style="--mc-color:${m.color}"
-           onclick="${m.external ? `window.open('${m.external}')` : `navTo('${m.page}')`}">
-        <div class="mc-badge ${m.badge?'visible':''}">${m.value || ''}</div>
-        <div class="mc-icon">${m.icon}</div>
-        <div class="mc-label">${m.label}</div>
-        ${m.value!=='' ? `<div class="mc-value">${m.value}</div>` : ''}
-        <div class="mc-sub">${m.sub}</div>
-        <div class="mc-arrow">Acessar <span>→</span></div>
-      </div>`).join('');
-  }
+  // ── Cards de destaque (linha horizontal) ────
+  const destaques = modulos.filter(m => m.value !== '' || m.badge);
+  const resto     = modulos.filter(m => m.value === '' && !m.badge);
 
-  // Vagas recentes
+  const grid = document.getElementById('modules-grid');
+  if (!grid) return;
+
+  grid.innerHTML = `
+    <!-- LINHA 1: Cards de contadores largos -->
+    <div class="home-kpi-row">
+      ${destaques.map(m => `
+        <div class="home-kpi-card" style="--mc-color:${m.color}"
+             onclick="${m.external ? `window.open('${m.external}')` : `navTo('${m.page}')`}">
+          <div class="hkc-left">
+            <div class="hkc-icon">${m.icon}</div>
+            <div>
+              <div class="hkc-label">${m.label}</div>
+              <div class="hkc-sub">${m.sub}</div>
+            </div>
+          </div>
+          <div class="hkc-right">
+            <div class="hkc-value">${m.value !== '' ? m.value : ''}</div>
+            <div class="hkc-arrow">Acessar →</div>
+          </div>
+          <div class="hkc-bar"></div>
+        </div>`).join('')}
+    </div>
+
+    <!-- LINHA 2: Cards de navegação menores -->
+    <div class="home-nav-row">
+      ${resto.map(m => `
+        <div class="home-nav-card" style="--mc-color:${m.color}"
+             onclick="${m.external ? `window.open('${m.external}')` : `navTo('${m.page}')`}">
+          <div class="hnc-icon">${m.icon}</div>
+          <div class="hnc-label">${m.label}</div>
+          <div class="hnc-sub">${m.sub}</div>
+          <div class="hnc-arrow">Acessar →</div>
+        </div>`).join('')}
+    </div>
+  `;
+
+  // ── Vagas recentes ───────────────────────────
   const vagasEl = document.getElementById('home-vagas-recentes');
   if (vagasEl) {
     const recentes = vagasNoEscopo().slice(0,5);
@@ -2244,7 +2291,7 @@ async function renderHome() {
       : '<div style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma vaga no seu escopo</div>';
   }
 
-  // Indicações recentes
+  // ── Indicações recentes ──────────────────────
   const indEl = document.getElementById('home-ind-recentes');
   if (indEl) {
     const recentes = INDICACOES.slice(0,5);
