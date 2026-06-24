@@ -3,753 +3,361 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sistema de Voucher — WeCan BR</title>
+<title>Administração de Pessoas — WeCan</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{
-  --bg:#150a20;--surface:#211132;--surface2:#2c1740;--surface3:#38204e;
-  --border:#432a5c;--accent:#63ccb0;--accent-dim:#4aa890;--brand:#4f0672;
-  --success:#22c55e;--danger:#ef4444;--warning:#f59e0b;--voucher:#4f7cff;
-  --text:#efe9f7;--muted:#a394bf;--radius:10px;--font:'Segoe UI',system-ui,sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex}
-::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  :root {
+    --bg:        #150a20;
+    --surface:   #211132;
+    --surface2:  #2c1740;
+    --surface3:  #38204e;
+    --border:    #432a5c;
+    --accent:    #63ccb0;
+    --accent-dim:#4aa890;
+    --brand:     #4f0672;
+    --voucher:   #4f7cff;
+    --success:   #22c55e;
+    --danger:    #ef4444;
+    --warning:   #f59e0b;
+    --text:      #efe9f7;
+    --muted:     #a394bf;
+    --radius:    10px;
+    --font:      'Segoe UI', system-ui, sans-serif;
+  }
 
-/* LOGIN */
-#login-page{position:fixed;inset:0;background:radial-gradient(circle at 18% 18%,rgba(99,204,176,.1),transparent 45%),radial-gradient(circle at 85% 80%,rgba(79,6,114,.35),transparent 55%),var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px}
-.login-box{width:400px;max-width:100%}
-.login-head{margin-bottom:26px}.login-head h1{font-size:26px;font-weight:900;letter-spacing:1px}.login-head .sub{color:var(--accent);font-size:13px;font-style:italic;margin-top:4px}
-.login-error{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:none}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; }
+  
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--surface3); }
 
-/* SIDEBAR */
-#sidebar{width:226px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;display:none}
-.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
-.sidebar-logo .mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--voucher),#3a5fd4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;margin-bottom:8px}
-.sidebar-logo h2{font-size:13px;font-weight:800;letter-spacing:.4px}.sidebar-logo span{font-size:11px;color:var(--muted)}
-nav{flex:1;padding:8px 0;overflow-y:auto}
-nav a{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;transition:all .15s;text-decoration:none}
-nav a:hover{color:var(--text);background:var(--surface2)}
-nav a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(99,204,176,.10);font-weight:600}
-.ico{width:18px;text-align:center;font-size:14px}
-.count-badge{margin-left:auto;background:var(--surface3);color:var(--muted);font-size:10.5px;padding:1px 7px;border-radius:20px;font-weight:700}
-.sidebar-user{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0}
-.user-info{flex:1;min-width:0}.user-info strong{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-info span{color:var(--muted);font-size:10.5px}
-.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer}
-.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
+  /* SIDEBAR STYLING */
+  #sidebar { width: 260px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; position: relative; z-index: 100; transition: transform 0.3s ease; }
+  .logo-area { text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .logo-area h2 { font-size: 1.2rem; color: var(--accent); letter-spacing: 1px; }
+  .logo-area span { font-size: 0.75rem; color: var(--muted); block-size: auto; }
+  
+  .nav-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .nav-item { display: flex; align-items: center; padding: 12px 16px; border-radius: var(--radius); color: var(--text); text-decoration: none; font-size: 0.95rem; cursor: pointer; transition: background 0.2s; }
+  .nav-item:hover, .nav-item.active { background: var(--surface2); color: var(--accent); }
+  
+  .user-box { padding-top: 15px; border-top: 1px solid var(--border); margin-top: 15px; display: flex; flex-direction: column; gap: 5px; }
+  .user-name { font-size: 0.85rem; font-weight: bold; color: var(--text); }
+  .user-role { font-size: 0.75rem; color: var(--muted); }
+  .btn-logout { background: transparent; border: none; color: var(--danger); font-size: 0.8rem; cursor: pointer; text-align: left; padding: 4px 0; width: max-content; }
 
-/* MAIN */
-#main{margin-left:226px;flex:1;padding:26px 32px;min-height:100vh;display:none}
-.page{display:none}.page.active{display:block}
-.page-header{margin-bottom:22px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.page-header h1{font-size:21px;font-weight:800}.page-header p{color:var(--muted);font-size:12.5px;margin-top:4px}
+  /* MAIN CONTENT AREA */
+  #main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 30px; }
+  .header-content { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+  .header-title h1 { font-size: 1.6rem; font-weight: 600; }
+  .header-title p { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  
+  /* DASHBOARD CARDS */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+  .card-metric { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 8px; }
+  .card-metric .title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .card-metric .value { font-size: 1.8rem; font-weight: bold; color: var(--text); }
+  .card-metric .sub { font-size: 0.75rem; color: var(--accent); }
 
-/* KPI */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
-.card-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
-.card-value{font-size:28px;font-weight:800;margin-top:6px}
-.card-value.teal{color:var(--accent)}.card-value.green{color:var(--success)}.card-value.red{color:var(--danger)}.card-value.blue{color:var(--voucher)}
-.card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+  /* TAB VIEW & TABLES */
+  .view-container { display: none; }
+  .view-container.active { display: block; }
+  
+  .filter-bar { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius); margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .input-control { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; outline: none; min-width: 200px; }
+  .input-control:focus { border-color: var(--accent); }
+  
+  .btn { background: var(--brand); color: var(--text); padding: 10px 18px; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; font-weight: 500; transition: opacity 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn:hover { opacity: 0.9; }
+  .btn-accent { background: var(--accent); color: var(--bg); font-weight: 600; }
+  
+  .table-responsive { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; width: 100%; }
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+  th { background: var(--surface2); color: var(--muted); font-weight: 600; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  td { padding: 14px 18px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  
+  .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+  .badge-active { background: rgba(34,197,94,0.15); color: var(--success); }
+  .badge-pending { background: rgba(245,158,11,0.15); color: var(--warning); }
 
-/* TOOLBAR */
-.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-.toolbar input,.toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none}
-.toolbar input{flex:1;min-width:200px}.toolbar input::placeholder{color:var(--muted)}
-.toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
+  /* ACTIONS BUTTONS */
+  .actions-cell { display: flex; gap: 8px; }
+  .btn-table { background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.85rem; }
+  .btn-table-danger { color: var(--danger); }
 
-/* BUTTONS */
-.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.btn-primary{background:var(--accent);color:var(--brand)}.btn-primary:hover{background:#7adcc4}
-.btn-danger{background:rgba(239,68,68,.13);color:var(--danger);border:1px solid rgba(239,68,68,.3)}.btn-danger:hover{background:var(--danger);color:#fff}
-.btn-success{background:rgba(34,197,94,.13);color:var(--success);border:1px solid rgba(34,197,94,.3)}.btn-success:hover{background:var(--success);color:#fff}
-.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
-.btn-warning{background:rgba(245,158,11,.13);color:var(--warning);border:1px solid rgba(245,158,11,.3)}.btn-warning:hover{background:var(--warning);color:#000}
-.btn-sm{padding:5px 11px;font-size:12px}.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+  /* MODAL */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 2000; }
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+  .modal-box { background: var(--surface); border: 1px solid var(--border); width: 100%; max-width: 550px; border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .modal-header h3 { font-size: 1.2rem; color: var(--text); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group-full { grid-column: span 2; }
+  .form-group label { font-size: 0.8rem; color: var(--muted); }
+  
+  /* MOBILE TRIGGER */
+  #menu-toggle { display: none; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; cursor: pointer; }
 
-/* TABLE */
-.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
-table.main-table{width:100%;border-collapse:collapse;font-size:12.5px}
-table.main-table thead th{background:var(--surface2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0}
-table.main-table tbody tr{border-bottom:1px solid rgba(46,51,80,.4)}
-table.main-table tbody tr:hover td{background:rgba(99,204,176,.06)}
-table.main-table td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
-.actions-cell{display:flex;gap:6px;align-items:center}
-.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap}
-.pill-ativo{background:rgba(34,197,94,.14);color:var(--success)}
-.pill-inativo{background:rgba(239,68,68,.14);color:var(--danger)}
-.pill-muted{background:var(--surface3);color:var(--muted)}
-.empty-state{text-align:center;padding:50px 20px;color:var(--muted)}
-.empty-state .ico{font-size:32px;margin-bottom:10px}
-
-/* MODAL */
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center;padding:20px}
-.modal-backdrop.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto}
-.modal-head{padding:22px 26px 0}.modal-head h2{font-size:16.5px;margin-bottom:4px}.modal-head p{font-size:12px;color:var(--muted);margin-bottom:16px}
-.modal-body{padding:0 26px 6px}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 26px 22px;border-top:1px solid var(--border);margin-top:6px}
-
-/* FORM */
-.form-group{margin-bottom:14px}
-.form-group label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none}
-.form-group input::placeholder{color:var(--muted)}
-.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-row.three{grid-template-columns:1fr 1fr 1fr}
-.section-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
-
-/* HISTÓRICO */
-.hist-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;align-items:flex-start}
-.hist-row:last-child{border-bottom:none}
-.hist-ico{width:28px;height:28px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
-.hist-main{flex:1}.hist-tipo{font-weight:700}.hist-sub{color:var(--muted);font-size:11.5px;margin-top:2px}
-
-/* TOAST */
-#toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;max-width:340px}
-#toast.show{opacity:1}#toast.success{border-color:var(--success);color:var(--success)}#toast.error{border-color:var(--danger);color:var(--danger)}#toast.info{border-color:var(--voucher);color:var(--voucher)}
-
-/* EXPORTAR */
-.export-preview{background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow:auto;margin-bottom:14px;font-size:12px}
-.export-preview table{width:100%;border-collapse:collapse}
-.export-preview th{background:var(--surface3);padding:6px 10px;text-align:left;color:var(--muted);position:sticky;top:0;white-space:nowrap}
-.export-preview td{padding:5px 10px;border-top:1px solid var(--border);white-space:nowrap}
-
-/* FORM LOGIN */
-.form-group-l{margin-bottom:14px}
-.form-group-l label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
-.form-group-l input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none}
-.form-group-l input:focus{border-color:var(--accent)}
-.btn-primary-full{background:var(--accent);color:var(--brand);width:100%;padding:10px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-family:var(--font);font-weight:700;margin-top:4px}
-.btn-primary-full:disabled{opacity:.5;cursor:not-allowed}
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); }
+    #main-content { padding: 16px; }
+    #menu-toggle { display: block; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group-full { grid-column: span 1; }
+  }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-page">
-  <div class="login-box">
-    <div class="login-head">
-      <h1>🎟️ Voucher</h1>
-      <p class="sub">Sistema de Controle — WeCan BR</p>
+  <aside id="sidebar">
+    <div class="logo-area">
+      <h2>WeCan BR</h2>
+      <span>Adm. de Pessoas</span>
     </div>
-    <div class="login-error" id="login-error"></div>
-    <div class="form-group-l"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@wecanbr.com.br"/></div>
-    <div class="form-group-l"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••"/></div>
-    <button class="btn-primary-full" id="btn-entrar" onclick="fazerLogin()">Entrar</button>
-  </div>
-</div>
-
-<!-- SIDEBAR -->
-<div id="sidebar">
-  <div class="sidebar-logo">
-    <div class="mark">🎟</div>
-    <h2>VOUCHER · CONTROLE</h2>
-    <span>WeCan BR</span>
-  </div>
-  <nav>
-    <a onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
-    <a onclick="navTo('controle')" data-page="controle"><span class="ico">☰</span> Controle de Vouchers <span class="count-badge" id="badge-ativos">0</span></a>
-    <a onclick="navTo('inativar')" data-page="inativar"><span class="ico">⊘</span> Inativar Colaborador</a>
-    <a onclick="navTo('exportar')" data-page="exportar"><span class="ico">↓</span> Exportar Planilha</a>
-    <a onclick="navTo('historico')" data-page="historico"><span class="ico">🕐</span> Histórico</a>
-    <a onclick="navTo('usuarios')" data-page="usuarios" id="nav-usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
-  </nav>
-  <div class="sidebar-user">
-    <div class="user-avatar" id="user-avatar">?</div>
-    <div class="user-info"><strong id="user-nome">—</strong><span id="user-perfil">—</span></div>
-    <button class="btn-logout" onclick="fazerLogout()">Sair</button>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div id="main">
-
-  <!-- DASHBOARD -->
-  <div class="page active" id="page-dashboard">
-    <div class="page-header"><div><h1>Dashboard</h1><p>Visão geral do sistema de Voucher</p></div>
-      <button class="btn btn-ghost btn-sm" onclick="atualizarDados()">🔄 Atualizar</button>
+    
+    <nav class="nav-menu">
+      <div class="nav-item active" onclick="switchView('dashboard')">Painel Geral</div>
+      <div class="nav-item" onclick="switchView('colaboradores')">Colaboradores</div>
+      <div class="nav-item" onclick="switchView('afastamentos')">Férias e Afastamentos</div>
+      <div class="nav-item" onclick="switchView('configuracoes')">Configurações</div>
+    </nav>
+    
+    <div class="user-box">
+      <div class="user-name" id="userName display">Carregando...</div>
+      <div class="user-role">Analista de DP</div>
+      <button class="btn-logout" onclick="executarLogout()">Sair do Sistema</button>
     </div>
-    <div class="cards-grid">
-      <div class="card"><div class="card-label">Colaboradores Ativos</div><div class="card-value teal" id="kpi-ativos">—</div><div class="card-sub">com voucher ativo</div></div>
-      <div class="card"><div class="card-label">Inativos</div><div class="card-value red" id="kpi-inativos">—</div><div class="card-sub">desligados</div></div>
-      <div class="card"><div class="card-label">Total Geral</div><div class="card-value blue" id="kpi-total">—</div><div class="card-sub">no sistema</div></div>
-      <div class="card"><div class="card-label">Ida</div><div class="card-value green" id="kpi-ida">—</div><div class="card-sub">turno chegada</div></div>
-      <div class="card"><div class="card-label">Volta</div><div class="card-value" style="color:var(--warning)" id="kpi-volta">—</div><div class="card-sub">turno saída</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Por Unidade</div>
-        <div id="dash-unidades"></div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Últimas Inativações</div>
-        <div id="dash-inativacoes"></div>
+  </aside>
+
+  <main id="main-content">
+    <div class="header-content">
+      <button id="menu-toggle" onclick="toggleSidebarMobile()">☰ Menu</button>
+      <div class="header-title">
+        <h1 id="view-title">Painel Geral</h1>
+        <p id="view-subtitle">Indicadores em tempo real da operação de administração de pessoal.</p>
       </div>
     </div>
-  </div>
 
-  <!-- CONTROLE -->
-  <div class="page" id="page-controle">
-    <div class="page-header">
-      <div><h1>Controle de Vouchers</h1><p>Colaboradores com benefício de voucher cadastrados</p></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="atualizarDados()">🔄 Atualizar</button>
-        <button class="btn btn-primary" onclick="abrirModalColab(null)">+ Adicionar Colaborador</button>
+    <section id="view-dashboard" class="view-container active">
+      <div class="metrics-grid">
+        <div class="card-metric">
+          <span class="title">Total de Ativos</span>
+          <span class="value" id="m-ativos">0</span>
+          <span class="sub">Registrados em loco</span>
+        </div>
+        <div class="card-metric">
+          <span class="title">Férias Programadas</span>
+          <span class="value" id="m-ferias">0</span>
+          <span class="sub">Para este mês</span>
+        </div>
+        <div class="card-metric">
+          <span class="title">Admissões Recentes</span>
+          <span class="value" id="m-admissoes">0</span>
+          <span class="sub">Últimos 30 dias</span>
+        </div>
       </div>
-    </div>
-    <div class="toolbar">
-      <input type="text" id="busca-colab" placeholder="Buscar por nome, matrícula, CPF…" oninput="renderControle()"/>
-      <select id="filtro-status-colab" onchange="renderControle()">
-        <option value="ATIVO">Ativos</option>
-        <option value="INATIVO">Inativos</option>
-        <option value="TODOS">Todos</option>
-      </select>
-      <select id="filtro-trajeto" onchange="renderControle()">
-        <option value="">Todos os trajetos</option>
-        <option value="IDA">IDA</option>
-        <option value="VOLTA">VOLTA</option>
-        <option value="IDA E VOLTA">IDA E VOLTA</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table class="main-table">
-        <thead><tr><th>Status</th><th>Matrícula</th><th>Nome</th><th>Unidade</th><th>Horário</th><th>Trajeto</th><th>Cod Voucher</th><th>Aplicativo</th><th>Dt. Inclusão</th><th>Ações</th></tr></thead>
-        <tbody id="tbody-controle"></tbody>
-      </table>
-    </div>
-    <p id="controle-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
-  </div>
+    </section>
 
-  <!-- INATIVAR -->
-  <div class="page" id="page-inativar">
-    <div class="page-header"><div><h1>Inativar Colaborador</h1><p>Busque pelo nome ou matrícula</p></div></div>
-    <div class="toolbar">
-      <input type="text" id="busca-inat" placeholder="Nome ou matrícula…" oninput="buscarParaInativar()"/>
-    </div>
-    <div id="inat-resultados"></div>
-  </div>
+    <section id="view-colaboradores" class="view-container">
+      <div class="filter-bar">
+        <input type="text" class="input-control" id="busca-colab" placeholder="Filtrar por nome ou CPF..." oninput="filtrarColaboradores()"/>
+        <button class="btn btn-accent" onclick="abrirModalColab()">+ Novo Colaborador</button>
+      </div>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Matrícula</th>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Cargo</th>
+              <th>Centro de Custo</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-colaboradores-body">
+            </tbody>
+        </table>
+      </div>
+    </section>
 
-  <!-- EXPORTAR -->
-  <div class="page" id="page-exportar">
-    <div class="page-header"><div><h1>Exportar Planilha</h1><p>Gera o arquivo no padrão Uber/99 para upload</p></div></div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;max-width:520px;margin-bottom:20px">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Data Base do Turno</label>
-          <input type="date" id="exp-data-base"/>
+    <section id="view-afastamentos" class="view-container">
+      <div class="filter-bar">
+        <p>Controle Integrado de Escalas de Férias, Licenças Médicas e Afastamentos Temporários.</p>
+      </div>
+    </section>
+
+    <section id="view-configuracoes" class="view-container">
+      <div class="filter-bar">
+        <p>Configurações de integração com banco de dados Supabase e parametrização de layouts.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal-colaborador">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Cadastro de Colaborador</h3>
+      </div>
+      <div class="form-grid">
+        <div class="form-group form-group-full">
+          <label>Nome Completo</label>
+          <input type="text" id="c-nome" class="input-control"/>
         </div>
         <div class="form-group">
-          <label>Data Vencimento (FDS, opcional)</label>
-          <input type="date" id="exp-data-venc"/>
+          <label>CPF</label>
+          <input type="text" id="c-cpf" class="input-control" placeholder="000.000.000-00"/>
+        </div>
+        <div class="form-group">
+          <label>Matrícula</label>
+          <input type="text" id="c-matricula" class="input-control"/>
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="c-cargo" class="input-control"/>
+        </div>
+        <div class="form-group">
+          <label>Centro de Custo</label>
+          <input type="text" id="c-cc" class="input-control"/>
         </div>
       </div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Deixe "Vencimento" em branco para modo normal (dia a dia). Preencha para modo FDS (sexta → segunda).</p>
-      <button class="btn btn-primary" onclick="gerarExportacao()">📊 Gerar Prévia</button>
-      <button class="btn btn-ghost" id="btn-baixar-xlsx" onclick="baixarExcel()" style="display:none;margin-left:8px">⬇️ Baixar Excel</button>
-    </div>
-    <div class="export-preview" id="export-preview" style="display:none">
-      <table><thead id="exp-head"></thead><tbody id="exp-body"></tbody></table>
-    </div>
-    <p id="exp-info" style="color:var(--muted);font-size:12px;margin-top:10px"></p>
-  </div>
-
-  <!-- HISTÓRICO -->
-  <div class="page" id="page-historico">
-    <div class="page-header"><div><h1>Histórico</h1><p>Registro de todas as ações no sistema</p></div></div>
-    <div class="toolbar">
-      <input type="text" id="busca-hist" placeholder="Buscar por matrícula, tipo, responsável…" oninput="renderHistorico()"/>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
-      <div id="hist-lista"><div style="color:var(--muted);padding:20px 0;text-align:center">Carregando…</div></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button class="btn" style="background:var(--surface3);" onclick="fecharModalColab()">Cancelar</button>
+        <button class="btn btn-accent" onclick="salvarColaborador()">Salvar Registro</button>
+      </div>
     </div>
   </div>
 
-  <!-- USUÁRIOS -->
-  <div class="page" id="page-usuarios">
-    <div class="page-header">
-      <div><h1>Usuários do Voucher</h1><p>Gerencie quem tem acesso ao sistema de Voucher</p></div>
-      <button class="btn btn-primary" onclick="abrirModalUsuario(null)">+ Novo Usuário</button>
-    </div>
-    <div class="table-wrap">
-      <table class="main-table">
-        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
-        <tbody id="tbody-usuarios"></tbody>
-      </table>
-    </div>
-  </div>
+  <script src="shared.js"></script>
+  <script>
+    let _colaboradores = [];
 
-</div><!-- /main -->
-
-<!-- MODAL COLABORADOR -->
-<div class="modal-backdrop" id="modal-colab">
-  <div class="modal">
-    <div class="modal-head"><h2 id="mc-title">Adicionar Colaborador</h2><p>Dados do colaborador com benefício de Voucher</p></div>
-    <div class="modal-body">
-      <input type="hidden" id="mc-id"/>
-      <div class="form-row">
-        <div class="form-group"><label>Matrícula *</label><input type="text" id="mc-matricula" placeholder="WE000000"/></div>
-        <div class="form-group"><label>Unidade</label><input type="text" id="mc-unidade" placeholder="HUB Campinas"/></div>
-      </div>
-      <div class="form-group"><label>Nome Completo *</label><input type="text" id="mc-nome" placeholder="NOME EM MAIÚSCULO"/></div>
-      <div class="form-row">
-        <div class="form-group"><label>CPF</label><input type="text" id="mc-cpf" placeholder="000.000.000-00"/></div>
-        <div class="form-group"><label>Celular</label><input type="text" id="mc-celular" placeholder="11999999999"/></div>
-      </div>
-      <hr class="section-divider"/>
-      <div class="form-row three">
-        <div class="form-group"><label>Hora Entrada</label><input type="text" id="mc-entrada" placeholder="00:00"/></div>
-        <div class="form-group"><label>Hora Saída</label><input type="text" id="mc-saida" placeholder="08:00"/></div>
-        <div class="form-group"><label>Trajeto</label>
-          <select id="mc-trajeto"><option value="">Calcular auto</option><option>IDA</option><option>VOLTA</option><option>IDA E VOLTA</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Código do Voucher</label><input type="text" id="mc-codvoucher"/></div>
-        <div class="form-group"><label>Valor</label><input type="text" id="mc-valor" placeholder="100,00"/></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Aplicativo</label>
-          <select id="mc-app"><option>UBER/99</option><option>UBER</option><option>99</option><option>OUTRO</option></select>
-        </div>
-        <div class="form-group"><label>Benefício Original</label><input type="text" id="mc-beneficio" placeholder="VT + VOUCHER"/></div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="fecharModal('modal-colab')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar-colab" onclick="salvarColab()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL USUÁRIO VOUCHER -->
-<div class="modal-backdrop" id="modal-usuario">
-  <div class="modal" style="width:480px">
-    <div class="modal-head"><h2 id="mu-title">Novo Usuário</h2><p>Acesso ao sistema de Voucher</p></div>
-    <div class="modal-body">
-      <input type="hidden" id="u-id"/>
-      <div class="form-group"><label>Nome</label><input type="text" id="u-nome" placeholder="NOME COMPLETO"/></div>
-      <div class="form-group"><label>E-mail</label><input type="email" id="u-email"/></div>
-      <div class="form-group"><label>Senha</label><input type="text" id="u-senha" placeholder="Deixe em branco para manter"/></div>
-      <div class="form-group"><label>Perfil</label>
-        <select id="u-perfil">
-          <option value="usuario">Usuário (visualiza e inativa)</option>
-          <option value="master">Master (gerencia usuários e exporta)</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar-u" onclick="salvarUsuario()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-<script src="shared.js"></script>
-<script>
-// ════════════════════════════════════════
-//  voucher.html — Supabase nativo
-// ════════════════════════════════════════
-let vSession = null;
-let COLABORADORES = [];
-let HISTORICO_LISTA = [];
-
-const VOUCHER_SESSAO_KEY = 'wecan_voucher_session';
-
-// ── Login ──────────────────────────────
-async function fazerLogin() {
-  const email = document.getElementById('l-email').value.trim().toLowerCase();
-  const senha = document.getElementById('l-senha').value;
-  const err   = document.getElementById('login-error');
-  const btn   = document.getElementById('btn-entrar');
-  err.style.display='none';
-  if (!email||!senha) { err.textContent='Informe e-mail e senha.'; err.style.display='block'; return; }
-  btn.disabled=true; btn.textContent='Entrando…';
-  try {
-    // Usa o mesmo login do sistema principal (tabela usuarios)
-    const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
-    vSession = resp.sessao;
-    salvarSessao(resp.sessao);
-    iniciarApp();
-  } catch(e) {
-    err.textContent = e.message || 'E-mail ou senha incorretos.';
-    err.style.display='block';
-  } finally { btn.disabled=false; btn.textContent='Entrar'; }
-}
-document.addEventListener('keydown', e => { if(e.key==='Enter') fazerLogin(); });
-
-function iniciarApp() {
-  document.getElementById('login-page').style.display = 'none';
-  document.getElementById('sidebar').style.display   = 'flex';
-  document.getElementById('main').style.display      = 'block';
-  document.getElementById('user-nome').textContent   = vSession.nome;
-  document.getElementById('user-perfil').textContent = vSession.perfil;
-  const initials=(vSession.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
-  document.getElementById('user-avatar').textContent = initials;
-  document.getElementById('nav-usuarios').style.display = vSession.perfil==='master'?'flex':'none';
-  atualizarDados();
-  navTo('dashboard');
-}
-
-function fazerLogout() {
-  rpc('wc_logout',{}).catch(()=>{});
-  limparSessaoSalva();
-  vSession=null;
-  document.getElementById('login-page').style.display='flex';
-  document.getElementById('sidebar').style.display='none';
-  document.getElementById('main').style.display='none';
-}
-
-// Verificar sessão já salva
-(function() {
-  const s = carregarSessaoSalva();
-  if (s) { vSession=s; iniciarApp(); }
-})();
-
-// ── Dados ──────────────────────────────
-async function atualizarDados() {
-  try {
-    const [rc, rh] = await Promise.all([
-      rpc('wc_voucher_listar', { p_status:'TODOS' }),
-      rpc('wc_voucher_historico', {})
-    ]);
-    COLABORADORES     = rc.itens || [];
-    HISTORICO_LISTA   = rh.historico || [];
-    const ativa = document.querySelector('.page.active');
-    if (ativa) navTo(ativa.id.replace('page-',''));
-    // Badge
-    const nAtivos = COLABORADORES.filter(c=>c.status==='ATIVO').length;
-    const badge = document.getElementById('badge-ativos');
-    if (badge) badge.textContent = nAtivos;
-  } catch(e) { toast(e.message,'error'); }
-}
-
-// ── Nav ────────────────────────────────
-function navTo(id) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
-  const page=document.getElementById('page-'+id); if(!page)return;
-  page.classList.add('active');
-  document.querySelector(`nav a[data-page="${id}"]`)?.classList.add('active');
-  if(id==='dashboard') renderDashboard();
-  if(id==='controle')  renderControle();
-  if(id==='historico') renderHistorico();
-  if(id==='usuarios')  renderUsuarios();
-  if(id==='inativar')  { document.getElementById('busca-inat').value=''; document.getElementById('inat-resultados').innerHTML=''; }
-}
-
-// ── Dashboard ──────────────────────────
-function renderDashboard() {
-  const ativos   = COLABORADORES.filter(c=>c.status==='ATIVO').length;
-  const inativos = COLABORADORES.filter(c=>c.status==='INATIVO').length;
-  const total    = COLABORADORES.length;
-  const ida      = COLABORADORES.filter(c=>c.status==='ATIVO'&&c.trajeto==='IDA').length;
-  const volta    = COLABORADORES.filter(c=>c.status==='ATIVO'&&c.trajeto==='VOLTA').length;
-  ['ativos','inativos','total','ida','volta'].forEach((k,i)=>{
-    const el=document.getElementById('kpi-'+k); if(el) el.textContent=[ativos,inativos,total,ida,volta][i];
-  });
-  // Por unidade
-  const porUnidade={};
-  COLABORADORES.filter(c=>c.status==='ATIVO').forEach(c=>{const u=c.unidade||'Sem unidade';porUnidade[u]=(porUnidade[u]||0)+1;});
-  const maxU=Math.max(...Object.values(porUnidade),1);
-  const uEl=document.getElementById('dash-unidades');
-  if(uEl) uEl.innerHTML=Object.entries(porUnidade).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px">
-      <span style="flex:1">${k}</span>
-      <div style="width:80px;height:6px;background:var(--surface2);border-radius:3px"><div style="width:${Math.round(v/maxU*100)}%;height:6px;background:var(--accent);border-radius:3px"></div></div>
-      <span style="color:var(--muted);min-width:20px;text-align:right">${v}</span>
-    </div>`).join('')||'<p style="color:var(--muted);font-size:12.5px">Sem dados</p>';
-  // Últimas inativações
-  const iEl=document.getElementById('dash-inativacoes');
-  const inats=HISTORICO_LISTA.filter(h=>h.tipo&&h.tipo.toUpperCase().includes('INATIV')).slice(0,8);
-  if(iEl) iEl.innerHTML=inats.length?inats.map(h=>`
-    <div class="hist-row">
-      <div class="hist-ico">⊘</div>
-      <div class="hist-main">
-        <div class="hist-tipo">${h.matricula} — ${h.motivo||'—'}</div>
-        <div class="hist-sub">${h.responsavel||'—'} · ${h.created_at?new Date(h.created_at).toLocaleDateString('pt-BR'):''}</div>
-      </div>
-    </div>`).join(''):'<p style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma inativação registrada</p>';
-}
-
-// ── Controle ───────────────────────────
-function definirTrajeto(entrada, saida) {
-  if(!entrada||!saida) return null;
-  const hE=parseInt((entrada||'').split(':')[0],10);
-  const hS=parseInt((saida||'').split(':')[0],10);
-  if(hE>=0&&hE<=4) return 'IDA';
-  if(hS>=0&&hS<=4) return 'VOLTA';
-  return null;
-}
-
-function renderControle() {
-  const busca  = (document.getElementById('busca-colab')?.value||'').toLowerCase();
-  const status = document.getElementById('filtro-status-colab')?.value||'ATIVO';
-  const trajeto= document.getElementById('filtro-trajeto')?.value||'';
-  let lista = status==='TODOS'?COLABORADORES:COLABORADORES.filter(c=>c.status===status);
-  if(busca)  lista=lista.filter(c=>[c.nome,c.matricula,c.cpf,c.unidade].some(f=>(f||'').toLowerCase().includes(busca)));
-  if(trajeto)lista=lista.filter(c=>(c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida))===trajeto);
-  const tbody=document.getElementById('tbody-controle');
-  const count=document.getElementById('controle-count');
-  if(!tbody)return;
-  if(!lista.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="ico">🎟️</div>Nenhum colaborador encontrado</div></td></tr>`;if(count)count.textContent='';return;}
-  if(count) count.textContent=`${lista.length} colaborador(es)`;
-  tbody.innerHTML=lista.map(c=>{
-    const traj=c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida)||'—';
-    const dataInc=c.data_inclusao?new Date(c.data_inclusao+'T00:00').toLocaleDateString('pt-BR'):'—';
-    const mc=(JSON.stringify(c)||'').replace(/'/g,"&apos;");
-    return`<tr>
-      <td><span class="pill ${c.status==='ATIVO'?'pill-ativo':'pill-inativo'}">${c.status}</span></td>
-      <td><strong>${c.matricula||'—'}</strong></td>
-      <td>${c.nome||'—'}</td>
-      <td>${c.unidade||'—'}</td>
-      <td>${[c.hora_entrada,c.hora_saida].filter(Boolean).join(' AS ')||'—'}</td>
-      <td><span class="pill pill-muted">${traj}</span></td>
-      <td>${c.cod_voucher||'—'}</td>
-      <td>${c.aplicativo||'—'}</td>
-      <td>${dataInc}</td>
-      <td class="actions-cell">
-        <button class="btn btn-ghost btn-sm" onclick='abrirModalColab(${JSON.stringify(c)})'>Editar</button>
-        ${c.status==='ATIVO'
-          ?`<button class="btn btn-warning btn-sm" onclick="abrirInativar('${c.matricula}','${(c.nome||'').replace(/'/g,"\\'")}')">Inativar</button>`
-          :`<button class="btn btn-success btn-sm" onclick="reativar('${c.matricula}')">Reativar</button>`
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Validação de Sessão a partir do arquivo compartilhado shared.js
+      if (typeof verificarSessao === 'function') {
+        const sessaoValida = verificarSessao();
+        if (!sessaoValida) {
+          window.location.href = 'index.html';
+          return;
         }
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-// ── Modal colaborador ──────────────────
-function abrirModalColab(c) {
-  document.getElementById('mc-title').textContent = c?'Editar Colaborador':'Adicionar Colaborador';
-  document.getElementById('mc-id').value        = c?.id||'';
-  document.getElementById('mc-matricula').value = c?.matricula||'';
-  document.getElementById('mc-unidade').value   = c?.unidade||'';
-  document.getElementById('mc-nome').value      = c?.nome||'';
-  document.getElementById('mc-cpf').value       = c?.cpf||'';
-  document.getElementById('mc-celular').value   = c?.celular||'';
-  document.getElementById('mc-entrada').value   = c?.hora_entrada||'';
-  document.getElementById('mc-saida').value     = c?.hora_saida||'';
-  document.getElementById('mc-trajeto').value   = c?.trajeto||'';
-  document.getElementById('mc-codvoucher').value= c?.cod_voucher||'';
-  document.getElementById('mc-valor').value     = c?.valor||'100,00';
-  document.getElementById('mc-app').value       = c?.aplicativo||'UBER/99';
-  document.getElementById('mc-beneficio').value = c?.beneficio_original||'';
-  abrirModal('modal-colab');
-}
-
-async function salvarColab() {
-  const btn=document.getElementById('btn-salvar-colab');
-  const g=id=>document.getElementById(id).value.trim();
-  const colab={
-    id:g('mc-id')||undefined,
-    matricula:g('mc-matricula'),nome:g('mc-nome'),unidade:g('mc-unidade'),
-    cpf:g('mc-cpf'),celular:g('mc-celular'),
-    hora_entrada:g('mc-entrada'),hora_saida:g('mc-saida'),
-    horario_full:[g('mc-entrada'),g('mc-saida')].filter(Boolean).join(' AS '),
-    trajeto:g('mc-trajeto')||null,
-    cod_voucher:g('mc-codvoucher'),valor:g('mc-valor')||'100,00',
-    aplicativo:g('mc-app'),beneficio_original:g('mc-beneficio')
-  };
-  if(!colab.matricula||!colab.nome){toast('Matrícula e nome são obrigatórios.','error');return;}
-  btn.disabled=true;btn.textContent='Salvando…';
-  try{
-    await rpc('wc_voucher_adicionar',{p_colab:colab});
-    fecharModal('modal-colab');await atualizarDados();
-    toast('Colaborador salvo!','success');
-  }catch(e){toast(e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='Salvar';}
-}
-
-// ── Inativar ───────────────────────────
-let _inatMatricula='';
-function buscarParaInativar(){
-  const busca=(document.getElementById('busca-inat').value||'').toLowerCase();
-  const el=document.getElementById('inat-resultados');
-  if(busca.length<2){el.innerHTML='';return;}
-  const lista=COLABORADORES.filter(c=>c.status==='ATIVO'&&[c.nome,c.matricula].some(f=>(f||'').toLowerCase().includes(busca)));
-  if(!lista.length){el.innerHTML='<p style="color:var(--muted);font-size:13px;margin-top:12px">Nenhum colaborador ativo encontrado.</p>';return;}
-  el.innerHTML=lista.map(c=>`
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
-      <div style="flex:1"><strong>${c.nome}</strong><br/><span style="color:var(--muted);font-size:12px">${c.matricula} · ${c.unidade||'—'}</span></div>
-      <button class="btn btn-warning btn-sm" onclick="abrirInativar('${c.matricula}','${(c.nome||'').replace(/'/g,"\\'")}')">Inativar</button>
-    </div>`).join('');
-}
-
-function abrirInativar(matricula, nome) {
-  const motivo=prompt(`Motivo do desligamento de ${nome}:`);
-  if(motivo===null)return;
-  const obs=prompt('Observações (opcional):')||'';
-  inativarColab(matricula,motivo,obs);
-}
-
-async function inativarColab(matricula,motivo,obs) {
-  try{
-    await rpc('wc_voucher_inativar',{p_matricula:matricula,p_motivo:motivo,p_obs:obs});
-    await atualizarDados();
-    toast(`${matricula} inativado.`,'success');
-  }catch(e){toast(e.message,'error');}
-}
-
-async function reativar(matricula) {
-  if(!confirm(`Reativar ${matricula}?`))return;
-  try{
-    await rpc('wc_voucher_reativar',{p_matricula:matricula});
-    await atualizarDados();
-    toast('Reativado!','success');
-  }catch(e){toast(e.message,'error');}
-}
-
-// ── Exportar ───────────────────────────
-let _exportRows=[];
-function _parseHorario(h){const m=String(h).match(/(\d{2}:\d{2})\s+AS\s+(\d{2}:\d{2})/i);if(!m)return{entrada:null,saida:null};return{entrada:m[1],saida:m[2]};}
-function _fmtData(dt){return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();}
-function _fmtHora(dt){return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');}
-
-function calcularDatas(horario,dataBase,dataVenc){
-  const {entrada,saida}=_parseHorario(horario);
-  const vazio={dInicioIda:'',hInicioIda:'',dFimIda:'',hFimIda:'',dInicioVolta:'',hInicioVolta:'',dFimVolta:'',hFimVolta:''};
-  if(!entrada||!saida||!dataBase)return vazio;
-  const [hE,mE]=entrada.split(':').map(Number);
-  const [hS,mS]=saida.split(':').map(Number);
-  const [ano,mes,dia]=dataBase.split('-').map(Number);
-  const calc=(baseD,baseM,baseA,hMin,addMin)=>{const tot=hMin+addMin;const d=baseD+Math.floor(tot/1440);const h=((tot%1440)+1440)%1440;return new Date(baseA,baseM-1,d,Math.floor(h/60),h%60,0);};
-  if(dataVenc){
-    const [av,mv,dv]=dataVenc.split('-').map(Number);
-    return{
-      dInicioIda:_fmtData(calc(dia,mes,ano,hE*60+mE,-120)),hInicioIda:_fmtHora(calc(dia,mes,ano,hE*60+mE,-120)),
-      dFimIda:_fmtData(calc(dv,mv,av,hE*60+mE,60)),hFimIda:_fmtHora(calc(dv,mv,av,hE*60+mE,60)),
-      dInicioVolta:_fmtData(calc(dia,mes,ano,hS*60+mS,-60)),hInicioVolta:_fmtHora(calc(dia,mes,ano,hS*60+mS,-60)),
-      dFimVolta:_fmtData(calc(dv,mv,av,hS*60+mS,120)),hFimVolta:_fmtHora(calc(dv,mv,av,hS*60+mS,120))
-    };
-  }
-  const d1=dia+1;
-  return{
-    dInicioIda:_fmtData(calc(d1,mes,ano,hE*60+mE,-120)),hInicioIda:_fmtHora(calc(d1,mes,ano,hE*60+mE,-120)),
-    dFimIda:_fmtData(calc(d1,mes,ano,hE*60+mE,60)),hFimIda:_fmtHora(calc(d1,mes,ano,hE*60+mE,60)),
-    dInicioVolta:_fmtData(calc(d1,mes,ano,hS*60+mS,-60)),hInicioVolta:_fmtHora(calc(d1,mes,ano,hS*60+mS,-60)),
-    dFimVolta:_fmtData(calc(d1,mes,ano,hS*60+mS,120)),hFimVolta:_fmtHora(calc(d1,mes,ano,hS*60+mS,120))
-  };
-}
-
-function gerarExportacao(){
-  const dataBase=document.getElementById('exp-data-base').value;
-  const dataVenc=document.getElementById('exp-data-venc').value||null;
-  if(!dataBase){toast('Selecione a Data Base.','error');return;}
-  _exportRows=[];
-  let semVoucher=0;
-  COLABORADORES.filter(c=>c.status==='ATIVO').forEach(c=>{
-    const horario=c.horario_full||[c.hora_entrada,c.hora_saida].filter(Boolean).join(' AS ');
-    const trajeto=c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida);
-    if(!trajeto){semVoucher++;return;}
-    const d=calcularDatas(horario,dataBase,dataVenc);
-    _exportRows.push({
-      'TRAJETO':trajeto,'UNIDADE':c.unidade,'MATRICULA':c.matricula,'NOME COMPLETO':c.nome,
-      'CELULAR':c.celular,'CPF':c.cpf,
-      'DATA INICIO':trajeto==='IDA'?d.dInicioIda:d.dInicioVolta,
-      'HORA INICIO':trajeto==='IDA'?d.hInicioIda:d.hInicioVolta,
-      'DATA FIM':trajeto==='IDA'?d.dFimIda:d.dFimVolta,
-      'HORA FIM':trajeto==='IDA'?d.hFimIda:d.hFimVolta,
-      'VOUCHER':'','VALOR':c.valor||'100,00','MOTIVO':'ESCALA DE TRABALHO','APLICATIVO':c.aplicativo||'UBER/99'
+      }
+      
+      await carregarDadosIniciais();
     });
-  });
-  const prev=document.getElementById('export-preview');
-  const head=document.getElementById('exp-head');
-  const body=document.getElementById('exp-body');
-  const info=document.getElementById('exp-info');
-  const cols=Object.keys(_exportRows[0]||{});
-  head.innerHTML=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
-  body.innerHTML=_exportRows.slice(0,20).map(r=>`<tr>${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('');
-  prev.style.display='block';
-  info.textContent=`${_exportRows.length} colaborador(es) gerados${semVoucher?` · ${semVoucher} sem trajeto definido (ignorados)`:''}${_exportRows.length>20?' · mostrando primeiros 20':''}`;
-  document.getElementById('btn-baixar-xlsx').style.display='inline-flex';
-}
 
-function baixarExcel(){
-  if(!_exportRows.length){toast('Gere a prévia primeiro.','error');return;}
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.json_to_sheet(_exportRows);
-  ws['!cols']=Object.keys(_exportRows[0]).map(()=>({wch:18}));
-  XLSX.utils.book_append_sheet(wb,ws,'Vouchers');
-  XLSX.writeFile(wb,`vouchers_${document.getElementById('exp-data-base').value}.xlsx`);
-}
+    function switchView(viewName) {
+      document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      
+      const targetView = document.getElementById(`view-${viewName}`);
+      if (targetView) targetView.classList.add('active');
+      
+      // Encontrar item correspondente na lista
+      const ev = window.event;
+      if (ev && ev.target) ev.target.classList.add('active');
+      
+      // Atualizar Títulos da View
+      const t = document.getElementById('view-title');
+      const s = document.getElementById('view-subtitle');
+      if (viewName === 'dashboard') { t.textContent = 'Painel Geral'; s.textContent = 'Indicadores em tempo real da operação.'; }
+      if (viewName === 'colaboradores') { t.textContent = 'Gestão de Colaboradores'; s.textContent = 'Visualização e modificação de fichas cadastrais.'; }
+      if (viewName === 'afastamentos') { t.textContent = 'Férias e Afastamentos'; s.textContent = 'Gerenciamento de períodos de ausência legal.'; }
+      if (viewName === 'configuracoes') { t.textContent = 'Configurações de Sistema'; s.textContent = 'Ajustes globais do módulo.'; }
+    }
 
-// ── Histórico ──────────────────────────
-function renderHistorico(){
-  const busca=(document.getElementById('busca-hist')?.value||'').toLowerCase();
-  let lista=[...HISTORICO_LISTA];
-  if(busca)lista=lista.filter(h=>[h.matricula,h.tipo,h.motivo,h.responsavel].some(f=>(f||'').toLowerCase().includes(busca)));
-  const el=document.getElementById('hist-lista');
-  if(!el)return;
-  if(!lista.length){el.innerHTML='<div class="empty-state"><div class="ico">📋</div>Nenhum registro encontrado</div>';return;}
-  const ico={INATIVAÇÃO:'⊘',REATIVAÇÃO:'✅'}; 
-  el.innerHTML=lista.slice(0,100).map(h=>`
-    <div class="hist-row">
-      <div class="hist-ico">${ico[h.tipo]||'📌'}</div>
-      <div class="hist-main">
-        <div class="hist-tipo">${h.tipo||'—'} — Matrícula ${h.matricula||'—'}</div>
-        <div class="hist-sub">${h.motivo||'—'} · ${h.responsavel||'—'} · ${h.created_at?new Date(h.created_at).toLocaleString('pt-BR'):''}</div>
-      </div>
-    </div>`).join('');
-}
+    async function carregarDadosIniciais() {
+      try {
+        // Chamadas RPC simulando o padrão wecan para carregar contadores e listas
+        _colaboradores = await rpc('wc_dp_listar_colaboradores', { p_busca: '' }) || [];
+        renderizarTabelaColaboradores(_colaboradores);
+        
+        // Atualizar os cards de métricas baseados no retorno
+        document.getElementById('m-ativos').textContent = _colaboradores.filter(c => c.status === 'Ativo').length;
+        document.getElementById('m-ferias').textContent = _colaboradores.filter(c => c.status === 'Férias').length;
+        document.getElementById('m-admissoes').textContent = _colaboradores.length;
+      } catch (e) {
+        console.error("Erro ao conectar com as funções RPC do Supabase:", e);
+      }
+    }
 
-// ── Usuários ───────────────────────────
-async function renderUsuarios(){
-  const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
-  tbody.innerHTML='<tr><td colspan="5" style="padding:20px;color:var(--muted)">Carregando…</td></tr>';
-  try{
-    const r=await rpc('wc_voucher_listar_usuarios',{});
-    tbody.innerHTML=(r.usuarios||[]).map(u=>`<tr>
-      <td><strong>${u.nome}</strong></td><td>${u.email}</td>
-      <td><span class="pill pill-muted">${u.perfil}</span></td>
-      <td>${u.ativo?'<span class="pill pill-ativo">ATIVO</span>':'<span class="pill pill-inativo">INATIVO</span>'}</td>
-      <td class="actions-cell">
-        <button class="btn btn-ghost btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>Editar</button>
-        <button class="btn btn-ghost btn-sm" onclick="toggleUsuario('${u.id}')">${u.ativo?'Desativar':'Ativar'}</button>
-        <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${u.id}')">Excluir</button>
-      </td>
-    </tr>`).join('')||`<tr><td colspan="5"><div class="empty-state">Nenhum usuário</div></td></tr>`;
-  }catch(e){tbody.innerHTML=`<tr><td colspan="5" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;}
-}
+    function renderizarTabelaColaboradores(lista) {
+      const tbody = document.getElementById('lista-colaboradores-body');
+      tbody.innerHTML = '';
+      
+      if(lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted);">Nenhum colaborador encontrado.</td></tr>';
+        return;
+      }
 
-function abrirModalUsuario(u){
-  document.getElementById('mu-title').textContent=u?'Editar Usuário':'Novo Usuário';
-  document.getElementById('u-id').value=u?.id||'';
-  document.getElementById('u-nome').value=u?.nome||'';
-  document.getElementById('u-email').value=u?.email||'';
-  document.getElementById('u-senha').value='';
-  document.getElementById('u-perfil').value=u?.perfil||'usuario';
-  abrirModal('modal-usuario');
-}
+      lista.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${c.matricula || '-'}</td>
+          <td><strong>${c.nome}</strong></td>
+          <td>${c.cpf || '-'}</td>
+          <td>${c.cargo || '-'}</td>
+          <td>${c.centro_custo || '-'}</td>
+          <td><span class="badge ${c.status === 'Ativo' ? 'badge-active' : 'badge-pending'}">${c.status || 'Ativo'}</span></td>
+          <td class="actions-cell">
+            <button class="btn-table" onclick="editarColaborador(${c.id})">Editar</button>
+            <button class="btn-table btn-table-danger" onclick="desativarColaborador(${c.id})">Desativar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-async function salvarUsuario(){
-  const btn=document.getElementById('btn-salvar-u');
-  const u={id:document.getElementById('u-id').value||undefined,nome:document.getElementById('u-nome').value.trim(),email:document.getElementById('u-email').value.trim().toLowerCase(),senha:document.getElementById('u-senha').value||undefined,perfil:document.getElementById('u-perfil').value,permissoes:[]};
-  if(!u.nome||!u.email){toast('Informe nome e e-mail.','error');return;}
-  btn.disabled=true;btn.textContent='Salvando…';
-  try{
-    await rpc('wc_voucher_salvar_usuario',{p_usuario:u});
-    fecharModal('modal-usuario');renderUsuarios();toast('Usuário salvo!','success');
-  }catch(e){toast(e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='Salvar';}
-}
+    function filtrarColaboradores() {
+      const termo = document.getElementById('busca-colab').value.toLowerCase().trim();
+      const filtrados = _colaboradores.filter(c => 
+        c.nome.toLowerCase().includes(termo) || 
+        (c.cpf && c.cpf.includes(termo)) ||
+        (c.matricula && c.matricula.includes(termo))
+      );
+      renderizarTabelaColaboradores(filtrados);
+    }
 
-async function toggleUsuario(id){
-  try{const r=await rpc('wc_voucher_toggle_usuario',{p_id:id});renderUsuarios();toast(r.ativo?'Ativado.':'Desativado.','success');}catch(e){toast(e.message,'error');}
-}
-async function excluirUsuario(id){
-  if(!confirm('Excluir este usuário?'))return;
-  try{await rpc('wc_voucher_excluir_usuario',{p_id:id});renderUsuarios();toast('Excluído.','success');}catch(e){toast(e.message,'error');}
-}
+    function abrirModalColab() { document.getElementById('modal-colaborador').classList.add('open'); }
+    function fecharModalColab() { document.getElementById('modal-colaborador').classList.remove('open'); }
 
-// ── Helpers ────────────────────────────
-function abrirModal(id){document.getElementById(id)?.classList.add('open');}
-function fecharModal(id){document.getElementById(id)?.classList.remove('open');}
-document.addEventListener('click',e=>{if(e.target.classList.contains('modal-backdrop'))e.target.classList.remove('open');});
-function toast(msg,tipo){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.className='show'+(tipo?' '+tipo:'');clearTimeout(window._tt);window._tt=setTimeout(()=>el.className='',4500);}
-</script>
+    async function salvarColaborador() {
+      const dados = {
+        nome: document.getElementById('c-nome').value,
+        cpf: document.getElementById('c-cpf').value,
+        matricula: document.getElementById('c-matricula').value,
+        cargo: document.getElementById('c-cargo').value,
+        centro_custo: document.getElementById('c-cc').value,
+        status: 'Ativo'
+      };
+
+      if(!dados.nome) { alert('O campo Nome é obrigatório.'); return; }
+
+      try {
+        await rpc('wc_dp_salvar_colaborador', { p_colaborador: dados });
+        fecharModalColab();
+        await carregarDadosIniciais();
+      } catch(e) {
+        alert('Erro ao gravar dados: ' + e.message);
+      }
+    }
+
+    function toggleSidebarMobile() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    function executarLogout() {
+      if (typeof limparSessao === 'function') limparSessao();
+      window.location.href = 'index.html';
+    }
+  </script>
 </body>
 </html>
