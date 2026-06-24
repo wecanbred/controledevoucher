@@ -630,7 +630,7 @@
         <a id="nav-vagas"     onclick="navTo('vagas')"     data-page="vagas"><span class="ico">▤</span> Vagas / Admissões</a>
         <a id="nav-voucher"   onclick="navTo('voucher')"   data-page="voucher"><span class="ico">⇄</span> Fila de Voucher <span class="count-badge alert" id="nav-voucher-count">0</span></a>
         <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes"><span class="ico">📋</span> Indicações <span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
-        <a id="nav-usuarios"  onclick="navTo('usuarios')"  data-page="usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
+        <!-- nav-usuarios removido -->
       </div>
     </div>
 
@@ -638,12 +638,12 @@
       <button class="nav-group-header" onclick="toggleNavGroup('voucherapp')">
         <span>Adm. de Pessoal</span><span class="chevron">▾</span>
       </button>
-      <div class="nav-group-items" id="voucherapp-items">
-        <a id="nav-adp-dashboard" onclick="abrirVoucher('dashboard')" data-vp="dashboard" style="display:none"><span class="ico">📊</span> Dashboard</a>
-        <a id="nav-adp-controle"  onclick="abrirVoucher('controle')"  data-vp="controle"  style="display:none"><span class="ico">☰</span> Controle de Vouchers</a>
-        <a id="nav-adp-inativar"  onclick="abrirVoucher('inativar')"  data-vp="inativar"  style="display:none"><span class="ico">⊘</span> Inativar Colaborador</a>
-        <a id="nav-adp-exportar"  onclick="abrirVoucher('exportar')"  data-vp="exportar"  style="display:none"><span class="ico">↓</span> Exportar Planilha</a>
-        <a id="nav-adp-historico" onclick="abrirVoucher('historico')" data-vp="historico" style="display:none"><span class="ico">🕐</span> Histórico</a>
+      <div class="nav-group-items">
+        <a id="nav-adp-dashboard" onclick="irParaVoucher()" data-vp="dashboard" style="display:none"><span class="ico">📊</span> Dashboard</a>
+        <a id="nav-adp-controle"  onclick="irParaVoucher()" data-vp="controle"  style="display:none"><span class="ico">☰</span> Controle de Vouchers</a>
+        <a id="nav-adp-inativar"  onclick="irParaVoucher()" data-vp="inativar"  style="display:none"><span class="ico">⊘</span> Inativar Colaborador</a>
+        <a id="nav-adp-exportar"  onclick="irParaVoucher()" data-vp="exportar"  style="display:none"><span class="ico">↓</span> Exportar Planilha</a>
+        <a id="nav-adp-historico" onclick="irParaVoucher()" data-vp="historico" style="display:none"><span class="ico">🕐</span> Histórico</a>
       </div>
     </div>
 
@@ -1311,11 +1311,11 @@
       <div class="form-group">
         <label>Tipo de acesso</label>
         <select id="u-perfil">
-          <option value="equipe">Consultor (Equipe) — vê só suas vagas e operações</option>
-          <option value="gestor">Gestor — vê tudo de todas as operações</option>
-          <option value="onsite">Onsite — vê vagas das suas operações + autoriza Voucher</option>
-          <option value="master">Master — acesso total</option>
+          <option value="equipe">Consultor — acesso às próprias vagas e operações</option>
+          <option value="gestor">Gestor — acesso definido pelas permissões abaixo</option>
+          <option value="onsite">Onsite — acesso definido pelas permissões abaixo</option>
         </select>
+        <p style="font-size:11px;color:var(--muted);margin-top:5px">Master não aparece aqui — é configurado diretamente no banco.</p>
       </div>
     </div>
 
@@ -1844,17 +1844,53 @@ function trPill(s) {
 const VOUCHER_APP_URL = 'voucher.html';
 const REGIONAIS       = ['SPI','RIO/ES','CO/N','SPM'];
 
-const SISTEMAS_DISPONIVEIS = [
-  { id: 'selecao_admissao',  nome: 'Seleção & Admissão',     descricao: 'Vagas, admissões e fila de Voucher' },
-  { id: 'voucher_integrado', nome: 'Voucher · Integrado',    descricao: 'Sistema de controle de vouchers' },
-  { id: 'estoque_epis',      nome: 'Estoque de EPIs',        descricao: 'Colete, bota e luva por unidade' },
-  { id: 'indicacoes',        nome: 'Indicações de Currículos', descricao: 'Portal de currículos dos líderes' },
+// ── Permissões por grupo ──────────────────────────────────────
+const PERMISSOES_GRUPOS = [
+  { grupo: 'Seleção & Admissão', itens: [
+    { id:'rs_dashboard',   nome:'Dashboard',         descricao:'Gráficos e KPIs do processo seletivo' },
+    { id:'rs_vagas',       nome:'Vagas / Admissões', descricao:'Cadastro e acompanhamento de vagas' },
+    { id:'rs_voucher',     nome:'Fila de Voucher',   descricao:'Autorização de vouchers na fila' },
+    { id:'rs_indicacoes',  nome:'Indicações',        descricao:'Currículos enviados pelos líderes' },
+    { id:'rs_noshow',      nome:'No Show',           descricao:'Controle de ausências', em_breve:true },
+    { id:'rs_estoque_epi', nome:'Estoque de EPI',    descricao:'Colete, bota e luva por unidade', em_breve:true },
+  ]},
+  { grupo: 'Administração de Pessoal', itens: [
+    { id:'adp_voucher_dashboard', nome:'Voucher — Dashboard',         descricao:'Visão geral do sistema de Voucher' },
+    { id:'adp_voucher_controle',  nome:'Voucher — Controle',          descricao:'Lista de colaboradores com voucher' },
+    { id:'adp_voucher_inativar',  nome:'Voucher — Inativar',          descricao:'Inativar colaborador desligado' },
+    { id:'adp_voucher_exportar',  nome:'Voucher — Exportar Planilha', descricao:'Gera arquivo para a empresa de voucher' },
+    { id:'adp_voucher_historico', nome:'Voucher — Histórico',         descricao:'Registro de inativações e reativações' },
+  ]},
+  { grupo: 'Suporte', itens: [
+    { id:'sup_configuracoes',   nome:'Configurações',      descricao:'Tema, foto de perfil e preferências' },
+    { id:'sup_gestao_usuarios', nome:'Gestão de Usuários', descricao:'Criar e gerenciar acessos' },
+  ]},
+  { grupo: 'Cadastros', itens: [
+    { id:'cad_clientes', nome:'Clientes',         descricao:'Cadastro de clientes' },
+    { id:'cad_cc',       nome:'Centro de Custos', descricao:'Centros de custo por cliente' },
+    { id:'cad_deptos',   nome:'Departamentos',    descricao:'Departamentos por cliente' },
+  ]},
 ];
+const SISTEMAS_DISPONIVEIS = PERMISSOES_GRUPOS.flatMap(g=>g.itens).filter(i=>!i.em_breve);
 
 // ── helpers de acesso ─────────────────────────
-function podeVerTudo()         { return session && ['gestor','master'].includes(session.perfil); }
-function podeAutorizarVoucher(){ return session && ['gestor','master','onsite','equipe'].includes(session.perfil); }
-function ehMaster()            { return session && session.perfil === 'master'; }
+function podeVerTudo()  { return session && ['gestor','master'].includes(session.perfil); }
+function ehMaster()     { return session && session.perfil === 'master'; }
+function podeAdmin()    { return ['master','gestor'].includes(session?.perfil); }
+// temPermissao: Master tem tudo sempre. Gestor/Onsite dependem de session.permissoes.
+// Fallback: se permissoes não veio na sessão (wc_login antigo), usa perfil como antes.
+function temPermissao(id) {
+  if (!session) return false;
+  if (session.perfil === 'master') return true;
+  // Se permissoes existe na sessão, usa ela
+  if (session.permissoes && Object.keys(session.permissoes).length > 0)
+    return session.permissoes[id] === true;
+  // Fallback para sessões antigas (sem permissoes): gestor vê tudo, outros veem RS
+  if (session.perfil === 'gestor') return true;
+  const RS = ['rs_dashboard','rs_vagas','rs_voucher','rs_indicacoes'];
+  return RS.includes(id);
+}
+function podeAutorizarVoucher() { return temPermissao('rs_voucher'); }
 function vagasNoEscopo() {
   if (podeVerTudo()) return VAGAS;
   // Filtra por operações vinculadas ao usuário (Onsite) ou por e-mail/nome do consultor (Equipe)
@@ -2015,40 +2051,28 @@ async function iniciarSessao(conta) {
   const show = (id, visivel) => { if (el(id)) el(id).style.display = visivel ? 'flex' : 'none'; };
   const showBlock = (id, visivel) => { if (el(id)) el(id).style.display = visivel ? 'block' : 'none'; };
 
-  // ── Mapa de permissões dos itens do Voucher no menu ──
-  const VOUCHER_NAV = {
-    'nav-adp-dashboard': 'adp_voucher_dashboard',
-    'nav-adp-controle':  'adp_voucher_controle',
-    'nav-adp-inativar':  'adp_voucher_inativar',
-    'nav-adp-exportar':  'adp_voucher_exportar',
-    'nav-adp-historico': 'adp_voucher_historico',
-  };
-
   show('nav-dashboard',  temPermissao('rs_dashboard'));
   show('nav-vagas',      temPermissao('rs_vagas'));
   show('nav-voucher',    temPermissao('rs_voucher'));
   show('nav-indicacoes', temPermissao('rs_indicacoes'));
-  show('nav-usuarios',   false);
+  show('nav-usuarios',   false); // centralizado em Suporte
 
-  // Mostra grupo Adm. de Pessoal se tiver pelo menos 1 item liberado
-  const algumVoucher = Object.entries(VOUCHER_NAV).some(([navId, permId]) => temPermissao(permId));
-  showBlock('navgroup-voucherapp', algumVoucher);
-
-  // Mostra cada item do Adm. de Pessoal individualmente
-  Object.entries(VOUCHER_NAV).forEach(([navId, permId]) => {
-    show(navId, temPermissao(permId));
-  });
-
-  showBlock('nav-suporte-cadastros', temPermissao('cad_clientes') || temPermissao('cad_cc') || temPermissao('cad_deptos'));
-  show('nav-suporte-usuarios', podeAdmin());
+  const _algumVoucher = PERMISSOES_GRUPOS[1].itens.some(i => temPermissao(i.id));
+  showBlock('navgroup-voucherapp',   _algumVoucher);
+  // Itens individuais do Adm. de Pessoal
+  show('nav-adp-dashboard', temPermissao('adp_voucher_dashboard'));
+  show('nav-adp-controle',  temPermissao('adp_voucher_controle'));
+  show('nav-adp-inativar',  temPermissao('adp_voucher_inativar'));
+  show('nav-adp-exportar',  temPermissao('adp_voucher_exportar'));
+  show('nav-adp-historico', temPermissao('adp_voucher_historico'));
+  showBlock('nav-suporte-cadastros', temPermissao('cad_clientes')||temPermissao('cad_cc')||temPermissao('cad_deptos'));
+  show('nav-suporte-usuarios',       podeAdmin());
   if (podeAdmin() && el('cfg-logo-card')) el('cfg-logo-card').style.display = 'block';
 
-  // Redireciona para primeira tela com acesso
   window._homeDefaultPage = temPermissao('rs_dashboard') ? 'home'
     : temPermissao('rs_vagas') ? 'vagas'
     : temPermissao('rs_voucher') ? 'voucher'
-    : algumVoucher ? 'voucherapp'
-    : 'home';
+    : _algumVoucher ? 'voucherapp' : 'home';
   // botões de Cadastros (só aparecem depois que o _MAIN_HTML é reinserido, por isso via delegação)
   window._cadPodeCriar = podeVerTudo();
   document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
@@ -2124,12 +2148,10 @@ function navTo(id) {
 }
 function toggleNavGroup(nome) { document.getElementById('navgroup-'+nome).classList.toggle('collapsed'); }
 
-// Navega direto para o voucher.html (mesma aba, sem iframe)
-// A sessão está no localStorage — o voucher.html entra direto sem pedir login
-function abrirVoucher(pagina) {
-  window.location.href = VOUCHER_APP_URL;
-}
-function abrirVoucherEm(pagina) { abrirVoucher(pagina); }
+// Navega direto para voucher.html (mesma aba, sessão compartilhada)
+function irParaVoucher() { window.location.href = VOUCHER_APP_URL; }
+function abrirVoucherEm(pagina) { irParaVoucher(); }
+function carregarVoucherFrame() {}
 
 async function popularFiltroCC() {
   const sel = document.getElementById('filtro-cc');
@@ -3342,18 +3364,43 @@ async function abrirModalUsuario(u) {
     }
   }
 
-  // Renderizar sistemas com toggles
+  // Renderizar permissões por grupo hierárquico
   const container = document.getElementById('sistemas-permissoes');
-  const perms = u?.permissoes||{};
+  const perms = u?.permissoes || {};
+  const isGestorOuMaster = ['master','gestor'].includes(u?.perfil || 'equipe');
   if (container) {
-    container.innerHTML = SISTEMAS_DISPONIVEIS.map(s=>`
-      <div class="sistema-row">
-        <div class="sistema-info"><strong>${s.nome}</strong><span>${s.descricao}</span></div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="perm-${s.id}" ${perms[s.id]!==false?'checked':''}>
-          <span class="slider"></span>
-        </label>
+    container.innerHTML = PERMISSOES_GRUPOS.map(g => `
+      <div style="margin-bottom:16px">
+        <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--border)">${g.grupo}</div>
+        <div class="sistemas-grid">
+          ${g.itens.map(s => {
+            const isMasterPerfil = u?.perfil === 'master';
+            const disabled = s.em_breve || isMasterPerfil;
+            const checked  = isMasterPerfil ? true : (perms[s.id] === true);
+            return \`<div class="sistema-row" style="\${s.em_breve?'opacity:.4':''}">
+              <div class="sistema-info">
+                <strong>\${s.nome}\${s.em_breve?' <span style=\"font-size:9px;color:var(--muted);font-weight:400\">(em breve)</span>':''}</strong>
+                <span>\${s.descricao}</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="perm-\${s.id}" \${checked?'checked':''} \${disabled?'disabled':''}>
+                <span class="slider"></span>
+              </label>
+            </div>\`;
+          }).join('')}
+        </div>
       </div>`).join('');
+
+    // Atualiza toggles quando perfil muda
+    document.getElementById('u-perfil').onchange = function() {
+      const isMst = this.value === 'master';
+      PERMISSOES_GRUPOS.flatMap(g=>g.itens).forEach(s => {
+        const inp = document.getElementById('perm-'+s.id);
+        if (!inp) return;
+        inp.disabled = isMst || !!s.em_breve;
+        if (isMst) inp.checked = true;
+      });
+    };
   }
 
   abrirModal('modal-usuario');
@@ -3372,10 +3419,11 @@ async function salvarUsuario() {
   const operacoes = [...document.querySelectorAll('#ops-grid input[data-op-id]:checked')]
     .map(i => i.dataset.opId);
 
-  // Sistemas
+  // Permissões — todos os grupos
   const permissoes = {};
-  SISTEMAS_DISPONIVEIS.forEach(s => {
-    permissoes[s.id] = document.getElementById('perm-'+s.id)?.checked || false;
+  PERMISSOES_GRUPOS.flatMap(g=>g.itens).forEach(s => {
+    const inp = document.getElementById('perm-'+s.id);
+    permissoes[s.id] = inp ? inp.checked : false;
   });
 
   btn.disabled=true; btn.textContent='Salvando…';
