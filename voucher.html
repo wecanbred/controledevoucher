@@ -155,7 +155,7 @@ table.main-table td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
     <a onclick="navTo('inativar')" data-page="inativar"><span class="ico">⊘</span> Inativar Colaborador</a>
     <a onclick="navTo('exportar')" data-page="exportar"><span class="ico">↓</span> Exportar Planilha</a>
     <a onclick="navTo('historico')" data-page="historico"><span class="ico">🕐</span> Histórico</a>
-    <a onclick="navTo('usuarios')" data-page="usuarios" id="nav-usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
+    <!-- nav-usuarios removido — gerenciado em Suporte > Gestão de Usuários -->
   </nav>
   <div class="sidebar-user">
     <div class="user-avatar" id="user-avatar">?</div>
@@ -212,9 +212,6 @@ table.main-table td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
         <option value="IDA">IDA</option>
         <option value="VOLTA">VOLTA</option>
         <option value="IDA E VOLTA">IDA E VOLTA</option>
-      </select>
-      <select id="filtro-depto" onchange="renderControle()" style="display:none">
-        <option value="">Todos os departamentos</option>
       </select>
     </div>
     <div class="table-wrap">
@@ -294,13 +291,8 @@ table.main-table td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
       <input type="hidden" id="mc-id"/>
       <div class="form-row">
         <div class="form-group"><label>Matrícula *</label><input type="text" id="mc-matricula" placeholder="WE000000"/></div>
-        <div class="form-group"><label>Departamento / Unidade *</label>
-          <select id="mc-depto">
-            <option value="">Carregando…</option>
-          </select>
-        </div>
+        <div class="form-group"><label>Unidade</label><input type="text" id="mc-unidade" placeholder="HUB Campinas"/></div>
       </div>
-      <input type="hidden" id="mc-unidade"/>
       <div class="form-group"><label>Nome Completo *</label><input type="text" id="mc-nome" placeholder="NOME EM MAIÚSCULO"/></div>
       <div class="form-row">
         <div class="form-group"><label>CPF</label><input type="text" id="mc-cpf" placeholder="000.000.000-00"/></div>
@@ -360,13 +352,12 @@ table.main-table td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
 <script>
 // ════════════════════════════════════════
 //  voucher.html — Supabase nativo
-//  Auth: shared.js (mesmo login do admissao.html)
-//  Filtro: Onsite vê só seus departamentos
 // ════════════════════════════════════════
 let vSession = null;
-let COLABORADORES  = [];
+let COLABORADORES = [];
 let HISTORICO_LISTA = [];
-let DEPTOS_LISTA    = [];  // departamentos disponíveis para o usuário
+
+const VOUCHER_SESSAO_KEY = 'wecan_voucher_session';
 
 // ── Login ──────────────────────────────
 async function fazerLogin() {
@@ -378,6 +369,7 @@ async function fazerLogin() {
   if (!email||!senha) { err.textContent='Informe e-mail e senha.'; err.style.display='block'; return; }
   btn.disabled=true; btn.textContent='Entrando…';
   try {
+    // Usa o mesmo login do sistema principal (tabela usuarios)
     const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
     vSession = resp.sessao;
     salvarSessao(resp.sessao);
@@ -389,26 +381,16 @@ async function fazerLogin() {
 }
 document.addEventListener('keydown', e => { if(e.key==='Enter') fazerLogin(); });
 
-function ehAdmin() { return vSession && ['master','gestor'].includes(vSession.perfil); }
-
-async function iniciarApp() {
+function iniciarApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('sidebar').style.display   = 'flex';
   document.getElementById('main').style.display      = 'block';
   document.getElementById('user-nome').textContent   = vSession.nome;
-  document.getElementById('user-perfil').textContent = PERFIL_LABEL?.[vSession.perfil] || vSession.perfil;
+  document.getElementById('user-perfil').textContent = vSession.perfil;
   const initials=(vSession.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
   document.getElementById('user-avatar').textContent = initials;
-
-  // Usuários: só master
-  document.getElementById('nav-usuarios').style.display = vSession.perfil==='master'?'flex':'none';
-
-  // Filtro de depto na toolbar: só admin vê (Onsite já vem filtrado do banco)
-  const filtroDep = document.getElementById('filtro-depto');
-  if (filtroDep && ehAdmin()) filtroDep.style.display = 'block';
-
-  await carregarDeptos();
-  await atualizarDados();
+  // nav-usuarios removido
+  atualizarDados();
   navTo('dashboard');
 }
 
@@ -421,38 +403,11 @@ function fazerLogout() {
   document.getElementById('main').style.display='none';
 }
 
-// Verificar sessão já salva (mesmo mecanismo do admissao.html)
+// Verificar sessão já salva
 (function() {
   const s = carregarSessaoSalva();
   if (s) { vSession=s; iniciarApp(); }
 })();
-
-// ── Departamentos ───────────────────────
-async function carregarDeptos() {
-  try {
-    const r = await rpc('wc_voucher_deptos_disponiveis', {});
-    DEPTOS_LISTA = r.deptos || [];
-    popularSelectDeptos();
-  } catch(e) {
-    // Fallback: usa lista já carregada vazia
-    DEPTOS_LISTA = [];
-  }
-}
-
-function popularSelectDeptos() {
-  // Select do modal de colaborador
-  const sel = document.getElementById('mc-depto');
-  if (sel) {
-    sel.innerHTML = '<option value="">— Selecione o departamento —</option>' +
-      DEPTOS_LISTA.map(d => `<option value="${d.id}" data-nome="${d.descricao}">${d.descricao}</option>`).join('');
-  }
-  // Select do filtro na toolbar (admin)
-  const filtro = document.getElementById('filtro-depto');
-  if (filtro) {
-    filtro.innerHTML = '<option value="">Todos os departamentos</option>' +
-      DEPTOS_LISTA.map(d => `<option value="${d.id}">${d.descricao}</option>`).join('');
-  }
-}
 
 // ── Dados ──────────────────────────────
 async function atualizarDados() {
@@ -461,10 +416,11 @@ async function atualizarDados() {
       rpc('wc_voucher_listar', { p_status:'TODOS' }),
       rpc('wc_voucher_historico', {})
     ]);
-    COLABORADORES   = rc.itens    || [];
-    HISTORICO_LISTA = rh.historico || [];
+    COLABORADORES     = rc.itens || [];
+    HISTORICO_LISTA   = rh.historico || [];
     const ativa = document.querySelector('.page.active');
     if (ativa) navTo(ativa.id.replace('page-',''));
+    // Badge
     const nAtivos = COLABORADORES.filter(c=>c.status==='ATIVO').length;
     const badge = document.getElementById('badge-ativos');
     if (badge) badge.textContent = nAtivos;
@@ -533,11 +489,9 @@ function renderControle() {
   const busca  = (document.getElementById('busca-colab')?.value||'').toLowerCase();
   const status = document.getElementById('filtro-status-colab')?.value||'ATIVO';
   const trajeto= document.getElementById('filtro-trajeto')?.value||'';
-  const depto  = document.getElementById('filtro-depto')?.value||'';
   let lista = status==='TODOS'?COLABORADORES:COLABORADORES.filter(c=>c.status===status);
-  if(busca)  lista=lista.filter(c=>[c.nome,c.matricula,c.cpf,c.unidade,c.depto_nome].some(f=>(f||'').toLowerCase().includes(busca)));
+  if(busca)  lista=lista.filter(c=>[c.nome,c.matricula,c.cpf,c.unidade].some(f=>(f||'').toLowerCase().includes(busca)));
   if(trajeto)lista=lista.filter(c=>(c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida))===trajeto);
-  if(depto)  lista=lista.filter(c=>c.depto_id===depto);
   const tbody=document.getElementById('tbody-controle');
   const count=document.getElementById('controle-count');
   if(!tbody)return;
@@ -546,13 +500,12 @@ function renderControle() {
   tbody.innerHTML=lista.map(c=>{
     const traj=c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida)||'—';
     const dataInc=c.data_inclusao?new Date(c.data_inclusao+'T00:00').toLocaleDateString('pt-BR'):'—';
-    const unidadeLabel = c.depto_nome || c.unidade || '—';
     const mc=(JSON.stringify(c)||'').replace(/'/g,"&apos;");
     return`<tr>
       <td><span class="pill ${c.status==='ATIVO'?'pill-ativo':'pill-inativo'}">${c.status}</span></td>
       <td><strong>${c.matricula||'—'}</strong></td>
       <td>${c.nome||'—'}</td>
-      <td>${unidadeLabel}</td>
+      <td>${c.unidade||'—'}</td>
       <td>${[c.hora_entrada,c.hora_saida].filter(Boolean).join(' AS ')||'—'}</td>
       <td><span class="pill pill-muted">${traj}</span></td>
       <td>${c.cod_voucher||'—'}</td>
@@ -585,25 +538,15 @@ function abrirModalColab(c) {
   document.getElementById('mc-valor').value     = c?.valor||'100,00';
   document.getElementById('mc-app').value       = c?.aplicativo||'UBER/99';
   document.getElementById('mc-beneficio').value = c?.beneficio_original||'';
-  // Selecionar departamento
-  const selDepto = document.getElementById('mc-depto');
-  if (selDepto && c?.depto_id) selDepto.value = c.depto_id;
-  else if (selDepto) selDepto.value = '';
   abrirModal('modal-colab');
 }
 
 async function salvarColab() {
   const btn=document.getElementById('btn-salvar-colab');
   const g=id=>document.getElementById(id).value.trim();
-  const selDepto = document.getElementById('mc-depto');
-  const deptoId  = selDepto?.value || null;
-  const deptoOpt = selDepto?.selectedOptions[0];
-  const deptoNome= deptoOpt?.dataset.nome || g('mc-unidade') || '';
   const colab={
     id:g('mc-id')||undefined,
-    matricula:g('mc-matricula'),nome:g('mc-nome'),
-    depto_id: deptoId,
-    unidade:  deptoNome,
+    matricula:g('mc-matricula'),nome:g('mc-nome'),unidade:g('mc-unidade'),
     cpf:g('mc-cpf'),celular:g('mc-celular'),
     hora_entrada:g('mc-entrada'),hora_saida:g('mc-saida'),
     horario_full:[g('mc-entrada'),g('mc-saida')].filter(Boolean).join(' AS '),
