@@ -2617,9 +2617,20 @@ function baixarTemplateImportacao() {
 function excelDateToISO(v) {
   if (!v) return '';
   if (typeof v === 'string') {
-    const m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10);
+    const s = v.trim();
+    // dd/mm/aaaa
+    const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+    // aaaa-mm-dd
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+    // "junho, 2026" ou "junho 2026" → primeiro dia do mês
+    const meses = { janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',
+      julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12' };
+    const m2 = s.toLowerCase().match(/^(\w+)[,\s]+(\d{4})$/);
+    if (m2 && meses[m2[1]]) return `${m2[2]}-${meses[m2[1]]}-01`;
+    // mm/aaaa
+    const m3 = s.match(/^(\d{1,2})\/(\d{4})$/);
+    if (m3) return `${m3[2]}-${m3[1].padStart(2,'0')}-01`;
     return '';
   }
   if (typeof v === 'number') {
@@ -2664,14 +2675,17 @@ function carregarPreviewImportacao(input) {
       if (!rows || !rows.length) { mostrarErro('Planilha vazia ou formato inválido.'); return; }
       const cabecalho = (rows[0]||[]).map(c => (c||'').toString().trim());
 
-      // Mapear nome de coluna → índice (por label ou por campo interno)
+      // Mapear nome de coluna → índice
+      // Normaliza: remove *, espaços extras, converte para minúsculo
+      const norm = s => s.toLowerCase().replace(/\*/g,'').replace(/_/g,' ').trim();
       const colIdx = {};
-      IMPORT_COLS_ENXUTO.forEach(c => {
-        const label = c.label.replace(' *','').toLowerCase();
-        const idx = cabecalho.findIndex(h =>
-          h.toLowerCase() === label ||
-          h.toLowerCase() === c.campo.toLowerCase().replace(/_/g,' ')
-        );
+      IMPORT_COLS_ENXUTO.forEach((c, posicao) => {
+        const labelN = norm(c.label);
+        const campoN = norm(c.campo);
+        // Primeiro: por nome de coluna
+        let idx = cabecalho.findIndex(h => { const hn = norm(h); return hn === labelN || hn === campoN; });
+        // Fallback: por posição (se a planilha foi gerada pelo modelo do sistema)
+        if (idx < 0 && posicao < cabecalho.length) idx = posicao;
         if (idx >= 0) colIdx[c.campo] = idx;
       });
 
