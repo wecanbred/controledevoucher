@@ -2202,25 +2202,27 @@ function popularSelectCC() {
 }
 
 function preencherLocalPorCC() {
-  const sel  = document.getElementById('v-codigoHub');
-  const opt  = sel?.selectedOptions[0];
-  if (!opt || !opt.value) return;
-  // Montar endereço completo a partir dos atributos do CC
+  const sel = document.getElementById('v-codigoHub');
+  if (!sel?.value) return;
+  // Busca os dados do CC no array em memória (mais confiável que data-attributes)
+  const cc = CENTROS_CUSTO.find(c => c.cod === sel.value);
+  if (!cc) return;
   const partes = [
-    opt.dataset.logradouro,
-    opt.dataset.numero ? `Nº ${opt.dataset.numero}` : '',
-    opt.dataset.bairro,
-    opt.dataset.cidade,
-    opt.dataset.uf
+    cc.logradouro,
+    cc.numero ? `Nº ${cc.numero}` : '',
+    cc.bairro,
+    cc.cidade,
+    cc.uf
   ].filter(Boolean);
-  const local = document.getElementById('v-local');
-  if (local) local.value = partes.join(', ');
-  // Preencher UF/regional automaticamente
-  const uf = opt.dataset.uf;
-  if (uf) {
-    const regMap = { SP:'SPI', RJ:'RIO/ES', ES:'RIO/ES', AM:'CO/N', PA:'CO/N', MA:'CO/N' };
+  const localEl = document.getElementById('v-local');
+  if (localEl) localEl.value = partes.join(', ');
+  // Preencher regional automaticamente pelo UF
+  const regMap = { SP:'SPI', RJ:'RIO/ES', ES:'RIO/ES', AM:'CO/N', PA:'CO/N', MA:'CO/N',
+                   GO:'CO/N', DF:'CO/N', MT:'CO/N', MS:'CO/N', TO:'CO/N', RO:'CO/N',
+                   AC:'CO/N', RR:'CO/N', AP:'CO/N', PI:'CO/N' };
+  if (cc.uf) {
     const reg = document.getElementById('v-regional');
-    if (reg && regMap[uf]) reg.value = regMap[uf];
+    if (reg && regMap[cc.uf]) reg.value = regMap[cc.uf];
   }
 }
 
@@ -2387,7 +2389,9 @@ async function abrirModalVaga(jiraOuNull) {
   set('v-codigoHub', v?.codigoHub||'');
   set('v-regional', v?.regional||'SPI');
   set('v-mes', v?.mes||'');
-  set('v-local', v?.local||'');
+  // Preenche local pelo CC automaticamente (pode ser editado manualmente depois)
+  preencherLocalPorCC();
+  if (v?.local) set('v-local', v.local); // se já tinha local salvo, mantém
   set('v-modalidade', v?.modalidade||'');
   set('v-tempo', v?.tempo||'');
   set('v-cargo', v?.cargo||'');
