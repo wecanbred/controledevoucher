@@ -502,7 +502,7 @@
   .tema-preview { width:16px; height:16px; border-radius:4px; border:2px solid var(--border); flex-shrink:0; }
 
   /* ── HOME G-CLICK ── */
-  .home-wrap { max-width:1100px; }
+  .home-wrap { width:100%; }
   .home-header {
     display:flex; align-items:center; justify-content:space-between;
     margin-bottom:28px; gap:16px; flex-wrap:wrap;
@@ -511,15 +511,13 @@
   .home-greeting p  { color:var(--muted); font-size:13px; margin-top:4px; }
   .home-time { font-size:12px; color:var(--muted); background:var(--surface); border:1px solid var(--border); padding:5px 12px; border-radius:20px; white-space:nowrap; }
 
-  /* Grid de módulos estilo G-Click */
-  /* ── HOME G-CLICK STYLE ── */
-  .modules-grid, .home-module-grid { display:block; margin-bottom:24px; }
+  .modules-grid, .home-module-grid { display:block; margin-bottom:24px; width:100%; }
 
-  /* Linha 1: cards KPI horizontais */
+  /* Linha 1: cards KPI — sempre 1 linha, sem quebra */
   .home-kpi-row {
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap:14px; margin-bottom:14px;
+    grid-template-columns: repeat(3, 1fr);
+    gap:14px; margin-bottom:14px; width:100%;
   }
   .home-kpi-card {
     background:var(--surface); border:1px solid var(--border);
@@ -541,11 +539,11 @@
   .hkc-arrow { font-size:11px; color:var(--muted); margin-top:4px; }
   .home-kpi-card:hover .hkc-arrow { color:var(--mc-color,var(--accent)); }
 
-  /* Linha 2: cards de navegação menores */
+  /* Linha 2: cards de navegação — distribui igualmente */
   .home-nav-row {
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap:14px;
+    grid-template-columns: repeat(4, 1fr);
+    gap:14px; width:100%;
   }
   .home-nav-card {
     background:var(--surface); border:1px solid var(--border);
@@ -564,17 +562,22 @@
   .hnc-arrow { font-size:11px; color:var(--muted); margin-top:6px; }
   .home-nav-card:hover .hnc-arrow { color:var(--mc-color,var(--accent)); }
 
+  @media(max-width:1024px) {
+    .home-kpi-row { grid-template-columns: repeat(3, 1fr) !important; }
+    .home-nav-row { grid-template-columns: repeat(2, 1fr) !important; }
+  }
   @media(max-width:768px) {
-    .home-kpi-row { grid-template-columns:1fr !important; }
-    .home-nav-row { grid-template-columns:1fr 1fr !important; }
+    .home-kpi-row { grid-template-columns: 1fr !important; }
+    .home-nav-row { grid-template-columns: 1fr 1fr !important; }
     .hkc-value { font-size:38px; }
   }
   @media(max-width:480px) {
-    .home-nav-row { grid-template-columns:1fr !important; }
+    .home-kpi-row { grid-template-columns: 1fr !important; }
+    .home-nav-row { grid-template-columns: 1fr !important; }
   }
 
   /* Seção de atividade recente */
-  .home-sections { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-bottom:20px; }
+  .home-sections { display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-bottom:20px; width:100%; }
   @media(max-width:900px){ .home-sections { grid-template-columns:1fr; } }
   .home-section { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
   .home-section h3 { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
