@@ -626,11 +626,11 @@
         <span>Seleção &amp; Admissão</span><span class="chevron">▾</span>
       </button>
       <div class="nav-group-items">
-        <a class="active" onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
-        <a onclick="navTo('vagas')" data-page="vagas"><span class="ico">▤</span> Vagas / Admissões</a>
-        <a onclick="navTo('voucher')" data-page="voucher" id="nav-voucher"><span class="ico">⇄</span> Fila de Voucher <span class="count-badge alert" id="nav-voucher-count">0</span></a>
-        <a onclick="navTo('indicacoes')" data-page="indicacoes" id="nav-indicacoes"><span class="ico">📋</span> Indicações <span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
-        <a onclick="navTo('usuarios')" data-page="usuarios" id="nav-usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
+        <a id="nav-dashboard" onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
+        <a id="nav-vagas"     onclick="navTo('vagas')"     data-page="vagas"><span class="ico">▤</span> Vagas / Admissões</a>
+        <a id="nav-voucher"   onclick="navTo('voucher')"   data-page="voucher"><span class="ico">⇄</span> Fila de Voucher <span class="count-badge alert" id="nav-voucher-count">0</span></a>
+        <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes"><span class="ico">📋</span> Indicações <span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
+        <a id="nav-usuarios"  onclick="navTo('usuarios')"  data-page="usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
       </div>
     </div>
 
@@ -2006,13 +2006,28 @@ async function iniciarSessao(conta) {
   const initials = (session.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
   const avEl = document.getElementById('user-avatar');
   avEl.textContent = initials;
-  document.getElementById('nav-voucher').style.display      = podeAutorizarVoucher() ? 'flex' : 'none';
-  document.getElementById('nav-indicacoes').style.display   = 'flex';
-  document.getElementById('nav-usuarios').style.display     = ehMaster() ? 'flex' : 'none';
-  document.getElementById('navgroup-voucherapp').style.display  = ehMaster() ? 'block' : 'none';
-  document.getElementById('nav-suporte-cadastros').style.display = podeVerTudo() ? 'block' : 'none';
-  document.getElementById('nav-suporte-usuarios').style.display = ehMaster() ? 'flex' : 'none';
-  if (ehMaster()) document.getElementById('cfg-logo-card').style.display = 'block';
+  const perfil = session.perfil; // 'equipe' | 'gestor' | 'onsite' | 'master'
+  const ehOnsite  = perfil === 'onsite';
+  const ehEquipe  = perfil === 'equipe';
+
+  // ── Time de Seleção — o que cada perfil vê ──
+  // Dashboard: Seleção → Gestor, Equipe, Master (NÃO Onsite)
+  const el = id => document.getElementById(id);
+  const show = (id, visivel) => { if (el(id)) el(id).style.display = visivel ? 'flex' : 'none'; };
+  const showBlock = (id, visivel) => { if (el(id)) el(id).style.display = visivel ? 'block' : 'none'; };
+
+  show('nav-dashboard',  !ehOnsite);
+  show('nav-vagas',      !ehOnsite);
+  show('nav-voucher',    podeAutorizarVoucher());
+  show('nav-indicacoes', !ehOnsite);
+  show('nav-usuarios',   ehMaster());
+  showBlock('navgroup-voucherapp',   ehMaster());
+  showBlock('nav-suporte-cadastros', podeVerTudo());
+  show('nav-suporte-usuarios',       ehMaster());
+  if (ehMaster() && el('cfg-logo-card')) el('cfg-logo-card').style.display = 'block';
+
+  // Se Onsite, redirecionar home direto para Fila de Voucher
+  window._homeDefaultPage = ehOnsite ? 'voucher' : 'home';
   // botões de Cadastros (só aparecem depois que o _MAIN_HTML é reinserido, por isso via delegação)
   window._cadPodeCriar = podeVerTudo();
   document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
@@ -2041,7 +2056,7 @@ async function iniciarSessao(conta) {
   popularFiltroConsultor();
   popularFiltroCC();
   iniciarConfiguracoes();
-  navTo('home');
+  navTo(window._homeDefaultPage || 'home');
 }
 
 async function initApp() {
@@ -2218,6 +2233,7 @@ async function renderHome() {
       icon:'▤', label:'Vagas em Andamento', value:cnt.vagas_andamento,
       sub:'processo ativo', color:'#63ccb0', page:'vagas',
       badge: cnt.vagas_andamento > 0,
+      hidden: session?.perfil === 'onsite',
     },
     {
       icon:'⇄', label:'Fila de Voucher', value:cnt.voucher_pendente,
@@ -2229,10 +2245,12 @@ async function renderHome() {
       icon:'📋', label:'Indicações Pendentes', value:cnt.indicacoes_pendentes,
       sub:'aguardando análise', color:'#f59e0b', page:'indicacoes',
       badge: cnt.indicacoes_pendentes > 0,
+      hidden: session?.perfil === 'onsite',
     },
     {
       icon:'◆', label:'Dashboard', value:'',
       sub:'visão geral e gráficos', color:'#a855f7', page:'dashboard',
+      hidden: session?.perfil === 'onsite',
     },
     {
       icon:'📦', label:'Estoque de EPIs', value:'',
