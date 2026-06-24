@@ -1775,7 +1775,13 @@ async function carregarUsuariosSistema() {
   try {
     const resp = await rpc('wc_listar_consultores', {});
     USUARIOS_SISTEMA = (resp.usuarios || [])
-      .map(u => ({ id: u.id, nome: u.nome, perfil: u.perfil, email: u.email || '' }))
+      .map(u => ({
+        id:         u.id,
+        nome:       u.nome,
+        perfil:     u.perfil,
+        email:      u.email || '',
+        operacoes:  u.operacoes || []   // [{id, nome, regional}]
+      }))
       .sort((a,b) => a.nome.localeCompare(b.nome));
   } catch(e) {
     USUARIOS_SISTEMA = [];
@@ -2565,13 +2571,13 @@ async function abrirImportacaoLote() {
     USUARIOS_SISTEMA.map(u => `<option value="${u.nome}">${u.nome}</option>`).join('');
   if (!podeVerTudo()) { selC.value = session.nome; selC.disabled = true; }
   else selC.disabled = false;
+  selC.onchange = () => impFiltrarCCsPorConsultor();
 
-  // Popular select de CC
-  const selCC = document.getElementById('imp-default-cc');
-  selCC.innerHTML = '<option value="">— nenhum padrão —</option>' +
-    CENTROS_CUSTO.filter(c => c.ativo !== false).map(c =>
-      `<option value="${c.cod}" data-local="${[c.logradouro,c.numero?'Nº '+c.numero:'',c.bairro,c.cidade,c.uf].filter(Boolean).join(', ')}" data-uf="${c.uf||''}">${c.cod} — ${c.descricao}</option>`
-    ).join('');
+  // Popular select de CC (todos inicialmente)
+  impPopularSelectCC(null);
+
+  // Se equipe/consultor logado, filtrar já de início
+  if (!podeVerTudo()) impFiltrarCCsPorConsultor();
 
   // Popular select de depto
   const selD = document.getElementById('imp-default-depto');
@@ -2579,6 +2585,48 @@ async function abrirImportacaoLote() {
     DEPTOS.map(d => `<option value="${d.descricao}">${d.codigo ? d.codigo+' — ' : ''}${d.descricao}</option>`).join('');
 
   abrirModal('modal-importacao');
+}
+
+function impPopularSelectCC(ccsPermitidos) {
+  // ccsPermitidos = Set de cods, ou null = mostrar todos
+  const selCC = document.getElementById('imp-default-cc');
+  const valorAtual = selCC.value;
+  const lista = CENTROS_CUSTO.filter(c =>
+    c.ativo !== false && (!ccsPermitidos || ccsPermitidos.has(c.cod))
+  );
+  selCC.innerHTML = '<option value="">— nenhum padrão —</option>' +
+    lista.map(c => {
+      const local = [c.logradouro, c.numero?'Nº '+c.numero:'', c.bairro, c.cidade, c.uf].filter(Boolean).join(', ');
+      return `<option value="${c.cod}" data-local="${local}" data-uf="${c.uf||''}">${c.cod} — ${c.descricao}</option>`;
+    }).join('');
+  // Manter seleção anterior se ainda disponível
+  if (valorAtual && lista.find(c => c.cod === valorAtual)) selCC.value = valorAtual;
+}
+
+function impFiltrarCCsPorConsultor() {
+  const nomeConsultor = document.getElementById('imp-default-consultor')?.value;
+  if (!nomeConsultor) { impPopularSelectCC(null); return; }
+
+  const usuario = USUARIOS_SISTEMA.find(u => u.nome === nomeConsultor);
+  // Master/Gestor ou sem operações cadastradas → mostrar todos
+  if (!usuario || !usuario.operacoes?.length ||
+      ['master','gestor'].includes(usuario.perfil)) {
+    impPopularSelectCC(null);
+    return;
+  }
+
+  // Filtrar CCs cujo cod está entre as operações do usuário
+  // Operações vinculadas via cc_cod ou por nome/descrição
+  const opsNomes = new Set(usuario.operacoes.map(o => (o.nome||'').toUpperCase()));
+  const opsCods  = new Set(usuario.operacoes.map(o => o.cc_cod).filter(Boolean));
+
+  const ccsPermitidos = new Set(
+    CENTROS_CUSTO
+      .filter(c => opsCods.has(c.cod) || opsNomes.has((c.descricao||'').toUpperCase()))
+      .map(c => c.cod)
+  );
+
+  impPopularSelectCC(ccsPermitidos.size ? ccsPermitidos : null);
 }
 
 function impPreencherLocalDefault() {
