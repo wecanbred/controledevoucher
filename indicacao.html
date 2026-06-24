@@ -203,8 +203,15 @@ async function rpcPublico(fn, args) {
 async function carregarDepartamentos() {
   const sel = document.getElementById('f-operacao');
   try {
-    const dados = await rpcPublico('wc_listar_deptos_publico', {});
-    const lista = Array.isArray(dados) ? dados : (dados.deptos || []);
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_listar_deptos_publico`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({})
+    });
+    let dados = await r.json();
+    // RPC RETURNS JSON pode chegar como string — faz parse se necessário
+    if (typeof dados === 'string') dados = JSON.parse(dados);
+    const lista = Array.isArray(dados) ? dados : [];
     sel.innerHTML = '<option value="">Selecione a operação…</option>';
     lista.forEach(d => {
       const opt = document.createElement('option');
@@ -214,17 +221,10 @@ async function carregarDepartamentos() {
     });
     sel.disabled = false;
   } catch(e) {
-    sel.innerHTML = '<option value="">Erro ao carregar — digite abaixo</option>';
+    sel.innerHTML = '<option value="">Erro ao carregar operações</option>';
     sel.disabled = false;
-    // fallback: transforma em input de texto
-    const parent = sel.parentElement;
-    const input = document.createElement('input');
-    input.type = 'text'; input.id = 'f-operacao'; input.placeholder = 'Ex: HUB Campinas, SOC Manaus';
-    input.style.cssText = sel.style.cssText;
-    input.className = sel.className;
-    parent.replaceChild(input, sel);
   }
-  document.getElementById('f-operacao')?.addEventListener('change', function() {
+  sel.addEventListener('change', function() {
     _deptoId = this.value || null;
   });
 }
