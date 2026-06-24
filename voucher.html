@@ -3,706 +3,753 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Voucher Uber — WeCan</title>
+<title>Sistema de Voucher — WeCan BR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root {
-  --bg:       #150a20;
-  --surface:  #211132;
-  --surface2: #2c1740;
-  --surface3: #38204e;
-  --border:   #432a5c;
-  --accent:   #63ccb0;
-  --accent-dim:#4aa890;
-  --brand:    #4f0672;
-  --success:  #22c55e;
-  --danger:   #ef4444;
-  --warning:  #f59e0b;
-  --voucher:  #4f7cff;
-  --text:     #efe9f7;
-  --muted:    #a394bf;
-  --radius:   10px;
-  --font:     'Segoe UI', system-ui, sans-serif;
+:root{
+  --bg:#150a20;--surface:#211132;--surface2:#2c1740;--surface3:#38204e;
+  --border:#432a5c;--accent:#63ccb0;--accent-dim:#4aa890;--brand:#4f0672;
+  --success:#22c55e;--danger:#ef4444;--warning:#f59e0b;--voucher:#4f7cff;
+  --text:#efe9f7;--muted:#a394bf;--radius:10px;--font:'Segoe UI',system-ui,sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;}
-::-webkit-scrollbar{width:8px;height:8px;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* LOGIN */
+#login-page{position:fixed;inset:0;background:radial-gradient(circle at 18% 18%,rgba(99,204,176,.1),transparent 45%),radial-gradient(circle at 85% 80%,rgba(79,6,114,.35),transparent 55%),var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px}
+.login-box{width:400px;max-width:100%}
+.login-head{margin-bottom:26px}.login-head h1{font-size:26px;font-weight:900;letter-spacing:1px}.login-head .sub{color:var(--accent);font-size:13px;font-style:italic;margin-top:4px}
+.login-error{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:none}
 
 /* SIDEBAR */
-#sidebar{width:226px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
-.sidebar-logo{padding:20px 18px 14px;border-bottom:1px solid var(--border);}
-.sidebar-logo .mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-dim));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:var(--brand);margin-bottom:10px;}
-.sidebar-logo h2{font-size:13px;font-weight:800;letter-spacing:.4px;}
-.sidebar-logo span{font-size:11px;color:var(--muted);}
-nav{flex:1;padding:10px 0;overflow-y:auto;}
-nav a{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13.5px;color:var(--muted);text-decoration:none;cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
-nav a:hover{color:var(--text);background:var(--surface2);}
-nav a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(99,204,176,.10);font-weight:600;}
-nav a .ico{width:18px;text-align:center;font-size:15px;}
-nav a .badge-nav{margin-left:auto;background:rgba(239,68,68,.18);color:var(--danger);font-size:10.5px;padding:1px 7px;border-radius:20px;font-weight:700;}
-.sidebar-footer{border-top:1px solid var(--border);padding:10px 0 0;}
-.sidebar-user{padding:12px 18px;display:flex;align-items:center;gap:10px;}
-.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0;border:2px solid var(--border);}
-.user-info strong{display:block;font-size:12px;color:var(--text);}
-.user-info span{color:var(--muted);font-size:11px;}
-.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;transition:all .15s;flex-shrink:0;}
-.btn-logout:hover{border-color:var(--danger);color:var(--danger);}
+#sidebar{width:226px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;display:none}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sidebar-logo .mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--voucher),#3a5fd4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;margin-bottom:8px}
+.sidebar-logo h2{font-size:13px;font-weight:800;letter-spacing:.4px}.sidebar-logo span{font-size:11px;color:var(--muted)}
+nav{flex:1;padding:8px 0;overflow-y:auto}
+nav a{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;transition:all .15s;text-decoration:none}
+nav a:hover{color:var(--text);background:var(--surface2)}
+nav a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(99,204,176,.10);font-weight:600}
+.ico{width:18px;text-align:center;font-size:14px}
+.count-badge{margin-left:auto;background:var(--surface3);color:var(--muted);font-size:10.5px;padding:1px 7px;border-radius:20px;font-weight:700}
+.sidebar-user{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0}
+.user-info{flex:1;min-width:0}.user-info strong{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-info span{color:var(--muted);font-size:10.5px}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
 
 /* MAIN */
-#main{margin-left:226px;flex:1;padding:32px 40px;min-height:100vh;}
-.page{display:none;}
-.page.active{display:block;}
-.page-header{margin-bottom:22px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.page-header h1{font-size:21px;font-weight:800;}
-.page-header p{color:var(--muted);font-size:12.5px;margin-top:4px;}
+#main{margin-left:226px;flex:1;padding:26px 32px;min-height:100vh;display:none}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:22px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.page-header h1{font-size:21px;font-weight:800}.page-header p{color:var(--muted);font-size:12.5px;margin-top:4px}
 
-/* CARDS KPI */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
-.card-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
-.card-value{font-size:28px;font-weight:800;margin-top:6px;}
-.card-value.teal{color:var(--accent);}
-.card-value.green{color:var(--success);}
-.card-value.red{color:var(--danger);}
-.card-value.blue{color:var(--voucher);}
-.card-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+/* KPI */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.card-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.card-value{font-size:28px;font-weight:800;margin-top:6px}
+.card-value.teal{color:var(--accent)}.card-value.green{color:var(--success)}.card-value.red{color:var(--danger)}.card-value.blue{color:var(--voucher)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none}
+.toolbar input{flex:1;min-width:200px}.toolbar input::placeholder{color:var(--muted)}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:var(--accent);color:var(--brand)}.btn-primary:hover{background:#7adcc4}
+.btn-danger{background:rgba(239,68,68,.13);color:var(--danger);border:1px solid rgba(239,68,68,.3)}.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-success{background:rgba(34,197,94,.13);color:var(--success);border:1px solid rgba(34,197,94,.3)}.btn-success:hover{background:var(--success);color:#fff}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-warning{background:rgba(245,158,11,.13);color:var(--warning);border:1px solid rgba(245,158,11,.3)}.btn-warning:hover{background:var(--warning);color:#000}
+.btn-sm{padding:5px 11px;font-size:12px}.btn-primary:disabled{opacity:.5;cursor:not-allowed}
 
 /* TABLE */
-.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
-.toolbar input,.toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;}
-.toolbar input{flex:1;min-width:200px;}
-.toolbar input::placeholder{color:var(--muted);}
-.toolbar input:focus,.toolbar select:focus{border-color:var(--accent);}
-.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
-table.main-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-table.main-table thead th{background:var(--surface2);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);}
-table.main-table tbody tr{border-bottom:1px solid rgba(46,51,80,.4);cursor:default;}
-table.main-table tbody tr:hover td{background:rgba(99,204,176,.04);}
-table.main-table td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
-tr.row-inativo td{opacity:.55;}
-
-/* PILLS */
-.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;}
-.pill-ativo{background:rgba(34,197,94,.14);color:var(--success);}
-.pill-inativo{background:rgba(239,68,68,.14);color:var(--danger);}
-.pill-ida{background:rgba(99,204,176,.14);color:var(--accent);}
-.pill-volta{background:rgba(79,124,255,.14);color:var(--voucher);}
-
-/* BTNS */
-.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
-.btn-primary{background:var(--accent);color:var(--brand);}
-.btn-primary:hover{background:#7adcc4;}
-.btn-danger{background:rgba(239,68,68,.13);color:var(--danger);border:1px solid rgba(239,68,68,.3);}
-.btn-danger:hover{background:var(--danger);color:#fff;}
-.btn-success{background:rgba(34,197,94,.13);color:var(--success);border:1px solid rgba(34,197,94,.3);}
-.btn-success:hover{background:var(--success);color:#fff;}
-.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
-.btn-sm{padding:5px 11px;font-size:12px;}
-.btn:disabled{opacity:.5;cursor:not-allowed;}
-.actions-cell{display:flex;gap:6px;align-items:center;}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table.main-table{width:100%;border-collapse:collapse;font-size:12.5px}
+table.main-table thead th{background:var(--surface2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0}
+table.main-table tbody tr{border-bottom:1px solid rgba(46,51,80,.4)}
+table.main-table tbody tr:hover td{background:rgba(99,204,176,.06)}
+table.main-table td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
+.actions-cell{display:flex;gap:6px;align-items:center}
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.pill-ativo{background:rgba(34,197,94,.14);color:var(--success)}
+.pill-inativo{background:rgba(239,68,68,.14);color:var(--danger)}
+.pill-muted{background:var(--surface3);color:var(--muted)}
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-state .ico{font-size:32px;margin-bottom:10px}
 
 /* MODAL */
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center;padding:20px;}
-.modal-backdrop.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:480px;max-width:95vw;max-height:92vh;overflow-y:auto;}
-.modal-head{padding:22px 26px 16px;border-bottom:1px solid var(--border);}
-.modal-head h2{font-size:16px;margin-bottom:4px;}
-.modal-head p{font-size:12px;color:var(--muted);}
-.modal-body{padding:20px 26px;}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 26px 22px;border-top:1px solid var(--border);margin-top:6px;}
-.form-group{margin-bottom:14px;}
-.form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);}
-.form-group textarea{resize:vertical;min-height:72px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.alert-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--danger);margin-bottom:14px;display:none;}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:580px;max-width:95vw;max-height:92vh;overflow-y:auto}
+.modal-head{padding:22px 26px 0}.modal-head h2{font-size:16.5px;margin-bottom:4px}.modal-head p{font-size:12px;color:var(--muted);margin-bottom:16px}
+.modal-body{padding:0 26px 6px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 26px 22px;border-top:1px solid var(--border);margin-top:6px}
 
-/* LOG */
-.log-list{list-style:none;}
-.log-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
-.log-item:last-child{border-bottom:none;}
-.log-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
-.log-dot-danger{background:var(--danger);}
-.log-dot-success{background:var(--success);}
-.log-text{flex:1;font-size:13px;color:var(--text);line-height:1.5;}
-.log-time{font-size:11px;color:var(--muted);margin-top:3px;}
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none}
+.form-group input::placeholder{color:var(--muted)}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-row.three{grid-template-columns:1fr 1fr 1fr}
+.section-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
 
-/* RELATORIO */
-.rel-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;}
-.rel-form .form-group{margin:0;min-width:160px;}
-
-/* EMPTY */
-.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
-.empty-state .ico{font-size:32px;margin-bottom:10px;}
+/* HISTÓRICO */
+.hist-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;align-items:flex-start}
+.hist-row:last-child{border-bottom:none}
+.hist-ico{width:28px;height:28px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
+.hist-main{flex:1}.hist-tipo{font-weight:700}.hist-sub{color:var(--muted);font-size:11.5px;margin-top:2px}
 
 /* TOAST */
-#toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;max-width:340px;}
-#toast.show{opacity:1;}
-#toast.success{border-color:var(--success);color:var(--success);}
-#toast.error{border-color:var(--danger);color:var(--danger);}
-#toast.info{border-color:var(--voucher);color:var(--voucher);}
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;max-width:340px}
+#toast.show{opacity:1}#toast.success{border-color:var(--success);color:var(--success)}#toast.error{border-color:var(--danger);color:var(--danger)}#toast.info{border-color:var(--voucher);color:var(--voucher)}
 
-/* SPINNER */
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;}
-@keyframes spin{to{transform:rotate(360deg);}}
+/* EXPORTAR */
+.export-preview{background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow:auto;margin-bottom:14px;font-size:12px}
+.export-preview table{width:100%;border-collapse:collapse}
+.export-preview th{background:var(--surface3);padding:6px 10px;text-align:left;color:var(--muted);position:sticky;top:0;white-space:nowrap}
+.export-preview td{padding:5px 10px;border-top:1px solid var(--border);white-space:nowrap}
 
-/* RESPONSIVE */
-#btn-menu-mobile{display:none;position:fixed;top:14px;left:14px;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--text);}
-#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;}
-#sidebar-overlay.visible{display:block;}
-@media(max-width:768px){
-  #btn-menu-mobile{display:flex;}
-  #sidebar{transform:translateX(-100%);transition:transform .25s ease;width:240px;z-index:200;}
-  #sidebar.open{transform:translateX(0);}
-  #main{margin-left:0;padding:60px 14px 14px;}
-  .cards-grid{grid-template-columns:1fr 1fr;}
-  .form-row{grid-template-columns:1fr;}
-}
+/* FORM LOGIN */
+.form-group-l{margin-bottom:14px}
+.form-group-l label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.form-group-l input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none}
+.form-group-l input:focus{border-color:var(--accent)}
+.btn-primary-full{background:var(--accent);color:var(--brand);width:100%;padding:10px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-family:var(--font);font-weight:700;margin-top:4px}
+.btn-primary-full:disabled{opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
 
-<button id="btn-menu-mobile" onclick="toggleSidebarMobile()" aria-label="Menu">☰</button>
-<div id="sidebar-overlay" onclick="fecharSidebarMobile()"></div>
+<!-- LOGIN -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-head">
+      <h1>🎟️ Voucher</h1>
+      <p class="sub">Sistema de Controle — WeCan BR</p>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-group-l"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@wecanbr.com.br"/></div>
+    <div class="form-group-l"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••"/></div>
+    <button class="btn-primary-full" id="btn-entrar" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div class="sidebar-logo">
-    <div class="mark" id="logo-mark">🚗</div>
-    <h2>VOUCHER UBER</h2>
-    <span id="sidebar-sub">WeCan BR</span>
+    <div class="mark">🎟</div>
+    <h2>VOUCHER · CONTROLE</h2>
+    <span>WeCan BR</span>
   </div>
   <nav>
-    <a onclick="navTo('colaboradores')" data-page="colaboradores"><span class="ico">👥</span> Colaboradores</a>
-    <a onclick="navTo('log')"           data-page="log"><span class="ico">📋</span> Histórico</a>
-    <a onclick="navTo('relatorio')"     data-page="relatorio"   id="nav-relatorio" style="display:none"><span class="ico">📊</span> Relatório</a>
-    <a onclick="navTo('adicionar')"     data-page="adicionar"   id="nav-adicionar" style="display:none"><span class="ico">➕</span> Adicionar</a>
+    <a onclick="navTo('dashboard')" data-page="dashboard"><span class="ico">◆</span> Dashboard</a>
+    <a onclick="navTo('controle')" data-page="controle"><span class="ico">☰</span> Controle de Vouchers <span class="count-badge" id="badge-ativos">0</span></a>
+    <a onclick="navTo('inativar')" data-page="inativar"><span class="ico">⊘</span> Inativar Colaborador</a>
+    <a onclick="navTo('exportar')" data-page="exportar"><span class="ico">↓</span> Exportar Planilha</a>
+    <a onclick="navTo('historico')" data-page="historico"><span class="ico">🕐</span> Histórico</a>
+    <a onclick="navTo('usuarios')" data-page="usuarios" id="nav-usuarios" style="display:none"><span class="ico">👤</span> Usuários</a>
   </nav>
-  <div class="sidebar-footer">
-    <div class="sidebar-user">
-      <div class="user-avatar" id="user-initials">?</div>
-      <div class="user-info">
-        <strong id="user-nome">—</strong>
-        <span id="user-perfil-label">—</span>
-      </div>
-      <button class="btn-logout" onclick="logout()">Sair</button>
-    </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <div class="user-info"><strong id="user-nome">—</strong><span id="user-perfil">—</span></div>
+    <button class="btn-logout" onclick="fazerLogout()">Sair</button>
   </div>
 </div>
 
 <!-- MAIN -->
 <div id="main">
 
-  <!-- ── COLABORADORES ── -->
-  <div class="page active" id="page-colaboradores">
-    <div class="page-header">
-      <div>
-        <h1>Colaboradores</h1>
-        <p>Controle de vouchers Uber por colaborador</p>
-      </div>
-      <button class="btn btn-ghost" id="btn-exportar" style="display:none" onclick="exportarAtivos()">⬇️ Exportar ativos (.tsv)</button>
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header"><div><h1>Dashboard</h1><p>Visão geral do sistema de Voucher</p></div>
+      <button class="btn btn-ghost btn-sm" onclick="atualizarDados()">🔄 Atualizar</button>
     </div>
-
     <div class="cards-grid">
-      <div class="card"><div class="card-label">Total</div><div class="card-value teal" id="stat-total">—</div></div>
-      <div class="card"><div class="card-label">Ativos</div><div class="card-value green" id="stat-ativos">—</div></div>
-      <div class="card"><div class="card-label">Inativos</div><div class="card-value red" id="stat-inativos">—</div></div>
-      <div class="card"><div class="card-label">Valor diário (ativos)</div><div class="card-value blue" id="stat-valor" style="font-size:20px">—</div></div>
+      <div class="card"><div class="card-label">Colaboradores Ativos</div><div class="card-value teal" id="kpi-ativos">—</div><div class="card-sub">com voucher ativo</div></div>
+      <div class="card"><div class="card-label">Inativos</div><div class="card-value red" id="kpi-inativos">—</div><div class="card-sub">desligados</div></div>
+      <div class="card"><div class="card-label">Total Geral</div><div class="card-value blue" id="kpi-total">—</div><div class="card-sub">no sistema</div></div>
+      <div class="card"><div class="card-label">Ida</div><div class="card-value green" id="kpi-ida">—</div><div class="card-sub">turno chegada</div></div>
+      <div class="card"><div class="card-label">Volta</div><div class="card-value" style="color:var(--warning)" id="kpi-volta">—</div><div class="card-sub">turno saída</div></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Por Unidade</div>
+        <div id="dash-unidades"></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Últimas Inativações</div>
+        <div id="dash-inativacoes"></div>
+      </div>
+    </div>
+  </div>
 
+  <!-- CONTROLE -->
+  <div class="page" id="page-controle">
+    <div class="page-header">
+      <div><h1>Controle de Vouchers</h1><p>Colaboradores com benefício de voucher cadastrados</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="atualizarDados()">🔄 Atualizar</button>
+        <button class="btn btn-primary" onclick="abrirModalColab(null)">+ Adicionar Colaborador</button>
+      </div>
+    </div>
     <div class="toolbar">
-      <input type="text" id="search-colab" placeholder="🔍  Buscar por nome, matrícula ou unidade…" oninput="renderColaboradores()"/>
-      <select id="filter-status" onchange="renderColaboradores()">
-        <option value="todos">Todos os status</option>
-        <option value="ativo">Somente ativos</option>
-        <option value="inativo">Somente inativos</option>
+      <input type="text" id="busca-colab" placeholder="Buscar por nome, matrícula, CPF…" oninput="renderControle()"/>
+      <select id="filtro-status-colab" onchange="renderControle()">
+        <option value="ATIVO">Ativos</option>
+        <option value="INATIVO">Inativos</option>
+        <option value="TODOS">Todos</option>
       </select>
-      <select id="filter-trajeto" onchange="renderColaboradores()">
-        <option value="todos">IDA + VOLTA</option>
-        <option value="IDA">Somente IDA</option>
-        <option value="VOLTA">Somente VOLTA</option>
+      <select id="filtro-trajeto" onchange="renderControle()">
+        <option value="">Todos os trajetos</option>
+        <option value="IDA">IDA</option>
+        <option value="VOLTA">VOLTA</option>
+        <option value="IDA E VOLTA">IDA E VOLTA</option>
       </select>
     </div>
-
     <div class="table-wrap">
       <table class="main-table">
-        <thead><tr>
-          <th>Matrícula</th><th>Nome</th><th>Unidade</th><th>Trajeto</th><th>Valor</th><th>Status</th><th>Ação</th>
-        </tr></thead>
-        <tbody id="tbody-colaboradores">
-          <tr><td colspan="7"><div class="empty-state"><div class="ico">⏳</div>Carregando…</div></td></tr>
-        </tbody>
+        <thead><tr><th>Status</th><th>Matrícula</th><th>Nome</th><th>Unidade</th><th>Horário</th><th>Trajeto</th><th>Cod Voucher</th><th>Aplicativo</th><th>Dt. Inclusão</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-controle"></tbody>
       </table>
     </div>
+    <p id="controle-count" style="color:var(--muted);font-size:12px;margin-top:12px"></p>
   </div>
 
-  <!-- ── HISTÓRICO ── -->
-  <div class="page" id="page-log">
-    <div class="page-header">
-      <div><h1>Histórico</h1><p>Registro de todas as inativações e reativações</p></div>
+  <!-- INATIVAR -->
+  <div class="page" id="page-inativar">
+    <div class="page-header"><div><h1>Inativar Colaborador</h1><p>Busque pelo nome ou matrícula</p></div></div>
+    <div class="toolbar">
+      <input type="text" id="busca-inat" placeholder="Nome ou matrícula…" oninput="buscarParaInativar()"/>
     </div>
-    <div id="log-container">
-      <div class="empty-state"><div class="ico">⏳</div>Carregando…</div>
-    </div>
+    <div id="inat-resultados"></div>
   </div>
 
-  <!-- ── RELATÓRIO (admin) ── -->
-  <div class="page" id="page-relatorio">
-    <div class="page-header">
-      <div><h1>Relatório</h1><p>Inativações e reativações por período</p></div>
-    </div>
-    <form id="form-relatorio" onsubmit="buscarRelatorio(event)">
-      <div class="rel-form">
-        <div class="form-group"><label>De</label><input type="date" id="rel-de" required/></div>
-        <div class="form-group"><label>Até</label><input type="date" id="rel-ate" required/></div>
-        <button type="submit" class="btn btn-primary">Buscar</button>
-      </div>
-    </form>
-    <div id="relatorio-resultado"></div>
-  </div>
-
-  <!-- ── ADICIONAR (admin) ── -->
-  <div class="page" id="page-adicionar">
-    <div class="page-header">
-      <div><h1>Adicionar Colaborador</h1><p>Cadastro manual de novo colaborador</p></div>
-    </div>
-    <div style="max-width:540px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 26px;">
-      <div id="adicionar-error" class="alert-box"></div>
-      <form id="form-adicionar" onsubmit="adicionarColaborador(event)">
-        <div class="form-group"><label>Matrícula *</label><input type="text" id="add-matricula" placeholder="WE000000" required/></div>
-        <div class="form-group"><label>Nome completo *</label><input type="text" id="add-nome" placeholder="NOME DO COLABORADOR" required/></div>
-        <div class="form-group"><label>Unidade *</label><input type="text" id="add-unidade" placeholder="LM Hub_SP_Vila Guilherme" required/></div>
-        <div class="form-group"><label>Telefone</label><input type="text" id="add-telefone" placeholder="(11) 99999-9999"/></div>
-        <div class="form-row">
-          <div class="form-group"><label>Trajeto *</label>
-            <select id="add-trajeto"><option value="IDA">IDA</option><option value="VOLTA">VOLTA</option></select>
-          </div>
-          <div class="form-group"><label>Valor (R$)</label>
-            <input type="number" id="add-valor" value="100" min="0" step="0.01"/>
-          </div>
+  <!-- EXPORTAR -->
+  <div class="page" id="page-exportar">
+    <div class="page-header"><div><h1>Exportar Planilha</h1><p>Gera o arquivo no padrão Uber/99 para upload</p></div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;max-width:520px;margin-bottom:20px">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data Base do Turno</label>
+          <input type="date" id="exp-data-base"/>
         </div>
-        <div class="form-group"><label>Motivo do voucher</label><input type="text" id="add-motivo" placeholder="ESCALA DE TRABALHO"/></div>
-        <div class="form-group"><label>Deslocamento</label><input type="text" id="add-deslocamento" placeholder="UBER/99"/></div>
-        <button type="submit" class="btn btn-primary" id="btn-add">Salvar colaborador</button>
-      </form>
+        <div class="form-group">
+          <label>Data Vencimento (FDS, opcional)</label>
+          <input type="date" id="exp-data-venc"/>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Deixe "Vencimento" em branco para modo normal (dia a dia). Preencha para modo FDS (sexta → segunda).</p>
+      <button class="btn btn-primary" onclick="gerarExportacao()">📊 Gerar Prévia</button>
+      <button class="btn btn-ghost" id="btn-baixar-xlsx" onclick="baixarExcel()" style="display:none;margin-left:8px">⬇️ Baixar Excel</button>
+    </div>
+    <div class="export-preview" id="export-preview" style="display:none">
+      <table><thead id="exp-head"></thead><tbody id="exp-body"></tbody></table>
+    </div>
+    <p id="exp-info" style="color:var(--muted);font-size:12px;margin-top:10px"></p>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="page" id="page-historico">
+    <div class="page-header"><div><h1>Histórico</h1><p>Registro de todas as ações no sistema</p></div></div>
+    <div class="toolbar">
+      <input type="text" id="busca-hist" placeholder="Buscar por matrícula, tipo, responsável…" oninput="renderHistorico()"/>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">
+      <div id="hist-lista"><div style="color:var(--muted);padding:20px 0;text-align:center">Carregando…</div></div>
+    </div>
+  </div>
+
+  <!-- USUÁRIOS -->
+  <div class="page" id="page-usuarios">
+    <div class="page-header">
+      <div><h1>Usuários do Voucher</h1><p>Gerencie quem tem acesso ao sistema de Voucher</p></div>
+      <button class="btn btn-primary" onclick="abrirModalUsuario(null)">+ Novo Usuário</button>
+    </div>
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-usuarios"></tbody>
+      </table>
     </div>
   </div>
 
 </div><!-- /main -->
 
-<!-- MODAL INATIVAR -->
-<div class="modal-backdrop" id="modal-inativar" onclick="if(event.target===this)fecharModalInativar()">
+<!-- MODAL COLABORADOR -->
+<div class="modal-backdrop" id="modal-colab">
   <div class="modal">
-    <div class="modal-head">
-      <h2>⛔ Inativar colaborador</h2>
-      <p id="modal-inativar-sub">—</p>
-    </div>
+    <div class="modal-head"><h2 id="mc-title">Adicionar Colaborador</h2><p>Dados do colaborador com benefício de Voucher</p></div>
     <div class="modal-body">
-      <div id="modal-inativar-error" class="alert-box"></div>
-      <div class="form-group">
-        <label>Motivo do desligamento *</label>
-        <select id="modal-motivo">
-          <option value="">Selecione o motivo</option>
-          <option>Desligamento voluntário</option>
-          <option>Desligamento involuntário</option>
-          <option>Transferência de unidade</option>
-          <option>Mudança de horário (não precisa de voucher)</option>
-          <option>Afastamento temporário</option>
-          <option>Outro</option>
-        </select>
+      <input type="hidden" id="mc-id"/>
+      <div class="form-row">
+        <div class="form-group"><label>Matrícula *</label><input type="text" id="mc-matricula" placeholder="WE000000"/></div>
+        <div class="form-group"><label>Unidade</label><input type="text" id="mc-unidade" placeholder="HUB Campinas"/></div>
       </div>
-      <div class="form-group" id="modal-obs-wrap" style="display:none">
-        <label>Descreva o motivo</label>
-        <textarea id="modal-obs" placeholder="Descreva o motivo…"></textarea>
+      <div class="form-group"><label>Nome Completo *</label><input type="text" id="mc-nome" placeholder="NOME EM MAIÚSCULO"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>CPF</label><input type="text" id="mc-cpf" placeholder="000.000.000-00"/></div>
+        <div class="form-group"><label>Celular</label><input type="text" id="mc-celular" placeholder="11999999999"/></div>
+      </div>
+      <hr class="section-divider"/>
+      <div class="form-row three">
+        <div class="form-group"><label>Hora Entrada</label><input type="text" id="mc-entrada" placeholder="00:00"/></div>
+        <div class="form-group"><label>Hora Saída</label><input type="text" id="mc-saida" placeholder="08:00"/></div>
+        <div class="form-group"><label>Trajeto</label>
+          <select id="mc-trajeto"><option value="">Calcular auto</option><option>IDA</option><option>VOLTA</option><option>IDA E VOLTA</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Código do Voucher</label><input type="text" id="mc-codvoucher"/></div>
+        <div class="form-group"><label>Valor</label><input type="text" id="mc-valor" placeholder="100,00"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Aplicativo</label>
+          <select id="mc-app"><option>UBER/99</option><option>UBER</option><option>99</option><option>OUTRO</option></select>
+        </div>
+        <div class="form-group"><label>Benefício Original</label><input type="text" id="mc-beneficio" placeholder="VT + VOUCHER"/></div>
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="fecharModalInativar()">Cancelar</button>
-      <button class="btn btn-danger" id="btn-confirmar-inativar" onclick="confirmarInativacao()">Confirmar inativação</button>
+      <button class="btn btn-ghost" onclick="fecharModal('modal-colab')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-colab" onclick="salvarColab()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL USUÁRIO VOUCHER -->
+<div class="modal-backdrop" id="modal-usuario">
+  <div class="modal" style="width:480px">
+    <div class="modal-head"><h2 id="mu-title">Novo Usuário</h2><p>Acesso ao sistema de Voucher</p></div>
+    <div class="modal-body">
+      <input type="hidden" id="u-id"/>
+      <div class="form-group"><label>Nome</label><input type="text" id="u-nome" placeholder="NOME COMPLETO"/></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="u-email"/></div>
+      <div class="form-group"><label>Senha</label><input type="text" id="u-senha" placeholder="Deixe em branco para manter"/></div>
+      <div class="form-group"><label>Perfil</label>
+        <select id="u-perfil">
+          <option value="usuario">Usuário (visualiza e inativa)</option>
+          <option value="master">Master (gerencia usuários e exporta)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-u" onclick="salvarUsuario()">Salvar</button>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="shared.js"></script>
-<script src="js/config.js"></script>
 <script>
-// ══════════════════════════════════════════════
-//  voucher/index.html — lógica principal
-//  Usa shared.js (mesma base do admissao.html):
-//    carregarSessaoSalva(), limparSessaoSalva(), rpc(), toast()
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════
+//  voucher.html — Supabase nativo
+// ════════════════════════════════════════
+let vSession = null;
+let COLABORADORES = [];
+let HISTORICO_LISTA = [];
 
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const VOUCHER_SESSAO_KEY = 'wecan_voucher_session';
 
-let session    = null;
-let colaboradores = [];
-let _pendingId = null; // id do colaborador sendo inativado
+// ── Login ──────────────────────────────
+async function fazerLogin() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const senha = document.getElementById('l-senha').value;
+  const err   = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-entrar');
+  err.style.display='none';
+  if (!email||!senha) { err.textContent='Informe e-mail e senha.'; err.style.display='block'; return; }
+  btn.disabled=true; btn.textContent='Entrando…';
+  try {
+    // Usa o mesmo login do sistema principal (tabela usuarios)
+    const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
+    vSession = resp.sessao;
+    salvarSessao(resp.sessao);
+    iniciarApp();
+  } catch(e) {
+    err.textContent = e.message || 'E-mail ou senha incorretos.';
+    err.style.display='block';
+  } finally { btn.disabled=false; btn.textContent='Entrar'; }
+}
+document.addEventListener('keydown', e => { if(e.key==='Enter') fazerLogin(); });
 
-// ── INIT ──────────────────────────────────────
-async function initApp() {
-  // Tenta usar sessão do shared.js (mesmo mecanismo do admissao.html)
-  const s = carregarSessaoSalva();
-  if (!s) { window.location.href = 'index.html'; return; }
-  session = s;
-
-  // Preenche sidebar
-  const initials = (session.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
-  document.getElementById('user-initials').textContent  = initials;
-  document.getElementById('user-nome').textContent      = session.nome;
-  document.getElementById('user-perfil-label').textContent = PERFIL_LABEL?.[session.perfil] || session.perfil;
-
-  // Mostra itens de admin
-  const isAdmin = ['master','gestor'].includes(session.perfil);
-  if (isAdmin) {
-    document.getElementById('nav-relatorio').style.display  = 'flex';
-    document.getElementById('nav-adicionar').style.display  = 'flex';
-    document.getElementById('btn-exportar').style.display   = 'inline-flex';
-  }
-
-  await loadColaboradores();
-  navTo('colaboradores');
+function iniciarApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('sidebar').style.display   = 'flex';
+  document.getElementById('main').style.display      = 'block';
+  document.getElementById('user-nome').textContent   = vSession.nome;
+  document.getElementById('user-perfil').textContent = vSession.perfil;
+  const initials=(vSession.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('nav-usuarios').style.display = vSession.perfil==='master'?'flex':'none';
+  atualizarDados();
+  navTo('dashboard');
 }
 
-async function logout() {
-  try { rpc('wc_logout', {}).catch(()=>{}); } catch(e) {}
+function fazerLogout() {
+  rpc('wc_logout',{}).catch(()=>{});
   limparSessaoSalva();
-  window.location.href = 'index.html';
+  vSession=null;
+  document.getElementById('login-page').style.display='flex';
+  document.getElementById('sidebar').style.display='none';
+  document.getElementById('main').style.display='none';
 }
 
-// ── NAVIGATION ────────────────────────────────
+// Verificar sessão já salva
+(function() {
+  const s = carregarSessaoSalva();
+  if (s) { vSession=s; iniciarApp(); }
+})();
+
+// ── Dados ──────────────────────────────
+async function atualizarDados() {
+  try {
+    const [rc, rh] = await Promise.all([
+      rpc('wc_voucher_listar', { p_status:'TODOS' }),
+      rpc('wc_voucher_historico', {})
+    ]);
+    COLABORADORES     = rc.itens || [];
+    HISTORICO_LISTA   = rh.historico || [];
+    const ativa = document.querySelector('.page.active');
+    if (ativa) navTo(ativa.id.replace('page-',''));
+    // Badge
+    const nAtivos = COLABORADORES.filter(c=>c.status==='ATIVO').length;
+    const badge = document.getElementById('badge-ativos');
+    if (badge) badge.textContent = nAtivos;
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ── Nav ────────────────────────────────
 function navTo(id) {
-  fecharSidebarMobile();
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-  const page = document.getElementById('page-' + id);
-  if (page) page.classList.add('active');
-  const link = document.querySelector(`[data-page="${id}"]`);
-  if (link) link.classList.add('active');
-  if (id === 'log')       loadLog();
-  if (id === 'relatorio') document.getElementById('relatorio-resultado').innerHTML = '';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  const page=document.getElementById('page-'+id); if(!page)return;
+  page.classList.add('active');
+  document.querySelector(`nav a[data-page="${id}"]`)?.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='controle')  renderControle();
+  if(id==='historico') renderHistorico();
+  if(id==='usuarios')  renderUsuarios();
+  if(id==='inativar')  { document.getElementById('busca-inat').value=''; document.getElementById('inat-resultados').innerHTML=''; }
 }
 
-// ── SUPABASE: colaboradores ───────────────────
-async function loadColaboradores() {
-  const tbody = document.getElementById('tbody-colaboradores');
-  tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico"><span class="spinner"></span></div></div></td></tr>`;
-
-  const { data, error } = await sb.from('colaboradores').select('*').order('nome');
-  if (error) { toast('Erro ao carregar colaboradores.', 'error'); return; }
-  colaboradores = data;
-  updateStats();
-  renderColaboradores();
-}
-
-function updateStats() {
-  const ativos   = colaboradores.filter(c => c.status === 'ativo').length;
-  const inativos = colaboradores.filter(c => c.status === 'inativo').length;
-  const valor    = colaboradores.filter(c => c.status === 'ativo').reduce((s,c) => s + Number(c.valor||0), 0);
-  document.getElementById('stat-total').textContent   = colaboradores.length;
-  document.getElementById('stat-ativos').textContent  = ativos;
-  document.getElementById('stat-inativos').textContent= inativos;
-  document.getElementById('stat-valor').textContent   = 'R$ ' + valor.toLocaleString('pt-BR');
-}
-
-function renderColaboradores() {
-  const search  = (document.getElementById('search-colab')?.value || '').toLowerCase();
-  const status  = document.getElementById('filter-status')?.value  || 'todos';
-  const trajeto = document.getElementById('filter-trajeto')?.value || 'todos';
-  const tbody   = document.getElementById('tbody-colaboradores');
-
-  const isAdmin = ['master','gestor'].includes(session?.perfil);
-
-  let lista = colaboradores.filter(c => {
-    const matchSearch  = c.nome.toLowerCase().includes(search)
-                       || c.matricula.toLowerCase().includes(search)
-                       || (c.unidade||'').toLowerCase().includes(search);
-    const matchStatus  = status  === 'todos' || c.status  === status;
-    const matchTrajeto = trajeto === 'todos' || c.trajeto === trajeto;
-    return matchSearch && matchStatus && matchTrajeto;
+// ── Dashboard ──────────────────────────
+function renderDashboard() {
+  const ativos   = COLABORADORES.filter(c=>c.status==='ATIVO').length;
+  const inativos = COLABORADORES.filter(c=>c.status==='INATIVO').length;
+  const total    = COLABORADORES.length;
+  const ida      = COLABORADORES.filter(c=>c.status==='ATIVO'&&c.trajeto==='IDA').length;
+  const volta    = COLABORADORES.filter(c=>c.status==='ATIVO'&&c.trajeto==='VOLTA').length;
+  ['ativos','inativos','total','ida','volta'].forEach((k,i)=>{
+    const el=document.getElementById('kpi-'+k); if(el) el.textContent=[ativos,inativos,total,ida,volta][i];
   });
+  // Por unidade
+  const porUnidade={};
+  COLABORADORES.filter(c=>c.status==='ATIVO').forEach(c=>{const u=c.unidade||'Sem unidade';porUnidade[u]=(porUnidade[u]||0)+1;});
+  const maxU=Math.max(...Object.values(porUnidade),1);
+  const uEl=document.getElementById('dash-unidades');
+  if(uEl) uEl.innerHTML=Object.entries(porUnidade).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px">
+      <span style="flex:1">${k}</span>
+      <div style="width:80px;height:6px;background:var(--surface2);border-radius:3px"><div style="width:${Math.round(v/maxU*100)}%;height:6px;background:var(--accent);border-radius:3px"></div></div>
+      <span style="color:var(--muted);min-width:20px;text-align:right">${v}</span>
+    </div>`).join('')||'<p style="color:var(--muted);font-size:12.5px">Sem dados</p>';
+  // Últimas inativações
+  const iEl=document.getElementById('dash-inativacoes');
+  const inats=HISTORICO_LISTA.filter(h=>h.tipo&&h.tipo.toUpperCase().includes('INATIV')).slice(0,8);
+  if(iEl) iEl.innerHTML=inats.length?inats.map(h=>`
+    <div class="hist-row">
+      <div class="hist-ico">⊘</div>
+      <div class="hist-main">
+        <div class="hist-tipo">${h.matricula} — ${h.motivo||'—'}</div>
+        <div class="hist-sub">${h.responsavel||'—'} · ${h.created_at?new Date(h.created_at).toLocaleDateString('pt-BR'):''}</div>
+      </div>
+    </div>`).join(''):'<p style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma inativação registrada</p>';
+}
 
-  if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico">🔍</div>Nenhum colaborador encontrado.</div></td></tr>`;
-    return;
-  }
+// ── Controle ───────────────────────────
+function definirTrajeto(entrada, saida) {
+  if(!entrada||!saida) return null;
+  const hE=parseInt((entrada||'').split(':')[0],10);
+  const hS=parseInt((saida||'').split(':')[0],10);
+  if(hE>=0&&hE<=4) return 'IDA';
+  if(hS>=0&&hS<=4) return 'VOLTA';
+  return null;
+}
 
-  tbody.innerHTML = lista.map(c => {
-    const isInativo = c.status === 'inativo';
-    const badge = isInativo
-      ? `<span class="pill pill-inativo">● Inativo</span>`
-      : `<span class="pill pill-ativo">● Ativo</span>`;
-    const trajBadge = c.trajeto === 'VOLTA'
-      ? `<span class="pill pill-volta">VOLTA</span>`
-      : `<span class="pill pill-ida">IDA</span>`;
-
-    let acao = '';
-    if (!isInativo) {
-      acao = `<button class="btn btn-danger btn-sm" onclick="abrirModalInativar(${c.id})">Inativar</button>`;
-    } else if (isAdmin) {
-      acao = `<button class="btn btn-success btn-sm" onclick="reativar(${c.id})">Reativar</button>`;
-    }
-
-    return `<tr class="${isInativo ? 'row-inativo' : ''}">
-      <td><code style="font-size:11.5px;font-weight:700;color:var(--accent)">${c.matricula}</code></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${c.nome}">${c.nome}</td>
-      <td style="max-width:170px;overflow:hidden;text-overflow:ellipsis;color:var(--muted)" title="${c.unidade||''}">${c.unidade||'—'}</td>
-      <td>${trajBadge}</td>
-      <td>R$ ${Number(c.valor||0).toLocaleString('pt-BR')}</td>
-      <td>${badge}</td>
-      <td class="actions-cell">${acao}</td>
+function renderControle() {
+  const busca  = (document.getElementById('busca-colab')?.value||'').toLowerCase();
+  const status = document.getElementById('filtro-status-colab')?.value||'ATIVO';
+  const trajeto= document.getElementById('filtro-trajeto')?.value||'';
+  let lista = status==='TODOS'?COLABORADORES:COLABORADORES.filter(c=>c.status===status);
+  if(busca)  lista=lista.filter(c=>[c.nome,c.matricula,c.cpf,c.unidade].some(f=>(f||'').toLowerCase().includes(busca)));
+  if(trajeto)lista=lista.filter(c=>(c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida))===trajeto);
+  const tbody=document.getElementById('tbody-controle');
+  const count=document.getElementById('controle-count');
+  if(!tbody)return;
+  if(!lista.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="ico">🎟️</div>Nenhum colaborador encontrado</div></td></tr>`;if(count)count.textContent='';return;}
+  if(count) count.textContent=`${lista.length} colaborador(es)`;
+  tbody.innerHTML=lista.map(c=>{
+    const traj=c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida)||'—';
+    const dataInc=c.data_inclusao?new Date(c.data_inclusao+'T00:00').toLocaleDateString('pt-BR'):'—';
+    const mc=(JSON.stringify(c)||'').replace(/'/g,"&apos;");
+    return`<tr>
+      <td><span class="pill ${c.status==='ATIVO'?'pill-ativo':'pill-inativo'}">${c.status}</span></td>
+      <td><strong>${c.matricula||'—'}</strong></td>
+      <td>${c.nome||'—'}</td>
+      <td>${c.unidade||'—'}</td>
+      <td>${[c.hora_entrada,c.hora_saida].filter(Boolean).join(' AS ')||'—'}</td>
+      <td><span class="pill pill-muted">${traj}</span></td>
+      <td>${c.cod_voucher||'—'}</td>
+      <td>${c.aplicativo||'—'}</td>
+      <td>${dataInc}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost btn-sm" onclick='abrirModalColab(${JSON.stringify(c)})'>Editar</button>
+        ${c.status==='ATIVO'
+          ?`<button class="btn btn-warning btn-sm" onclick="abrirInativar('${c.matricula}','${(c.nome||'').replace(/'/g,"\\'")}')">Inativar</button>`
+          :`<button class="btn btn-success btn-sm" onclick="reativar('${c.matricula}')">Reativar</button>`
+        }
+      </td>
     </tr>`;
   }).join('');
 }
 
-// ── INATIVAR ──────────────────────────────────
-function abrirModalInativar(id) {
-  const c = colaboradores.find(x => x.id === id);
-  if (!c) return;
-  _pendingId = id;
-  document.getElementById('modal-inativar-sub').textContent = `${c.nome} · ${c.matricula}`;
-  document.getElementById('modal-motivo').value = '';
-  document.getElementById('modal-obs').value    = '';
-  document.getElementById('modal-obs-wrap').style.display = 'none';
-  document.getElementById('modal-inativar-error').style.display = 'none';
-  document.getElementById('modal-inativar').classList.add('open');
+// ── Modal colaborador ──────────────────
+function abrirModalColab(c) {
+  document.getElementById('mc-title').textContent = c?'Editar Colaborador':'Adicionar Colaborador';
+  document.getElementById('mc-id').value        = c?.id||'';
+  document.getElementById('mc-matricula').value = c?.matricula||'';
+  document.getElementById('mc-unidade').value   = c?.unidade||'';
+  document.getElementById('mc-nome').value      = c?.nome||'';
+  document.getElementById('mc-cpf').value       = c?.cpf||'';
+  document.getElementById('mc-celular').value   = c?.celular||'';
+  document.getElementById('mc-entrada').value   = c?.hora_entrada||'';
+  document.getElementById('mc-saida').value     = c?.hora_saida||'';
+  document.getElementById('mc-trajeto').value   = c?.trajeto||'';
+  document.getElementById('mc-codvoucher').value= c?.cod_voucher||'';
+  document.getElementById('mc-valor').value     = c?.valor||'100,00';
+  document.getElementById('mc-app').value       = c?.aplicativo||'UBER/99';
+  document.getElementById('mc-beneficio').value = c?.beneficio_original||'';
+  abrirModal('modal-colab');
 }
 
-document.getElementById('modal-motivo').addEventListener('change', function() {
-  document.getElementById('modal-obs-wrap').style.display = this.value === 'Outro' ? 'block' : 'none';
-});
-
-function fecharModalInativar() {
-  document.getElementById('modal-inativar').classList.remove('open');
-  _pendingId = null;
-}
-
-async function confirmarInativacao() {
-  const motivoTipo = document.getElementById('modal-motivo').value;
-  const obs        = document.getElementById('modal-obs').value.trim();
-  const errEl      = document.getElementById('modal-inativar-error');
-  const btn        = document.getElementById('btn-confirmar-inativar');
-
-  if (!motivoTipo) {
-    errEl.textContent = 'Selecione o motivo do desligamento.';
-    errEl.style.display = 'block';
-    return;
-  }
-  const motivo = motivoTipo === 'Outro' ? (obs || 'Outro') : motivoTipo;
-  errEl.style.display = 'none';
-
-  const c = colaboradores.find(x => x.id === _pendingId);
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Salvando…';
-
-  const { error: errUpdate } = await sb.from('colaboradores')
-    .update({ status: 'inativo' }).eq('id', _pendingId);
-
-  if (errUpdate) {
-    toast('Erro ao inativar.', 'error');
-    btn.disabled = false; btn.textContent = 'Confirmar inativação';
-    return;
-  }
-
-  // Registra no log
-  await sb.from('log_inativacoes').insert({
-    colaborador_id:   _pendingId,
-    matricula:        c.matricula,
-    nome_colaborador: c.nome,
-    acao:             'inativacao',
-    motivo:           motivo,
-    onsite_id:        session.id,
-    onsite_nome:      session.nome,
-  });
-
-  fecharModalInativar();
-  toast(`${c.nome} inativado com sucesso.`, 'success');
-  btn.disabled = false; btn.textContent = 'Confirmar inativação';
-  await loadColaboradores();
-}
-
-// ── REATIVAR ──────────────────────────────────
-async function reativar(id) {
-  const c = colaboradores.find(x => x.id === id);
-  if (!c || !confirm(`Reativar voucher de ${c.nome}?`)) return;
-
-  const { error } = await sb.from('colaboradores').update({ status: 'ativo' }).eq('id', id);
-  if (error) { toast('Erro ao reativar.', 'error'); return; }
-
-  await sb.from('log_inativacoes').insert({
-    colaborador_id:   id,
-    matricula:        c.matricula,
-    nome_colaborador: c.nome,
-    acao:             'reativacao',
-    motivo:           null,
-    onsite_id:        session.id,
-    onsite_nome:      session.nome,
-  });
-
-  toast(`${c.nome} reativado!`, 'success');
-  await loadColaboradores();
-}
-
-// ── EXPORTAR ──────────────────────────────────
-function exportarAtivos() {
-  const ativos = colaboradores.filter(c => c.status === 'ativo');
-  const hoje   = new Date().toLocaleDateString('pt-BR').replace(/\//g,'.');
-  const linhas = [
-    ['Trajeto','Unidade','Matrícula','Nome completo','Telefone','Data Inicio','Horário inicio','Data fim','Horário fim','Valor','Link Voucher','Motivo','Deslocamento'].join('\t')
-  ];
-  ativos.forEach(c => {
-    linhas.push([
-      c.trajeto, c.unidade, c.matricula, c.nome.toUpperCase(), c.telefone||'',
-      hoje, '22:00', hoje, '02:00',
-      Number(c.valor||0).toFixed(0), '',
-      c.motivo_voucher||'ESCALA DE TRABALHO',
-      c.deslocamento||'UBER/99'
-    ].join('\t'));
-  });
-  const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/tab-separated-values;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `vouchers_ativos_${hoje}.tsv`; a.click();
-  URL.revokeObjectURL(url);
-  toast(`${ativos.length} colaboradores exportados.`, 'success');
-}
-
-// ── LOG / HISTÓRICO ───────────────────────────
-async function loadLog() {
-  const container = document.getElementById('log-container');
-  container.innerHTML = `<div class="empty-state"><div class="ico"><span class="spinner"></span></div></div>`;
-
-  const { data, error } = await sb.from('log_inativacoes')
-    .select('*').order('created_at', { ascending: false }).limit(300);
-
-  if (error) { container.innerHTML = `<div class="empty-state">Erro ao carregar histórico.</div>`; return; }
-
-  if (!data.length) {
-    container.innerHTML = `<div class="empty-state"><div class="ico">📋</div>Nenhum registro ainda.</div>`;
-    return;
-  }
-
-  container.innerHTML = `<ul class="log-list">${data.map(l => {
-    const isInativacao = l.acao === 'inativacao';
-    const acao = isInativacao ? 'inativado' : 'reativado';
-    const data_fmt = new Date(l.created_at).toLocaleString('pt-BR');
-    return `<li class="log-item">
-      <div class="log-dot ${isInativacao ? 'log-dot-danger' : 'log-dot-success'}"></div>
-      <div class="log-text">
-        <strong>${l.nome_colaborador}</strong> (${l.matricula}) foi <strong>${acao}</strong>
-        por <strong>${l.onsite_nome}</strong>
-        ${l.motivo ? `<span style="color:var(--muted)"> — ${l.motivo}</span>` : ''}
-        <div class="log-time">${data_fmt}</div>
-      </div>
-    </li>`;
-  }).join('')}</ul>`;
-}
-
-// ── RELATÓRIO ─────────────────────────────────
-async function buscarRelatorio(e) {
-  e.preventDefault();
-  const de  = document.getElementById('rel-de').value;
-  const ate = document.getElementById('rel-ate').value;
-  const container = document.getElementById('relatorio-resultado');
-  container.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
-
-  const { data, error } = await sb.from('log_inativacoes')
-    .select('*')
-    .gte('created_at', de + 'T00:00:00')
-    .lte('created_at', ate + 'T23:59:59')
-    .order('created_at', { ascending: false });
-
-  if (error) { container.innerHTML = `<div class="empty-state" style="color:var(--danger)">Erro ao buscar dados.</div>`; return; }
-  if (!data.length) { container.innerHTML = `<div class="empty-state"><div class="ico">📭</div>Nenhum registro neste período.</div>`; return; }
-
-  const inativacoes = data.filter(l => l.acao === 'inativacao').length;
-  const reativacoes = data.filter(l => l.acao === 'reativacao').length;
-
-  container.innerHTML = `
-    <div class="cards-grid" style="margin-bottom:16px">
-      <div class="card"><div class="card-label">Inativações</div><div class="card-value red">${inativacoes}</div></div>
-      <div class="card"><div class="card-label">Reativações</div><div class="card-value green">${reativacoes}</div></div>
-    </div>
-    <div class="table-wrap"><table class="main-table">
-      <thead><tr><th>Data/Hora</th><th>Colaborador</th><th>Matrícula</th><th>Ação</th><th>Responsável</th><th>Motivo</th></tr></thead>
-      <tbody>${data.map(l => {
-        const badge = l.acao === 'inativacao'
-          ? `<span class="pill pill-inativo">Inativação</span>`
-          : `<span class="pill pill-ativo">Reativação</span>`;
-        return `<tr>
-          <td>${new Date(l.created_at).toLocaleString('pt-BR')}</td>
-          <td>${l.nome_colaborador}</td><td>${l.matricula}</td>
-          <td>${badge}</td><td>${l.onsite_nome}</td><td>${l.motivo||'—'}</td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div>`;
-}
-
-// ── ADICIONAR COLABORADOR ─────────────────────
-async function adicionarColaborador(e) {
-  e.preventDefault();
-  const btn   = document.getElementById('btn-add');
-  const errEl = document.getElementById('adicionar-error');
-  errEl.style.display = 'none';
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Salvando…';
-
-  const payload = {
-    matricula:     document.getElementById('add-matricula').value.trim().toUpperCase(),
-    nome:          document.getElementById('add-nome').value.trim().toUpperCase(),
-    unidade:       document.getElementById('add-unidade').value.trim(),
-    telefone:      document.getElementById('add-telefone').value.trim(),
-    trajeto:       document.getElementById('add-trajeto').value,
-    valor:         Number(document.getElementById('add-valor').value) || 100,
-    motivo_voucher:document.getElementById('add-motivo').value.trim() || 'ESCALA DE TRABALHO',
-    deslocamento:  document.getElementById('add-deslocamento').value.trim() || 'UBER/99',
-    status:        'ativo',
+async function salvarColab() {
+  const btn=document.getElementById('btn-salvar-colab');
+  const g=id=>document.getElementById(id).value.trim();
+  const colab={
+    id:g('mc-id')||undefined,
+    matricula:g('mc-matricula'),nome:g('mc-nome'),unidade:g('mc-unidade'),
+    cpf:g('mc-cpf'),celular:g('mc-celular'),
+    hora_entrada:g('mc-entrada'),hora_saida:g('mc-saida'),
+    horario_full:[g('mc-entrada'),g('mc-saida')].filter(Boolean).join(' AS '),
+    trajeto:g('mc-trajeto')||null,
+    cod_voucher:g('mc-codvoucher'),valor:g('mc-valor')||'100,00',
+    aplicativo:g('mc-app'),beneficio_original:g('mc-beneficio')
   };
+  if(!colab.matricula||!colab.nome){toast('Matrícula e nome são obrigatórios.','error');return;}
+  btn.disabled=true;btn.textContent='Salvando…';
+  try{
+    await rpc('wc_voucher_adicionar',{p_colab:colab});
+    fecharModal('modal-colab');await atualizarDados();
+    toast('Colaborador salvo!','success');
+  }catch(e){toast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Salvar';}
+}
 
-  const { error } = await sb.from('colaboradores').insert(payload);
-  btn.disabled = false; btn.textContent = 'Salvar colaborador';
+// ── Inativar ───────────────────────────
+let _inatMatricula='';
+function buscarParaInativar(){
+  const busca=(document.getElementById('busca-inat').value||'').toLowerCase();
+  const el=document.getElementById('inat-resultados');
+  if(busca.length<2){el.innerHTML='';return;}
+  const lista=COLABORADORES.filter(c=>c.status==='ATIVO'&&[c.nome,c.matricula].some(f=>(f||'').toLowerCase().includes(busca)));
+  if(!lista.length){el.innerHTML='<p style="color:var(--muted);font-size:13px;margin-top:12px">Nenhum colaborador ativo encontrado.</p>';return;}
+  el.innerHTML=lista.map(c=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
+      <div style="flex:1"><strong>${c.nome}</strong><br/><span style="color:var(--muted);font-size:12px">${c.matricula} · ${c.unidade||'—'}</span></div>
+      <button class="btn btn-warning btn-sm" onclick="abrirInativar('${c.matricula}','${(c.nome||'').replace(/'/g,"\\'")}')">Inativar</button>
+    </div>`).join('');
+}
 
-  if (error) {
-    errEl.textContent = error.code === '23505'
-      ? 'Matrícula já cadastrada.'
-      : 'Erro ao salvar: ' + error.message;
-    errEl.style.display = 'block';
-    return;
+function abrirInativar(matricula, nome) {
+  const motivo=prompt(`Motivo do desligamento de ${nome}:`);
+  if(motivo===null)return;
+  const obs=prompt('Observações (opcional):')||'';
+  inativarColab(matricula,motivo,obs);
+}
+
+async function inativarColab(matricula,motivo,obs) {
+  try{
+    await rpc('wc_voucher_inativar',{p_matricula:matricula,p_motivo:motivo,p_obs:obs});
+    await atualizarDados();
+    toast(`${matricula} inativado.`,'success');
+  }catch(e){toast(e.message,'error');}
+}
+
+async function reativar(matricula) {
+  if(!confirm(`Reativar ${matricula}?`))return;
+  try{
+    await rpc('wc_voucher_reativar',{p_matricula:matricula});
+    await atualizarDados();
+    toast('Reativado!','success');
+  }catch(e){toast(e.message,'error');}
+}
+
+// ── Exportar ───────────────────────────
+let _exportRows=[];
+function _parseHorario(h){const m=String(h).match(/(\d{2}:\d{2})\s+AS\s+(\d{2}:\d{2})/i);if(!m)return{entrada:null,saida:null};return{entrada:m[1],saida:m[2]};}
+function _fmtData(dt){return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();}
+function _fmtHora(dt){return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');}
+
+function calcularDatas(horario,dataBase,dataVenc){
+  const {entrada,saida}=_parseHorario(horario);
+  const vazio={dInicioIda:'',hInicioIda:'',dFimIda:'',hFimIda:'',dInicioVolta:'',hInicioVolta:'',dFimVolta:'',hFimVolta:''};
+  if(!entrada||!saida||!dataBase)return vazio;
+  const [hE,mE]=entrada.split(':').map(Number);
+  const [hS,mS]=saida.split(':').map(Number);
+  const [ano,mes,dia]=dataBase.split('-').map(Number);
+  const calc=(baseD,baseM,baseA,hMin,addMin)=>{const tot=hMin+addMin;const d=baseD+Math.floor(tot/1440);const h=((tot%1440)+1440)%1440;return new Date(baseA,baseM-1,d,Math.floor(h/60),h%60,0);};
+  if(dataVenc){
+    const [av,mv,dv]=dataVenc.split('-').map(Number);
+    return{
+      dInicioIda:_fmtData(calc(dia,mes,ano,hE*60+mE,-120)),hInicioIda:_fmtHora(calc(dia,mes,ano,hE*60+mE,-120)),
+      dFimIda:_fmtData(calc(dv,mv,av,hE*60+mE,60)),hFimIda:_fmtHora(calc(dv,mv,av,hE*60+mE,60)),
+      dInicioVolta:_fmtData(calc(dia,mes,ano,hS*60+mS,-60)),hInicioVolta:_fmtHora(calc(dia,mes,ano,hS*60+mS,-60)),
+      dFimVolta:_fmtData(calc(dv,mv,av,hS*60+mS,120)),hFimVolta:_fmtHora(calc(dv,mv,av,hS*60+mS,120))
+    };
   }
-
-  toast('Colaborador adicionado!', 'success');
-  e.target.reset();
-  navTo('colaboradores');
-  await loadColaboradores();
+  const d1=dia+1;
+  return{
+    dInicioIda:_fmtData(calc(d1,mes,ano,hE*60+mE,-120)),hInicioIda:_fmtHora(calc(d1,mes,ano,hE*60+mE,-120)),
+    dFimIda:_fmtData(calc(d1,mes,ano,hE*60+mE,60)),hFimIda:_fmtHora(calc(d1,mes,ano,hE*60+mE,60)),
+    dInicioVolta:_fmtData(calc(d1,mes,ano,hS*60+mS,-60)),hInicioVolta:_fmtHora(calc(d1,mes,ano,hS*60+mS,-60)),
+    dFimVolta:_fmtData(calc(d1,mes,ano,hS*60+mS,120)),hFimVolta:_fmtHora(calc(d1,mes,ano,hS*60+mS,120))
+  };
 }
 
-// ── TOAST ─────────────────────────────────────
-function toast(msg, tipo) {
-  const el = document.getElementById('toast'); if (!el) return;
-  el.textContent = msg;
-  el.className   = 'show' + (tipo ? ' ' + tipo : '');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => el.className = '', 4000);
+function gerarExportacao(){
+  const dataBase=document.getElementById('exp-data-base').value;
+  const dataVenc=document.getElementById('exp-data-venc').value||null;
+  if(!dataBase){toast('Selecione a Data Base.','error');return;}
+  _exportRows=[];
+  let semVoucher=0;
+  COLABORADORES.filter(c=>c.status==='ATIVO').forEach(c=>{
+    const horario=c.horario_full||[c.hora_entrada,c.hora_saida].filter(Boolean).join(' AS ');
+    const trajeto=c.trajeto||definirTrajeto(c.hora_entrada,c.hora_saida);
+    if(!trajeto){semVoucher++;return;}
+    const d=calcularDatas(horario,dataBase,dataVenc);
+    _exportRows.push({
+      'TRAJETO':trajeto,'UNIDADE':c.unidade,'MATRICULA':c.matricula,'NOME COMPLETO':c.nome,
+      'CELULAR':c.celular,'CPF':c.cpf,
+      'DATA INICIO':trajeto==='IDA'?d.dInicioIda:d.dInicioVolta,
+      'HORA INICIO':trajeto==='IDA'?d.hInicioIda:d.hInicioVolta,
+      'DATA FIM':trajeto==='IDA'?d.dFimIda:d.dFimVolta,
+      'HORA FIM':trajeto==='IDA'?d.hFimIda:d.hFimVolta,
+      'VOUCHER':'','VALOR':c.valor||'100,00','MOTIVO':'ESCALA DE TRABALHO','APLICATIVO':c.aplicativo||'UBER/99'
+    });
+  });
+  const prev=document.getElementById('export-preview');
+  const head=document.getElementById('exp-head');
+  const body=document.getElementById('exp-body');
+  const info=document.getElementById('exp-info');
+  const cols=Object.keys(_exportRows[0]||{});
+  head.innerHTML=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+  body.innerHTML=_exportRows.slice(0,20).map(r=>`<tr>${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('');
+  prev.style.display='block';
+  info.textContent=`${_exportRows.length} colaborador(es) gerados${semVoucher?` · ${semVoucher} sem trajeto definido (ignorados)`:''}${_exportRows.length>20?' · mostrando primeiros 20':''}`;
+  document.getElementById('btn-baixar-xlsx').style.display='inline-flex';
 }
 
-// ── SIDEBAR MOBILE ────────────────────────────
-function toggleSidebarMobile() {
-  const sb = document.getElementById('sidebar');
-  const ov = document.getElementById('sidebar-overlay');
-  const open = sb.classList.toggle('open');
-  ov.classList.toggle('visible', open);
-}
-function fecharSidebarMobile() {
-  document.getElementById('sidebar')?.classList.remove('open');
-  document.getElementById('sidebar-overlay')?.classList.remove('visible');
+function baixarExcel(){
+  if(!_exportRows.length){toast('Gere a prévia primeiro.','error');return;}
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(_exportRows);
+  ws['!cols']=Object.keys(_exportRows[0]).map(()=>({wch:18}));
+  XLSX.utils.book_append_sheet(wb,ws,'Vouchers');
+  XLSX.writeFile(wb,`vouchers_${document.getElementById('exp-data-base').value}.xlsx`);
 }
 
-// ── START ─────────────────────────────────────
-initApp();
+// ── Histórico ──────────────────────────
+function renderHistorico(){
+  const busca=(document.getElementById('busca-hist')?.value||'').toLowerCase();
+  let lista=[...HISTORICO_LISTA];
+  if(busca)lista=lista.filter(h=>[h.matricula,h.tipo,h.motivo,h.responsavel].some(f=>(f||'').toLowerCase().includes(busca)));
+  const el=document.getElementById('hist-lista');
+  if(!el)return;
+  if(!lista.length){el.innerHTML='<div class="empty-state"><div class="ico">📋</div>Nenhum registro encontrado</div>';return;}
+  const ico={INATIVAÇÃO:'⊘',REATIVAÇÃO:'✅'}; 
+  el.innerHTML=lista.slice(0,100).map(h=>`
+    <div class="hist-row">
+      <div class="hist-ico">${ico[h.tipo]||'📌'}</div>
+      <div class="hist-main">
+        <div class="hist-tipo">${h.tipo||'—'} — Matrícula ${h.matricula||'—'}</div>
+        <div class="hist-sub">${h.motivo||'—'} · ${h.responsavel||'—'} · ${h.created_at?new Date(h.created_at).toLocaleString('pt-BR'):''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Usuários ───────────────────────────
+async function renderUsuarios(){
+  const tbody=document.getElementById('tbody-usuarios');if(!tbody)return;
+  tbody.innerHTML='<tr><td colspan="5" style="padding:20px;color:var(--muted)">Carregando…</td></tr>';
+  try{
+    const r=await rpc('wc_voucher_listar_usuarios',{});
+    tbody.innerHTML=(r.usuarios||[]).map(u=>`<tr>
+      <td><strong>${u.nome}</strong></td><td>${u.email}</td>
+      <td><span class="pill pill-muted">${u.perfil}</span></td>
+      <td>${u.ativo?'<span class="pill pill-ativo">ATIVO</span>':'<span class="pill pill-inativo">INATIVO</span>'}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleUsuario('${u.id}')">${u.ativo?'Desativar':'Ativar'}</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${u.id}')">Excluir</button>
+      </td>
+    </tr>`).join('')||`<tr><td colspan="5"><div class="empty-state">Nenhum usuário</div></td></tr>`;
+  }catch(e){tbody.innerHTML=`<tr><td colspan="5" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;}
+}
+
+function abrirModalUsuario(u){
+  document.getElementById('mu-title').textContent=u?'Editar Usuário':'Novo Usuário';
+  document.getElementById('u-id').value=u?.id||'';
+  document.getElementById('u-nome').value=u?.nome||'';
+  document.getElementById('u-email').value=u?.email||'';
+  document.getElementById('u-senha').value='';
+  document.getElementById('u-perfil').value=u?.perfil||'usuario';
+  abrirModal('modal-usuario');
+}
+
+async function salvarUsuario(){
+  const btn=document.getElementById('btn-salvar-u');
+  const u={id:document.getElementById('u-id').value||undefined,nome:document.getElementById('u-nome').value.trim(),email:document.getElementById('u-email').value.trim().toLowerCase(),senha:document.getElementById('u-senha').value||undefined,perfil:document.getElementById('u-perfil').value,permissoes:[]};
+  if(!u.nome||!u.email){toast('Informe nome e e-mail.','error');return;}
+  btn.disabled=true;btn.textContent='Salvando…';
+  try{
+    await rpc('wc_voucher_salvar_usuario',{p_usuario:u});
+    fecharModal('modal-usuario');renderUsuarios();toast('Usuário salvo!','success');
+  }catch(e){toast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Salvar';}
+}
+
+async function toggleUsuario(id){
+  try{const r=await rpc('wc_voucher_toggle_usuario',{p_id:id});renderUsuarios();toast(r.ativo?'Ativado.':'Desativado.','success');}catch(e){toast(e.message,'error');}
+}
+async function excluirUsuario(id){
+  if(!confirm('Excluir este usuário?'))return;
+  try{await rpc('wc_voucher_excluir_usuario',{p_id:id});renderUsuarios();toast('Excluído.','success');}catch(e){toast(e.message,'error');}
+}
+
+// ── Helpers ────────────────────────────
+function abrirModal(id){document.getElementById(id)?.classList.add('open');}
+function fecharModal(id){document.getElementById(id)?.classList.remove('open');}
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-backdrop'))e.target.classList.remove('open');});
+function toast(msg,tipo){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.className='show'+(tipo?' '+tipo:'');clearTimeout(window._tt);window._tt=setTimeout(()=>el.className='',4500);}
 </script>
 </body>
 </html>
