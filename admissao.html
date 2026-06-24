@@ -1299,7 +1299,7 @@
       <div class="modal-section-label">Identificação</div>
       <div class="form-row-2">
         <div class="form-group">
-          <label>Código (COD)</label>
+          <label>Cód. do Cliente</label>
           <input type="text" id="cc-cod" placeholder="Gerado automaticamente"/>
           <small style="color:var(--muted);font-size:11px">Gerado automaticamente. Pode ser editado.</small>
         </div>
@@ -2210,34 +2210,29 @@ function popularSelectCC() {
 function preencherLocalPorCC() {
   const sel = document.getElementById('v-codigoHub');
   if (!sel?.value) return;
-  // Busca os dados do CC no array em memória (mais confiável que data-attributes)
   const cc = CENTROS_CUSTO.find(c => c.cod === sel.value);
   if (!cc) return;
-  const partes = [
-    cc.logradouro,
-    cc.numero ? `Nº ${cc.numero}` : '',
-    cc.bairro,
-    cc.cidade,
-    cc.uf
-  ].filter(Boolean);
+  const partes = [cc.logradouro, cc.numero?`Nº ${cc.numero}`:'', cc.bairro, cc.cidade, cc.uf].filter(Boolean);
   const localEl = document.getElementById('v-local');
   if (localEl) localEl.value = partes.join(', ');
-  // Preencher regional automaticamente pelo UF
   const regMap = { SP:'SPI', RJ:'RIO/ES', ES:'RIO/ES', AM:'CO/N', PA:'CO/N', MA:'CO/N',
                    GO:'CO/N', DF:'CO/N', MT:'CO/N', MS:'CO/N', TO:'CO/N', RO:'CO/N',
                    AC:'CO/N', RR:'CO/N', AP:'CO/N', PI:'CO/N' };
-  if (cc.uf) {
-    const reg = document.getElementById('v-regional');
-    if (reg && regMap[cc.uf]) reg.value = regMap[cc.uf];
-  }
+  if (cc.uf) { const reg = document.getElementById('v-regional'); if (reg && regMap[cc.uf]) reg.value = regMap[cc.uf]; }
+  // Filtrar departamentos pelo cod do CC
+  popularSelectDeptos(cc.cod);
 }
 
-function popularSelectDeptos() {
+function popularSelectDeptos(codCC) {
   const sel = document.getElementById('v-departamentoGI');
   if (!sel) return;
   const atual = sel.value;
+  // Vínculo: CC.cod === Departamento.cli_codigo
+  const lista = codCC
+    ? DEPTOS.filter(d => !d.cli_codigo || d.cli_codigo === codCC)
+    : DEPTOS;
   sel.innerHTML = '<option value="">— selecione —</option>' +
-    DEPTOS.map(d => `<option value="${d.descricao}">${d.codigo ? d.codigo+' — ' : ''}${d.descricao}</option>`).join('');
+    lista.map(d => `<option value="${d.descricao}">${d.codigo ? d.codigo+' — ' : ''}${d.descricao}</option>`).join('');
   if (atual) sel.value = atual;
 }
 
@@ -2575,6 +2570,10 @@ async function abrirImportacaoLote() {
 
   // Popular select de CC (todos inicialmente)
   impPopularSelectCC(null);
+  document.getElementById('imp-default-cc').onchange = () => {
+    impPreencherLocalDefault();
+    impFiltrarDeptosPorCC();
+  };
 
   // Se equipe/consultor logado, filtrar já de início
   if (!podeVerTudo()) impFiltrarCCsPorConsultor();
@@ -2588,7 +2587,6 @@ async function abrirImportacaoLote() {
 }
 
 function impPopularSelectCC(ccsPermitidos) {
-  // ccsPermitidos = Set de cods, ou null = mostrar todos
   const selCC = document.getElementById('imp-default-cc');
   const valorAtual = selCC.value;
   const lista = CENTROS_CUSTO.filter(c =>
@@ -2597,10 +2595,29 @@ function impPopularSelectCC(ccsPermitidos) {
   selCC.innerHTML = '<option value="">— nenhum padrão —</option>' +
     lista.map(c => {
       const local = [c.logradouro, c.numero?'Nº '+c.numero:'', c.bairro, c.cidade, c.uf].filter(Boolean).join(', ');
-      return `<option value="${c.cod}" data-local="${local}" data-uf="${c.uf||''}">${c.cod} — ${c.descricao}</option>`;
+      return `<option value="${c.cod}" data-local="${local}" data-uf="${c.uf||''}" data-cliente="${c.cliente||''}">${c.cod} — ${c.descricao}</option>`;
     }).join('');
-  // Manter seleção anterior se ainda disponível
   if (valorAtual && lista.find(c => c.cod === valorAtual)) selCC.value = valorAtual;
+  // Filtrar deptos pelo CC já selecionado
+  impFiltrarDeptosPorCC();
+}
+
+function impFiltrarDeptosPorCC() {
+  const selCC  = document.getElementById('imp-default-cc');
+  const selDep = document.getElementById('imp-default-depto');
+  if (!selDep) return;
+  const codCC      = selCC?.value || '';
+  const valorAtual = selDep.value;
+
+  // Vínculo: CC.cod === Departamento.cli_codigo
+  const lista = codCC
+    ? DEPTOS.filter(d => !d.cli_codigo || d.cli_codigo === codCC)
+    : DEPTOS;
+
+  selDep.innerHTML = '<option value="">— nenhum padrão —</option>' +
+    lista.map(d => `<option value="${d.descricao}">${d.codigo ? d.codigo+' — ' : ''}${d.descricao}</option>`).join('');
+
+  if (valorAtual && lista.find(d => d.descricao === valorAtual)) selDep.value = valorAtual;
 }
 
 function impFiltrarCCsPorConsultor() {
