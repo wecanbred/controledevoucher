@@ -5317,6 +5317,14 @@ function integCancelarPreview() {
   document.getElementById('integ-colmeias-wrap').style.display = 'block';
 }
 
+function integSelecionarData(data) {
+  // Se a data tem integração, exibe; se não, mostra aviso
+  window._integAbaAtiva = data;
+  const picker = document.getElementById('integ-date-picker');
+  if (picker) picker.value = data;
+  integRenderColmeias();
+}
+
 async function integCriarColmeias() {
   try {
     const r = await rpc('wc_integ_criar_colmeia', { p_lote: INTEG_LOTE });
@@ -5359,24 +5367,48 @@ function integRenderColmeias() {
   const abaAtiva = window._integAbaAtiva || datas[0];
   window._integAbaAtiva = abaAtiva;
 
-  // Select compacto de datas
-  const abas = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-    <label style="font-size:12px;color:var(--muted);font-weight:600">📅 Data:</label>
-    <select onchange="window._integAbaAtiva=this.value;integRenderColmeias()"
+  // Input date — só mostra datas que têm integração
+  const datasSet = datas.join(',');
+  const abas = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+    <label style="font-size:12px;color:var(--muted);font-weight:600">📅 Data da integração:</label>
+    <input type="date" id="integ-date-picker" value="${abaAtiva}"
+      onchange="integSelecionarData(this.value)"
       style="background:var(--surface2);border:1px solid var(--border);color:var(--text);
-      border-radius:8px;padding:6px 12px;font-size:13px;font-family:var(--font);cursor:pointer;outline:none">
-      ${datas.map(data => {
+      border-radius:8px;padding:6px 12px;font-size:13px;font-family:var(--font);outline:none;cursor:pointer"/>
+    <span id="integ-date-status" style="font-size:12px;color:var(--muted)">
+      ${datas.length} data(s) com integração no histórico
+    </span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${datas.slice(0,5).map(data => {
         const cols = porData[data];
         const pend = cols.reduce((s,c)=>s+Number(c.pendentes),0);
-        const label = data + (pend > 0 ? ` (⏳ ${pend})` : cols.every(c=>c.status==='fechada') ? ' 🔒' : ' ✓');
-        return `<option value="${data}" ${data===abaAtiva?'selected':''}>${label}</option>`;
+        const ativa = data === abaAtiva;
+        const [a,m,d] = data.split('-');
+        return `<button onclick="integSelecionarData('${data}')"
+          style="padding:3px 10px;border-radius:20px;border:1px solid ${ativa?'var(--accent)':'var(--border)'};
+          background:${ativa?'var(--accent)':'transparent'};color:${ativa?'var(--brand)':'var(--muted)'};
+          font-size:11px;cursor:pointer;font-family:var(--font)">
+          ${d}/${m}${pend>0?` ⏳${pend}`:''}
+        </button>`;
       }).join('')}
-    </select>
-    <span style="font-size:11px;color:var(--muted)">${datas.length} data(s) no histórico</span>
+      ${datas.length > 5 ? `<span style="font-size:11px;color:var(--muted);padding:4px 0">+${datas.length-5} mais…</span>` : ''}
+    </div>
   </div>`;
 
   // Conteúdo da data selecionada
+  // Verificar se data selecionada tem integração
   const cols = porData[abaAtiva] || [];
+  if (abaAtiva && !porData[abaAtiva]) {
+    // Data sem integração
+    const [a,m,d] = abaAtiva.split('-');
+    wrap.innerHTML = `${abas}
+      <div class="empty-state">
+        <div style="font-size:32px;margin-bottom:10px">📅</div>
+        <p>Nenhuma integração em <strong>${d}/${m}/${a}</strong>.</p>
+        <p style="font-size:12px;margin-top:6px">Suba uma planilha para criar colmeias nesta data.</p>
+      </div>`;
+    return;
+  }
   const totalGeral    = cols.reduce((s,c)=>s+Number(c.total),0);
   const pagosGeral    = cols.reduce((s,c)=>s+Number(c.pagos),0);
   const noshowGeral   = cols.reduce((s,c)=>s+Number(c.noshow),0);
