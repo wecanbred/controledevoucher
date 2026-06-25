@@ -1262,34 +1262,92 @@
 
   <!-- ══ INTEGRAÇÃO — Colmeia ══ -->
   <div class="page" id="page-integracao">
-    <div class="page-header">
+
+    <!-- ── TOOLBAR ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
       <div>
-        <h1>🐝 Gestão de Benefícios</h1>
-        <p>Suba a planilha de admitidos e confirme a presença por departamento</p>
+        <h1 style="font-size:20px;font-weight:800;margin:0">Gestão de Benefícios</h1>
+        <p style="font-size:12px;color:var(--muted);margin-top:2px">Confirmação de presença para pagamento</p>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap" id="integ-btns-admin">
-        <button class="btn btn-ghost" onclick="document.getElementById('integ-file-input').click()">📂 Subir planilha</button>
+      <div style="display:flex;gap:8px;align-items:center" id="integ-btns-admin">
+        <button class="btn btn-ghost btn-sm" id="integ-btn-upload" onclick="document.getElementById('integ-file-input').click()">
+          📂 Subir planilha
+        </button>
         <input type="file" id="integ-file-input" accept=".xlsx,.xls" style="display:none" onchange="integLerPlanilha(this)"/>
       </div>
     </div>
 
-    <!-- Preview da planilha antes de criar colmeias -->
+    <!-- ── PREVIEW UPLOAD (antes de confirmar) ── -->
     <div id="integ-preview-wrap" style="display:none;margin-bottom:20px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:12px" id="integ-preview-titulo"></div>
+      <div style="background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:18px 22px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent)" id="integ-preview-titulo"></div>
         <div id="integ-preview-lista"></div>
         <div style="margin-top:16px;display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="integCriarColmeias()">🐝 Criar colmeias</button>
+          <button class="btn btn-primary" onclick="integCriarColmeias()">✅ Confirmar e salvar</button>
           <button class="btn btn-ghost" onclick="integCancelarPreview()">Cancelar</button>
         </div>
       </div>
     </div>
 
-    <!-- Lista de colmeias existentes -->
+    <!-- ── CONTEÚDO PRINCIPAL ── -->
     <div id="integ-colmeias-wrap">
-      <div id="integ-colmeias-lista">
-        <div class="empty-state"><div style="font-size:32px;margin-bottom:10px">🐝</div>Nenhuma integração ainda</div>
+
+      <!-- Linha de filtros -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <!-- Seletor de data -->
+        <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px">
+          <span style="font-size:13px">📅</span>
+          <input type="date" id="integ-date-picker"
+            onchange="integSelecionarData(this.value)"
+            style="background:transparent;border:none;color:var(--text);font-size:13px;font-family:var(--font);outline:none;cursor:pointer;min-width:130px"/>
+        </div>
+        <!-- Filtro de status -->
+        <select id="integ-filtro-status" onchange="integRenderTabela()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:13px;font-family:var(--font);outline:none;cursor:pointer">
+          <option value="">Todos os status</option>
+          <option value="pendente">⏳ Pendentes</option>
+          <option value="PAGAR">✅ Pagar</option>
+          <option value="NO SHOW">⊘ No Show</option>
+        </select>
+        <!-- Busca -->
+        <div style="flex:1;min-width:180px;max-width:300px;position:relative">
+          <input type="text" id="integ-busca" placeholder="Buscar nome, cargo, depto…"
+            oninput="integRenderTabela()"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px 6px 32px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">🔍</span>
+        </div>
+        <span id="integ-date-hist" style="font-size:11.5px;color:var(--muted)"></span>
       </div>
+
+      <!-- Pills de datas rápidas -->
+      <div id="integ-date-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+
+      <!-- KPI cards da data selecionada -->
+      <div id="integ-kpis" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap"></div>
+
+      <!-- Tabela de colaboradores -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <table class="main-table" id="integ-tabela" style="width:100%">
+          <thead>
+            <tr>
+              <th style="width:36px">#</th>
+              <th>Nome</th>
+              <th>Cargo</th>
+              <th>Departamento</th>
+              <th>Benefícios</th>
+              <th style="width:160px;text-align:center">Confirmação</th>
+              <th>Confirmado por</th>
+            </tr>
+          </thead>
+          <tbody id="integ-tabela-body">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">Selecione uma data</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Rodapé com fechar colmeia -->
+      <div id="integ-rodape" style="display:none;margin-top:14px;display:flex;justify-content:flex-end;gap:8px"></div>
+
     </div>
   </div>
 
@@ -1412,27 +1470,7 @@
 </div>
 
 
-<!-- MODAL COLMEIA -->
-<div class="modal-backdrop" id="integ-modal-colmeia" onclick="if(event.target===this)fecharModal('integ-modal-colmeia')">
-  <div class="modal" style="width:640px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column">
-    <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <div>
-        <h2 id="integ-modal-titulo">Colmeia</h2>
-        <p id="integ-modal-sub" style="font-size:12px;color:var(--muted);margin-top:3px"></p>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span id="integ-modal-badges" style="font-size:12px;color:var(--muted)"></span>
-        <button class="btn btn-ghost btn-sm" id="integ-btn-fechar-col" onclick="integFecharColmeia()" style="display:none">✅ Fechar colmeia</button>
-        <button class="btn btn-ghost btn-sm" onclick="fecharModal('integ-modal-colmeia')">✕</button>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:0 26px 20px">
-      <div id="integ-colmeia-content">
-        <div class="loading-overlay"><span class="spinner"></span></div>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 </body>
 </html>
@@ -5179,32 +5217,26 @@ async function vchrExcluirHistorico(id) {
 // ═══════════════ FIM VOUCHER INTEGRADO ═══════════════
 
 // ════════════════════════════════════════════════════════════
-//  INTEGRAÇÃO — Colmeia de confirmação de presença
+//  INTEGRAÇÃO — Gestão de Benefícios (lista tabular)
 // ════════════════════════════════════════════════════════════
-let INTEG_LOTE       = [];   // dados lidos da planilha, agrupados
-let INTEG_COLMEIAS   = [];   // lista de colmeias do banco
-let INTEG_COL_ABERTA = null; // colmeia atualmente aberta no modal
-let INTEG_COLABS     = [];   // colaboradores da colmeia aberta
+let INTEG_LOTE       = [];
+let INTEG_COLMEIAS   = [];   // todas as colmeias do banco
+let INTEG_TODOS_COLABS = []; // todos os colabs da data selecionada (flat)
 
-// ── Carregar lista ao navegar ──
+// ── Navegar para página ──
 const _origNavTo2 = window.navTo;
 window.navTo = function(id) {
   if (id === 'integracao') {
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('nav a,.nav-suporte-item').forEach(a=>a.classList.remove('active'));
-    const pg = document.getElementById('page-integracao'); if(pg) pg.classList.add('active');
+    const pg = document.getElementById('page-integracao');
+    if (pg) pg.classList.add('active');
     document.querySelector('[data-page="integracao"]')?.classList.add('active');
     integCarregarColmeias();
-    fecharSidebarMobile && fecharSidebarMobile();
-    // Mostra botão de upload só para quem pode criar
-    const btns = document.getElementById('integ-btns-admin');
-    if (btns) btns.style.display = podeAdmin() ? 'flex' : 'none';
     return;
   }
   _origNavTo2(id);
 };
 
-// ── Ler planilha ATIVOS_E_INATIVOS ──
+// ── Ler planilha ──
 function integLerPlanilha(input) {
   const file = input.files[0]; if(!file) return;
   input.value = '';
@@ -5216,16 +5248,14 @@ function integLerPlanilha(input) {
       const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:false});
       if (!rows.length) { showToast('Planilha vazia.','error'); return; }
 
-      // Mapear cabeçalhos
       const header = rows[0].map(h => (h||'').toString().trim());
       const idx = name => header.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
 
       const iNome    = idx('Nome do Funcionário');
       const iAdmiss  = idx('Data de Admissão');
-      const iDepto   = idx('Depto/Centro de Custo');   // código ex: HUB-LSP-04
-      const iDeptoNm = idx('Departamento');              // nome ex: LM Hub_SP_São José dos Campos
-      const iCliente = idx('Cliente');                   // código numérico do cliente
-      const iRazao   = idx('Razão Social');              // nome do cliente
+      const iDepto   = idx('Depto/Centro de Custo');
+      const iDeptoNm = idx('Departamento');
+      const iRazao   = idx('Razão Social');
       const iCargo   = idx('Cargo ou Função');
       const iHorario = idx('Descrição do Horário');
       const iCodigo  = idx('Código');
@@ -5237,7 +5267,6 @@ function integLerPlanilha(input) {
 
       if (iNome < 0 || iAdmiss < 0) { showToast('Planilha fora do padrão esperado.','error'); return; }
 
-      // Agrupar por data+depto — só ativos (sem data de demissão)
       const grupos = {};
       rows.slice(1).forEach(row => {
         const nome   = row[iNome];
@@ -5246,7 +5275,6 @@ function integLerPlanilha(input) {
         if (!nome || !admiss) return;
         if (demiss && String(demiss).trim() && String(demiss).trim() !== 'null') return;
 
-        // Formatar data
         let dataStr = '';
         if (admiss instanceof Date) {
           dataStr = admiss.toISOString().split('T')[0];
@@ -5257,7 +5285,6 @@ function integLerPlanilha(input) {
           else dataStr = s;
         }
 
-        // Usar código do depto (cli_codigo no sistema) como chave de agrupamento
         const depto_cod  = iDepto  >= 0 ? (row[iDepto]  || '').toString().trim() : '';
         const razao      = iRazao  >= 0 ? (row[iRazao]  || '').toString().trim() : '';
         const depto_nome = iDeptoNm >= 0 ? (row[iDeptoNm]|| '').toString().trim() : depto_cod;
@@ -5277,10 +5304,7 @@ function integLerPlanilha(input) {
       });
 
       INTEG_LOTE = Object.values(grupos).sort((a,b) => a.data_admissao.localeCompare(b.data_admissao));
-
       if (!INTEG_LOTE.length) { showToast('Nenhum admitido ativo encontrado.','error'); return; }
-
-      // Mostrar preview
       integMostrarPreview();
     } catch(e) { showToast('Erro ao ler planilha: ' + e.message, 'error'); }
   };
@@ -5288,46 +5312,38 @@ function integLerPlanilha(input) {
 }
 
 function integMostrarPreview() {
-  const wrap = document.getElementById('integ-preview-wrap');
+  const wrap  = document.getElementById('integ-preview-wrap');
   const titulo = document.getElementById('integ-preview-titulo');
   const lista  = document.getElementById('integ-preview-lista');
   const totalCol = INTEG_LOTE.reduce((s,g) => s + g.colaboradores.length, 0);
-
-  titulo.textContent = `${INTEG_LOTE.length} colmeia(s) encontrada(s) · ${totalCol} colaborador(es) admitido(s)`;
-
+  titulo.textContent = `${INTEG_LOTE.length} grupo(s) encontrado(s) · ${totalCol} colaborador(es) admitido(s)`;
   lista.innerHTML = INTEG_LOTE.map(g => {
     const [a,m,d] = g.data_admissao.split('-');
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
       <div>
         <strong>${d}/${m}/${a}</strong>
-        <span style="color:var(--muted);margin-left:10px">${g.depto_nome || g.depto_cod || 'Sem depto'}</span>
+        <span style="color:var(--muted);margin-left:8px">${g.cli_nome ? g.cli_nome+' — ' : ''}${g.depto_nome || g.depto_cod || 'Sem depto'}</span>
       </div>
       <span style="color:var(--accent);font-weight:600">${g.colaboradores.length} pessoa(s)</span>
     </div>`;
   }).join('');
-
   wrap.style.display = 'block';
-  document.getElementById('integ-colmeias-wrap').style.display = 'none';
 }
 
 function integCancelarPreview() {
   INTEG_LOTE = [];
   document.getElementById('integ-preview-wrap').style.display = 'none';
-  document.getElementById('integ-colmeias-wrap').style.display = 'block';
 }
 
 // Normaliza data para o formato que está no banco (DD/MM/YYYY)
 function integNormalizarData(data) {
   if (!data) return data;
-  // ISO YYYY-MM-DD → DD/MM/YYYY
   if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
     const [a,m,d] = data.split('-');
     return `${d}/${m}/${a}`;
   }
-  return data; // já está em DD/MM/YYYY
+  return data;
 }
-
-// ISO para o input date
 function integParaISO(data) {
   if (!data) return '';
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
@@ -5337,18 +5353,10 @@ function integParaISO(data) {
   return data;
 }
 
-function integSelecionarData(data) {
-  const normalizada = integNormalizarData(data);
-  window._integAbaAtiva = normalizada;
-  const picker = document.getElementById('integ-date-picker');
-  if (picker) picker.value = integParaISO(normalizada);
-  integRenderColmeias();
-}
-
 async function integCriarColmeias() {
   try {
     const r = await rpc('wc_integ_criar_colmeia', { p_lote: INTEG_LOTE });
-    const msg = `${r.colmeias} colmeia(s) criada(s) · ${r.colaboradores} colaborador(es)` +
+    const msg = `${r.colmeias} grupo(s) criado(s) · ${r.colaboradores} colaborador(es)` +
       (r.puladas > 0 ? ` · ${r.puladas} data(s) fechada(s) preservada(s) 🔒` : '');
     showToast(msg, 'success');
     integCancelarPreview();
@@ -5356,322 +5364,250 @@ async function integCriarColmeias() {
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-// ── Listar colmeias ──
+// ── Carregar todas as colmeias ──
 async function integCarregarColmeias() {
-  const wrap = document.getElementById('integ-colmeias-lista');
-  if (wrap) wrap.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Carregando…</div>';
   try {
     const r = await rpc('wc_integ_listar_colmeias', {});
     INTEG_COLMEIAS = r.colmeias || [];
-    integRenderColmeias();
-  } catch(e) { if(wrap) wrap.innerHTML = `<div style="color:var(--danger);padding:16px">${e.message}</div>`; }
-}
-
-function integRenderColmeias() {
-  const wrap = document.getElementById('integ-colmeias-lista');
-  if (!wrap) return;
-  if (!INTEG_COLMEIAS.length) {
-    wrap.innerHTML = '<div class="empty-state"><div style="font-size:32px;margin-bottom:10px">🐝</div>Nenhuma integração ainda. Suba uma planilha para começar.</div>';
-    return;
-  }
-
-  // Agrupar por data
-  const porData = {};
-  INTEG_COLMEIAS.forEach(col => {
-    if (!porData[col.data_admissao]) porData[col.data_admissao] = [];
-    porData[col.data_admissao].push(col);
-  });
-
-  const datas = Object.keys(porData).sort((a,b) => {
-    // Ordenar DD/MM/YYYY corretamente
-    const toISO = s => { const p=s.split('/'); return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s; };
-    return toISO(b).localeCompare(toISO(a));
-  });
-  // Normalizar aba ativa para DD/MM/YYYY (formato do banco)
-  const abaAtiva = integNormalizarData(window._integAbaAtiva) || datas[0];
-  window._integAbaAtiva = abaAtiva;
-  // Sincronizar input date
-  const picker = document.getElementById('integ-date-picker');
-  if (picker && !picker.value) picker.value = integParaISO(abaAtiva);
-
-  // Input date — só mostra datas que têm integração
-  const abas = `
-  <div style="margin-bottom:20px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 12px">
-        <span style="font-size:14px">📅</span>
-        <input type="date" id="integ-date-picker" value="${integParaISO(abaAtiva)}"
-          onchange="integSelecionarData(this.value)"
-          style="background:transparent;border:none;color:var(--text);font-size:13px;font-family:var(--font);outline:none;cursor:pointer;min-width:130px"/>
-      </div>
-      <span style="font-size:11.5px;color:var(--muted)">${datas.length} integração(ões) no histórico</span>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-      \${datas.slice(0,8).map(data => {
-        const colsDt = porData[data];
-        const pend   = colsDt.reduce((s,c)=>s+Number(c.pendentes),0);
-        const total  = colsDt.reduce((s,c)=>s+Number(c.total),0);
-        const pagos  = colsDt.reduce((s,c)=>s+Number(c.pagos),0);
-        const ativa  = data === abaAtiva;
-        let label = data;
-        if (data.includes('-')) { const p=data.split('-'); label=p[2]+'/'+p[1]; }
-        else if (data.includes('/')) { const p=data.split('/'); label=p[0]+'/'+p[1]; }
-        const completo = pend === 0;
-        const cor = ativa ? 'var(--accent)' : completo ? 'var(--success)' : 'var(--border)';
-        const bg  = ativa ? 'var(--accent)' : 'transparent';
-        const txt = ativa ? 'var(--brand)'  : completo ? 'var(--success)' : 'var(--text)';
-        return '<button onclick="integSelecionarData(\'' + data + '\')"' +
-          ' style="display:flex;flex-direction:column;align-items:center;padding:5px 12px;border-radius:8px;' +
-          'border:1.5px solid ' + cor + ';background:' + bg + ';color:' + txt + ';cursor:pointer;font-family:var(--font);transition:all .15s;min-width:52px">' +
-          '<span style="font-size:12px;font-weight:700">' + label + '</span>' +
-          '<span style="font-size:10px;opacity:.75;margin-top:1px">' + (pend>0 ? '⏳'+pend : '✅'+pagos+'/'+total) + '</span>' +
-          '</button>';
-      }).join('')}
-      \${datas.length > 8 ? '<span style="font-size:11px;color:var(--muted);padding:4px 6px;align-self:center">+' + (datas.length-8) + ' mais</span>' : ''}
-    </div>
-  </div>`;
-
-  // Conteúdo da data selecionada
-  // Verificar se data selecionada tem integração
-  const cols = porData[abaAtiva] || [];
-  if (abaAtiva && !porData[abaAtiva]) {
-    // Data sem integração
-    const [a,m,d] = abaAtiva.split('-');
-    wrap.innerHTML = `${abas}
-      <div class="empty-state">
-        <div style="font-size:32px;margin-bottom:10px">📅</div>
-        <p>Nenhuma integração em <strong>${d}/${m}/${a}</strong>.</p>
-        <p style="font-size:12px;margin-top:6px">Suba uma planilha para criar colmeias nesta data.</p>
-      </div>`;
-    return;
-  }
-  const totalGeral    = cols.reduce((s,c)=>s+Number(c.total),0);
-  const pagosGeral    = cols.reduce((s,c)=>s+Number(c.pagos),0);
-  const noshowGeral   = cols.reduce((s,c)=>s+Number(c.noshow),0);
-  const pendentesGeral= cols.reduce((s,c)=>s+Number(c.pendentes),0);
-  const todasFechadas = cols.every(c=>c.status==='fechada');
-
-  const cards = cols.map(col => {
-    const pct = Number(col.total) > 0 ? Math.round((Number(col.pagos)+Number(col.noshow)) / Number(col.total) * 100) : 0;
-    const fechada = col.status === 'fechada';
-    const completo = Number(col.pendentes) === 0;
-    const statusColor = fechada ? 'var(--muted)' : completo ? 'var(--success)' : Number(col.pendentes) === Number(col.total) ? 'var(--border)' : 'var(--warning)';
-    const statusLabel = fechada ? '🔒 Fechada' : completo ? '✅ Concluída' : `⏳ ${col.pendentes} pendente${col.pendentes==1?'':'s'}`;
-    // Suporte legado: depto_nome antigo vinha como "RAZAO — DEPTO"
-    let clienteLabel = col.cli_nome || '';
-    let deptoLabel   = col.depto_nome || col.depto_cod || 'Sem departamento';
-    if (!clienteLabel && deptoLabel.includes(' — ')) {
-      const parts = deptoLabel.split(' — ');
-      clienteLabel = parts[0].trim();
-      deptoLabel   = parts.slice(1).join(' — ').trim();
+    integRenderPills();
+    // Selecionar data mais recente com pendentes, ou apenas a mais recente
+    if (!window._integDataAtiva && INTEG_COLMEIAS.length) {
+      const datas = integGetDatasOrdenadas();
+      const comPend = datas.find(d => {
+        const cols = INTEG_COLMEIAS.filter(c => c.data_admissao === d);
+        return cols.some(c => Number(c.pendentes) > 0);
+      });
+      window._integDataAtiva = comPend || datas[0];
+      const picker = document.getElementById('integ-date-picker');
+      if (picker) picker.value = integParaISO(window._integDataAtiva);
     }
-    return `<div onclick="integAbrirColmeia('${col.id}')"
-      style="background:var(--surface);border:1.5px solid ${completo||fechada?'var(--border)':'var(--border)'};
-      border-radius:12px;padding:0;cursor:pointer;width:220px;flex-shrink:0;
-      transition:box-shadow .15s,border-color .15s;overflow:hidden"
-      onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 4px 16px rgba(0,0,0,.18)'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-      <!-- Topo colorido por status -->
-      <div style="height:4px;background:${statusColor};border-radius:0"></div>
-      <div style="padding:14px 16px">
-        <!-- Cliente (topo, menor) -->
-        ${clienteLabel ? `<div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${clienteLabel}</div>` : ''}
-        <!-- Departamento (destaque) -->
-        <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.35;margin-bottom:10px;white-space:normal">
-          ${deptoLabel}
-        </div>
-        <!-- Contadores -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="display:flex;gap:10px;font-size:11.5px">
-            <span style="color:var(--success);font-weight:700">✅ ${col.pagos}</span>
-            <span style="color:var(--danger);font-weight:700">⊘ ${col.noshow}</span>
-            <span style="color:var(--muted)">${col.total} total</span>
-          </div>
-        </div>
-        <!-- Barra de progresso -->
-        <div style="height:4px;background:var(--surface3);border-radius:4px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${completo?'var(--success)':'var(--accent)'};border-radius:4px;transition:width .3s"></div>
-        </div>
-        <!-- Status label -->
-        <div style="font-size:10.5px;color:${statusColor};font-weight:600;margin-top:6px">${statusLabel}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  wrap.innerHTML = `
-    ${abas}
-    <!-- Resumo da aba -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap;gap:8px">
-      <div style="font-size:13px;color:var(--text);font-weight:600">
-        ${cols.length} departamento(s) &nbsp;·&nbsp; ${totalGeral} pessoa(s)
-        ${todasFechadas ? ' &nbsp;·&nbsp; <span style="color:var(--muted)">🔒 Todos fechados</span>' : ''}
-      </div>
-      <div style="display:flex;gap:16px;font-size:12.5px">
-        <span style="color:var(--success);font-weight:700">✅ ${pagosGeral} PAGAR</span>
-        <span style="color:var(--danger);font-weight:700">⊘ ${noshowGeral} NO SHOW</span>
-        ${pendentesGeral > 0 ? `<span style="color:var(--warning);font-weight:700">⏳ ${pendentesGeral} pendente(s)</span>` : '<span style="color:var(--success)">✓ Tudo confirmado</span>'}
-      </div>
-    </div>
-    <!-- Cards de departamento -->
-    <div style="display:flex;flex-wrap:wrap;gap:12px">
-      ${cards || '<div style="color:var(--muted);font-size:13px">Nenhum departamento nesta data.</div>'}
-    </div>`;
-}
-
-// ── Abrir colmeia ──
-async function integAbrirColmeia(colmeiaId) {
-  const content = document.getElementById('integ-colmeia-content');
-  if (content) content.innerHTML = '<div class="loading-overlay"><span class="spinner"></span></div>';
-  abrirModal('integ-modal-colmeia');
-
-  try {
-    const r = await rpc('wc_integ_abrir_colmeia', { p_colmeia_id: colmeiaId });
-    INTEG_COL_ABERTA = r.colmeia;
-    INTEG_COLABS = r.colaboradores || [];
-
-    document.getElementById('integ-modal-titulo').textContent = `🐝 ${r.colmeia.depto_nome}`;
-    document.getElementById('integ-modal-sub').textContent = `Integração ${r.colmeia.data_admissao} · ${INTEG_COLABS.length} colaborador(es)`;
-
-    // Botão fechar colmeia — só admin e se ainda aberta
-    const btnFechar = document.getElementById('integ-btn-fechar-col');
-    if (btnFechar) {
-      btnFechar.style.display = (podeAdmin() && r.colmeia.status === 'aberta') ? 'inline-flex' : 'none';
-      btnFechar.dataset.id = colmeiaId;
-    }
-
-    integRenderColabs();
-  } catch(e) { if(content) content.innerHTML = `<div style="color:var(--danger);padding:16px">${e.message}</div>`; }
-}
-
-function integTemControle() {
-  return temPermissao('rs_gestao_beneficios');
-}
-
-function integRenderColabs() {
-  const content = document.getElementById('integ-colmeia-content');
-  if (!content) return;
-
-  const pagos   = INTEG_COLABS.filter(c=>c.presenca==='PAGAR').length;
-  const noshow  = INTEG_COLABS.filter(c=>c.presenca==='NO SHOW').length;
-  const pend    = INTEG_COLABS.filter(c=>!c.presenca).length;
-  const fechada = INTEG_COL_ABERTA?.status === 'fechada';
-  const isControle = integTemControle();
-
-  const badges = document.getElementById('integ-modal-badges');
-  if (badges) badges.innerHTML =
-    `<span style="color:var(--success)">✅ ${pagos}</span> &nbsp;` +
-    `<span style="color:var(--danger)">⊘ ${noshow}</span> &nbsp;` +
-    `<span style="color:var(--warning)">⏳ ${pend}</span>`;
-
-  // Campo data de pagamento — só para quem tem controle
-  const dataPag = INTEG_COL_ABERTA?.data_pagamento || '';
-  const dataPagHtml = isControle ? `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--border)">
-      <label style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap">💰 Data de Pagamento:</label>
-      <input type="date" id="integ-data-pag" value="${dataPag}"
-        onchange="integSalvarDataPag(this.value)"
-        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);
-        border-radius:6px;padding:5px 10px;font-size:13px;font-family:var(--font);outline:none"/>
-      <span style="font-size:11px;color:var(--muted)">Data prevista para pagamento dos benefícios</span>
-    </div>` : (dataPag ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;margin-bottom:8px;border-bottom:1px solid var(--border)">💰 Pagamento previsto: <strong>${dataPag.split('-').reverse().join('/')}</strong></div>` : '');
-
-  content.innerHTML = dataPagHtml + `<div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">` +
-    INTEG_COLABS.map(col => {
-      const ben = [col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).join(' · ') || '—';
-      const cor = col.presenca==='PAGAR' ? 'var(--success)' : col.presenca==='NO SHOW' ? 'var(--danger)' : 'var(--border)';
-      const confirmInfo = col.confirmado_por
-        ? `<span style="font-size:10px;color:var(--muted)">👤 ${col.confirmado_por}</span>` : '';
-
-      return `<div id="integ-row-${col.id}"
-        style="border:1px solid ${cor};border-radius:8px;padding:10px 14px;
-        background:var(--surface2);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:160px">
-          <div style="font-size:13px;font-weight:600">${col.nome}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">
-            ${col.codigo ? col.codigo+' · ' : ''}${col.cargo||''}
-          </div>
-          ${isControle
-            ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px;white-space:normal">${ben}</div>`
-            : `<div style="font-size:10.5px;color:var(--muted);margin-top:2px">${ben}</div>`
-          }
-        </div>
-        <!-- Presença -->
-        ${fechada
-          ? `<div style="font-size:12px;font-weight:700;color:${cor};text-align:center;min-width:80px">
-               ${col.presenca||'—'}<br/>${confirmInfo}
-             </div>`
-          : `<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-               <button onclick="integConfirmar('${col.id}','PAGAR')"
-                 style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--success);font-size:12px;cursor:pointer;font-weight:700;
-                 background:${col.presenca==='PAGAR'?'var(--success)':'transparent'};
-                 color:${col.presenca==='PAGAR'?'#fff':'var(--success)'}">✅ PAGAR</button>
-               <button onclick="integConfirmar('${col.id}','NO SHOW')"
-                 style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--danger);font-size:12px;cursor:pointer;font-weight:700;
-                 background:${col.presenca==='NO SHOW'?'var(--danger)':'transparent'};
-                 color:${col.presenca==='NO SHOW'?'#fff':'var(--danger)'}">⊘ NO SHOW</button>
-               ${confirmInfo}
-             </div>`
-        }
-        <!-- Obs e benefícios editáveis (só controle) -->
-        ${isControle && !fechada
-          ? `<div style="display:flex;flex-direction:column;gap:4px;min-width:200px">
-               <input type="text" value="${col.obs||''}" placeholder="Observações…"
-                 onchange="integSalvarObs('${col.id}',this.value)"
-                 style="background:var(--surface);border:1px solid var(--border);color:var(--text);
-                 border-radius:6px;padding:4px 8px;font-size:11.5px;font-family:var(--font)"/>
-             </div>`
-          : col.obs ? `<div style="font-size:11.5px;color:var(--muted);min-width:120px">${col.obs}</div>` : ''
-        }
-      </div>`;
-    }).join('') + `</div>`;
-}
-
-async function integSalvarDataPag(data) {
-  if (!INTEG_COL_ABERTA) return;
-  try {
-    await rpc('wc_integ_salvar_data_pag', {
-      p_colmeia_id: INTEG_COL_ABERTA.id,
-      p_data_pag: data
-    });
-    if (INTEG_COL_ABERTA) INTEG_COL_ABERTA.data_pagamento = data;
-    showToast('Data de pagamento salva.', 'success');
+    integCarregarData(window._integDataAtiva);
   } catch(e) { showToast(e.message, 'error'); }
+}
+
+function integGetDatasOrdenadas() {
+  const toISO = s => { const p=(s||'').split('/'); return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s; };
+  return [...new Set(INTEG_COLMEIAS.map(c => c.data_admissao))]
+    .sort((a,b) => toISO(b).localeCompare(toISO(a)));
+}
+
+// ── Filtro por operação do Onsite ──
+function integFiltrarPorOnsite(colmeias) {
+  if (podeVerTudo()) return colmeias;
+  if (session?.perfil === 'onsite' && session._operacoes?.length) {
+    const opsNomes = new Set(session._operacoes.map(o => (o.nome||'').toUpperCase()));
+    const opsCods  = new Set(session._operacoes.map(o => o.cc_cod).filter(Boolean));
+    return colmeias.filter(c => {
+      const cod  = (c.depto_cod || '').toUpperCase();
+      const nome = (c.depto_nome || '').toUpperCase();
+      const cli  = (c.cli_nome || '').toUpperCase();
+      return opsCods.has(cod) || opsNomes.has(nome) || opsNomes.has(cli);
+    });
+  }
+  return colmeias;
+}
+
+function integRenderPills() {
+  const pills = document.getElementById('integ-date-pills');
+  const hist  = document.getElementById('integ-date-hist');
+  if (!pills) return;
+  const datas = integGetDatasOrdenadas();
+  if (hist) hist.textContent = datas.length + ' integração(ões) no histórico';
+
+  pills.innerHTML = datas.slice(0,8).map(data => {
+    const colsDt = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === data));
+    const pend  = colsDt.reduce((s,c)=>s+Number(c.pendentes),0);
+    const total = colsDt.reduce((s,c)=>s+Number(c.total),0);
+    const pagos = colsDt.reduce((s,c)=>s+Number(c.pagos),0);
+    const ativa = data === window._integDataAtiva;
+    let label = data;
+    if (data.includes('/')) { const p=data.split('/'); label=p[0]+'/'+p[1]; }
+    else if (data.includes('-')) { const p=data.split('-'); label=p[2]+'/'+p[1]; }
+    const completo = pend === 0 && total > 0;
+    const cor = ativa ? 'var(--accent)' : completo ? 'var(--success)' : 'var(--border)';
+    const bg  = ativa ? 'var(--accent)' : 'transparent';
+    const txt = ativa ? 'var(--brand)'  : completo ? 'var(--success)' : 'var(--text)';
+    return `<button onclick="integSelecionarData('${data}')"
+      style="display:flex;flex-direction:column;align-items:center;padding:5px 12px;border-radius:8px;
+      border:1.5px solid ${cor};background:${bg};color:${txt};cursor:pointer;font-family:var(--font);
+      transition:all .15s;min-width:52px">
+      <span style="font-size:12px;font-weight:700">${label}</span>
+      <span style="font-size:10px;opacity:.75;margin-top:1px">${total === 0 ? '—' : pend>0 ? '⏳'+pend : '✅'+pagos+'/'+total}</span>
+    </button>`;
+  }).join('') + (datas.length > 8 ? `<span style="font-size:11px;color:var(--muted);padding:4px 6px;align-self:center">+${datas.length-8} mais</span>` : '');
+}
+
+function integSelecionarData(data) {
+  window._integDataAtiva = integNormalizarData(data);
+  const picker = document.getElementById('integ-date-picker');
+  if (picker) picker.value = integParaISO(window._integDataAtiva);
+  integRenderPills();
+  integCarregarData(window._integDataAtiva);
+}
+
+// ── Carregar colaboradores de uma data (todos os grupos da data) ──
+async function integCarregarData(data) {
+  if (!data) { integRenderTabela(); return; }
+  const colmeias = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === data));
+  if (!colmeias.length) { INTEG_TODOS_COLABS = []; integRenderKPIs([]); integRenderTabela(); return; }
+
+  try {
+    // Carregar todos os colabs de todas as colmeias desta data em paralelo
+    const resultados = await Promise.all(colmeias.map(col =>
+      rpc('wc_integ_abrir_colmeia', { p_colmeia_id: col.id })
+    ));
+    INTEG_TODOS_COLABS = [];
+    resultados.forEach((r, i) => {
+      const col = colmeias[i];
+      (r.colaboradores || []).forEach(c => {
+        // Extrair cliente/depto para exibição (suporte legado)
+        let clienteLabel = col.cli_nome || '';
+        let deptoLabel   = col.depto_nome || col.depto_cod || '';
+        if (!clienteLabel && deptoLabel.includes(' — ')) {
+          const parts = deptoLabel.split(' — ');
+          clienteLabel = parts[0].trim();
+          deptoLabel   = parts.slice(1).join(' — ').trim();
+        }
+        INTEG_TODOS_COLABS.push({
+          ...c,
+          _colmeia_id:     col.id,
+          _colmeia_status: col.status,
+          _depto_cod:      col.depto_cod,
+          _depto_nome:     deptoLabel,
+          _cli_nome:       clienteLabel,
+        });
+      });
+    });
+    integRenderKPIs(colmeias);
+    integRenderTabela();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── KPI cards ──
+function integRenderKPIs(colmeias) {
+  const kpis = document.getElementById('integ-kpis');
+  if (!kpis) return;
+  if (!colmeias.length) { kpis.innerHTML = ''; return; }
+  const total  = colmeias.reduce((s,c)=>s+Number(c.total),0);
+  const pagos  = colmeias.reduce((s,c)=>s+Number(c.pagos),0);
+  const noshow = colmeias.reduce((s,c)=>s+Number(c.noshow),0);
+  const pend   = colmeias.reduce((s,c)=>s+Number(c.pendentes),0);
+  const fechadas = colmeias.filter(c=>c.status==='fechada').length;
+  const pct = total > 0 ? Math.round((pagos+noshow)/total*100) : 0;
+  kpis.innerHTML = [
+    { label:'Total', val:total,   cor:'var(--text)',    ico:'👥' },
+    { label:'Pagar', val:pagos,   cor:'var(--success)', ico:'✅' },
+    { label:'No Show', val:noshow,cor:'var(--danger)',  ico:'⊘' },
+    { label:'Pendentes', val:pend,cor:'var(--warning)', ico:'⏳' },
+    { label:'Progresso', val:pct+'%', cor:pct===100?'var(--success)':'var(--accent)', ico:'📊' },
+  ].map(k => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;min-width:100px;flex:1">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${k.ico} ${k.label}</div>
+      <div style="font-size:22px;font-weight:800;color:${k.cor}">${k.val}</div>
+    </div>`).join('') +
+    (podeAdmin() && fechadas < colmeias.length ? `
+    <div style="display:flex;align-items:center;padding:0 4px">
+      <button class="btn btn-ghost btn-sm" onclick="integFecharTodosGrupos()" style="white-space:nowrap">
+        🔒 Fechar todos
+      </button>
+    </div>` : '');
+}
+
+// ── Tabela de colaboradores ──
+function integRenderTabela() {
+  const tbody  = document.getElementById('integ-tabela-body');
+  if (!tbody) return;
+
+  const busca  = (document.getElementById('integ-busca')?.value || '').toLowerCase();
+  const filtSt = document.getElementById('integ-filtro-status')?.value || '';
+
+  let lista = [...INTEG_TODOS_COLABS];
+
+  // Filtro busca
+  if (busca) lista = lista.filter(c =>
+    [c.nome, c.cargo, c._depto_nome, c._cli_nome, c.codigo].some(f => (f||'').toLowerCase().includes(busca))
+  );
+  // Filtro status
+  if (filtSt === 'pendente') lista = lista.filter(c => !c.presenca);
+  else if (filtSt) lista = lista.filter(c => c.presenca === filtSt);
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">
+      ${INTEG_TODOS_COLABS.length === 0 ? 'Selecione uma data com integração.' : 'Nenhum colaborador encontrado com este filtro.'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map((col, i) => {
+    const ben = [col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).join(' · ') || '—';
+    const fechada = col._colmeia_status === 'fechada';
+    const corPres = col.presenca === 'PAGAR' ? 'var(--success)' : col.presenca === 'NO SHOW' ? 'var(--danger)' : 'var(--muted)';
+    const bgPagar  = col.presenca === 'PAGAR'    ? 'var(--success)' : 'transparent';
+    const bgNoShow = col.presenca === 'NO SHOW'  ? 'var(--danger)'  : 'transparent';
+    const txtPagar  = col.presenca === 'PAGAR'   ? '#fff' : 'var(--success)';
+    const txtNoShow = col.presenca === 'NO SHOW' ? '#fff' : 'var(--danger)';
+    const deptoDisplay = col._cli_nome
+      ? `<div style="font-size:11px;font-weight:700;color:var(--muted)">${col._cli_nome}</div><div style="font-size:12px">${col._depto_nome}</div>`
+      : `<div style="font-size:12px">${col._depto_nome || '—'}</div>`;
+
+    return `<tr id="integ-row-${col.id}" style="border-bottom:1px solid var(--border)">
+      <td style="color:var(--muted);font-size:12px;text-align:center">${i+1}</td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${col.nome}</div>
+        ${col.codigo ? `<div style="font-size:11px;color:var(--muted)">${col.codigo}</div>` : ''}
+      </td>
+      <td style="font-size:12.5px;color:var(--muted)">${col.cargo || '—'}</td>
+      <td>${deptoDisplay}</td>
+      <td style="font-size:11.5px;color:var(--muted)">${ben}</td>
+      <td style="text-align:center">
+        ${fechada
+          ? `<span style="font-size:12px;font-weight:700;color:${corPres}">${col.presenca || '—'}</span>`
+          : `<div style="display:flex;gap:5px;justify-content:center">
+               <button onclick="integConfirmar('${col.id}','PAGAR')"
+                 style="padding:4px 10px;border-radius:6px;border:1.5px solid var(--success);font-size:11.5px;cursor:pointer;font-weight:700;background:${bgPagar};color:${txtPagar};font-family:var(--font)">✅ Pagar</button>
+               <button onclick="integConfirmar('${col.id}','NO SHOW')"
+                 style="padding:4px 10px;border-radius:6px;border:1.5px solid var(--danger);font-size:11.5px;cursor:pointer;font-weight:700;background:${bgNoShow};color:${txtNoShow};font-family:var(--font)">⊘ No Show</button>
+             </div>`
+        }
+      </td>
+      <td style="font-size:11.5px;color:var(--muted)">${col.confirmado_por || '—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 async function integConfirmar(colabId, presenca) {
-  const obs = document.querySelector(`#integ-row-${colabId} input`)?.value || '';
   try {
-    await rpc('wc_integ_confirmar_presenca', { p_colab_id: colabId, p_presenca: presenca, p_obs: obs });
-    // Atualiza local
-    const col = INTEG_COLABS.find(c => c.id === colabId);
+    await rpc('wc_integ_confirmar_presenca', { p_colab_id: colabId, p_presenca: presenca, p_obs: '' });
+    const col = INTEG_TODOS_COLABS.find(c => c.id === colabId);
     if (col) { col.presenca = presenca; col.confirmado_por = session?.nome; }
-    integRenderColabs();
-    // Atualiza badge da lista
-    integCarregarColmeias();
+    integRenderTabela();
+    // Atualizar KPIs e pills sem recarregar do banco
+    const colmeias = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === window._integDataAtiva));
+    colmeias.forEach(col => {
+      const colabsDaCol = INTEG_TODOS_COLABS.filter(c => c._colmeia_id === col.id);
+      col.pagos    = colabsDaCol.filter(c => c.presenca === 'PAGAR').length;
+      col.noshow   = colabsDaCol.filter(c => c.presenca === 'NO SHOW').length;
+      col.pendentes= colabsDaCol.filter(c => !c.presenca).length;
+    });
+    integRenderKPIs(colmeias);
+    integRenderPills();
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-async function integSalvarObs(colabId, obs) {
-  const col = INTEG_COLABS.find(c => c.id === colabId);
-  const presenca = col?.presenca || '';
-  try {
-    await rpc('wc_integ_confirmar_presenca', { p_colab_id: colabId, p_presenca: presenca, p_obs: obs });
-  } catch(e) { showToast(e.message, 'error'); }
-}
-
-async function integFecharColmeia() {
-  const btn = document.getElementById('integ-btn-fechar-col');
-  const id  = btn?.dataset.id;
-  if (!id) return;
-  const pend = INTEG_COLABS.filter(c => !c.presenca).length;
+async function integFecharTodosGrupos() {
+  const colmeias = integFiltrarPorOnsite(
+    INTEG_COLMEIAS.filter(c => c.data_admissao === window._integDataAtiva && c.status === 'aberta')
+  );
+  if (!colmeias.length) return;
+  const pend = INTEG_TODOS_COLABS.filter(c => !c.presenca).length;
   if (pend > 0 && !confirm(`Ainda há ${pend} colaborador(es) sem confirmação. Fechar mesmo assim?`)) return;
   try {
-    await rpc('wc_integ_fechar_colmeia', { p_colmeia_id: id });
-    if (btn) btn.style.display = 'none';
-    if (INTEG_COL_ABERTA) INTEG_COL_ABERTA.status = 'fechada';
-    integRenderColabs();
-    integCarregarColmeias();
-    showToast('Colmeia fechada.', 'success');
+    await Promise.all(colmeias.map(col => rpc('wc_integ_fechar_colmeia', { p_colmeia_id: col.id })));
+    colmeias.forEach(col => col.status = 'fechada');
+    INTEG_TODOS_COLABS.forEach(c => c._colmeia_status = 'fechada');
+    integRenderTabela();
+    integRenderKPIs(colmeias);
+    showToast('Todos os grupos fechados.', 'success');
   } catch(e) { showToast(e.message, 'error'); }
 }
 // ═══════════════ FIM INTEGRAÇÃO ═══════════════
