@@ -771,27 +771,13 @@
       <div class="home-header">
         <div class="home-greeting">
           <h1 id="home-saudacao">Olá! 👋</h1>
-          <p id="home-subtitulo">Veja o que está pendente para você hoje</p>
+          <p id="home-subtitulo">Carregando…</p>
           <div class="ops-chips" id="home-ops-chips"></div>
         </div>
         <span class="home-time" id="home-hora">—</span>
       </div>
-
-      <!-- Grid de módulos -->
-      <div class="modules-grid home-module-grid" id="modules-grid">
-        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">⏳ Carregando módulos…</div>
-      </div>
-
-      <!-- Atividade recente -->
-      <div class="home-sections home-recentes-grid">
-        <div class="home-section">
-          <h3>▤ Vagas Recentes <a onclick="navTo('vagas')">Ver todas →</a></h3>
-          <div id="home-vagas-recentes"><div style="color:var(--muted);font-size:12.5px;padding:12px 0">Carregando…</div></div>
-        </div>
-        <div class="home-section">
-          <h3>📋 Indicações Recentes <a onclick="navTo('indicacoes')">Ver todas →</a></h3>
-          <div id="home-ind-recentes"><div style="color:var(--muted);font-size:12.5px;padding:12px 0">Carregando…</div></div>
-        </div>
+      <div id="home-painel-conteudo">
+        <div style="color:var(--muted);padding:40px;text-align:center">⏳ Carregando painel…</div>
       </div>
     </div>
   </div>
@@ -2432,157 +2418,163 @@ function atualizarBadgeFila() {
 
 // ── HOME (estilo G-Click) ─────────────────────
 async function renderHome() {
-  // Hora e saudação
   const h = new Date().getHours();
-  const saud = h<12 ? 'Bom dia' : h<18 ? 'Boa tarde' : 'Boa noite';
+  const saud = h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  const nome1 = session.nome.split(' ')[0];
   const greet = document.getElementById('home-saudacao');
   const sub   = document.getElementById('home-subtitulo');
   const hora  = document.getElementById('home-hora');
-  if (greet) greet.textContent = `${saud}, ${session.nome.split(' ')[0]}! 👋`;
-  if (sub)   sub.textContent   = podeVerTudo() ? 'Aqui está o resumo geral de todas as operações' : 'Aqui estão as pendências das suas operações';
-  if (hora)  hora.textContent  = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+  if (greet) greet.textContent = `${saud}, ${nome1}! 👋`;
+  if (hora)  hora.textContent  = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
 
-  // Chips de operações do usuário
+  // Chips de operações
   const chipsEl = document.getElementById('home-ops-chips');
   if (chipsEl) {
-    if (podeVerTudo()) {
-      chipsEl.innerHTML = '<span class="ops-chip">🌐 Todas as operações</span>';
-    } else if (session._operacoes?.length) {
+    if (podeVerTudo()) chipsEl.innerHTML = '<span class="ops-chip">🌐 Todas as operações</span>';
+    else if (session._operacoes?.length)
       chipsEl.innerHTML = session._operacoes.map(o=>`<span class="ops-chip">${o.nome}</span>`).join('');
-    }
   }
 
-  // Contadores via RPC
-  let cnt = { vagas_andamento:0, voucher_pendente:0, indicacoes_pendentes:0 };
+  // Buscar contadores
+  let cnt = {};
   try {
     const r = await rpc('wc_home_resumo', {});
-    cnt = r.contadores || cnt;
-    // Salvar operações do usuário na sessão para os chips
-    if (r.operacoes) session._operacoes = r.operacoes;
-    if (chipsEl && !podeVerTudo() && r.operacoes?.length) {
-      chipsEl.innerHTML = r.operacoes.map(o=>`<span class="ops-chip">${o.nome}</span>`).join('');
+    cnt = r.contadores || {};
+    if (r.operacoes) {
+      session._operacoes = r.operacoes;
+      if (chipsEl && !podeVerTudo())
+        chipsEl.innerHTML = r.operacoes.map(o=>`<span class="ops-chip">${o.nome}</span>`).join('');
     }
   } catch(e) {
-    cnt.vagas_andamento     = vagasNoEscopo().filter(v=>(v.statusVaga||'').includes('Andamento')).length;
-    cnt.voucher_pendente    = VAGAS.filter(v=>v.filaVoucherStatus==='pendente').length;
-    cnt.indicacoes_pendentes = INDICACOES.filter(i=>i.status==='pendente').length;
+    cnt = {
+      vagas_abertas:    VAGAS.filter(v=>v.statusVaga?.includes('Aberta')).length,
+      vagas_andamento:  VAGAS.filter(v=>v.statusVaga?.includes('Andamento')).length,
+      vagas_fechadas:   VAGAS.filter(v=>v.statusVaga?.includes('Fechada')).length,
+      voucher_pendente: VAGAS.filter(v=>v.filaVoucherStatus==='pendente').length,
+      indicacoes_pendentes: INDICACOES.filter(i=>i.status==='pendente').length,
+    };
   }
 
-  // Módulos clicáveis
-  const modulos = [
-    {
-      icon:'▤', label:'Vagas em Andamento', value:cnt.vagas_andamento,
-      sub:'processo ativo', color:'#63ccb0', page:'vagas',
-      badge: cnt.vagas_andamento > 0,
-      hidden: session?.perfil === 'onsite',
-    },
-    {
-      icon:'⇄', label:'Fila de Voucher', value:cnt.voucher_pendente,
-      sub:'aguardando aprovação', color:'#4f7cff', page:'voucher',
-      badge: cnt.voucher_pendente > 0,
-      hidden: !podeAutorizarVoucher(),
-    },
-    {
-      icon:'📋', label:'Indicações Pendentes', value:cnt.indicacoes_pendentes,
-      sub:'aguardando análise', color:'#f59e0b', page:'indicacoes',
-      badge: cnt.indicacoes_pendentes > 0,
-      hidden: session?.perfil === 'onsite',
-    },
-    {
-      icon:'◆', label:'Dashboard', value:'',
-      sub:'visão geral e gráficos', color:'#a855f7', page:'dashboard',
-      hidden: session?.perfil === 'onsite',
-    },
-    {
-      icon:'📦', label:'Estoque de EPIs', value:'',
-      sub:'colete, bota e luva', color:'#ec4899', page:'estoque',
-      external:'estoque.html',
-    },
-    {
-      icon:'🏢', label:'Centro de Custos', value:'',
-      sub:'clientes, CC e departamentos', color:'#06b6d4', page:'cad-cc',
-      hidden: !podeVerTudo(),
-    },
-    {
-      icon:'⚙️', label:'Configurações', value:'',
-      sub:'tema, foto e preferências', color:'#8891b4', page:'configuracoes',
-    },
-  ].filter(m => !m.hidden);
+  if (sub) sub.textContent = podeVerTudo()
+    ? 'Resumo geral de toda a equipe'
+    : 'Suas tarefas e pendências de hoje';
 
-  // ── Cards de destaque (linha horizontal) ────
-  const destaques = modulos.filter(m => m.value !== '' || m.badge);
-  const resto     = modulos.filter(m => m.value === '' && !m.badge);
+  const el = document.getElementById('home-painel-conteudo');
+  if (!el) return;
 
-  const grid = document.getElementById('modules-grid');
-  if (!grid) return;
+  if (podeVerTudo()) {
+    // ── PAINEL GESTOR / MASTER ──
+    el.innerHTML = `
+      <!-- S&A -->
+      <div style="margin-bottom:28px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📋 Seleção &amp; Admissão</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          ${homePainelCard('▤','Tarefas Pendentes',cnt.vagas_abertas??0,'Vagas abertas aguardando','#f59e0b','vagas')}
+          ${homePainelCard('⇄','Em Andamento',cnt.vagas_andamento??0,'Processos ativos','#63ccb0','vagas')}
+          ${homePainelCard('✓','Concluídas',cnt.vagas_fechadas??0,'Vagas encerradas','#6b7280','vagas')}
+          ${homePainelCard('⊘','Fila de Voucher',cnt.voucher_pendente??0,'Aguardando aprovação','#4f7cff','voucher')}
+          ${homePainelCard('📋','Indicações',cnt.indicacoes_pendentes??0,'Pendentes de análise','#a855f7','indicacoes')}
+        </div>
+      </div>
+      <!-- Adm Pessoal -->
+      <div style="margin-bottom:28px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          ${homePainelCard('🐝','Integrações',cnt.integ_abertas??0,'Colmeias abertas','#f59e0b','integracao')}
+          ${homePainelCard('🎟️','Vouchers Ativos',cnt.voucher_ativos??0,'Colaboradores com voucher','#63ccb0','vchr-controle')}
+          ${homePainelCard('⊘','Inativos',cnt.voucher_inativos??0,'Desligados no sistema','#ef4444','vchr-controle')}
+        </div>
+      </div>
+      <!-- Recentes -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div class="home-section">
+          <h3>▤ Vagas Recentes <a onclick="navTo('vagas')">Ver todas →</a></h3>
+          <div id="home-vagas-recentes"><div style="color:var(--muted);font-size:12.5px;padding:8px 0">Carregando…</div></div>
+        </div>
+        <div class="home-section">
+          <h3>📋 Indicações Recentes <a onclick="navTo('indicacoes')">Ver todas →</a></h3>
+          <div id="home-ind-recentes"><div style="color:var(--muted);font-size:12.5px;padding:8px 0">Carregando…</div></div>
+        </div>
+      </div>`;
+  } else if (session.perfil === 'onsite') {
+    // ── PAINEL ONSITE ──
+    el.innerHTML = `
+      <div style="margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          ${homePainelCard('🐝','Integrações Pendentes',cnt.integ_abertas??0,'Confirmações em aberto','#f59e0b','integracao')}
+          ${homePainelCard('⊘','Inativar Colaborador','→','Registrar desligamento','#ef4444','vchr-inativar')}
+          ${homePainelCard('🎟️','Meus Vouchers',cnt.voucher_ativos??0,'Ativos no meu depto','#63ccb0','vchr-controle')}
+        </div>
+      </div>`;
+  } else {
+    // ── PAINEL CONSULTOR (equipe) ──
+    el.innerHTML = `
+      <div style="margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📋 Minhas Tarefas — Seleção &amp; Admissão</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          ${homePainelCard('▤','Pendentes',cnt.vagas_abertas??0,'Vagas abertas','#f59e0b','vagas')}
+          ${homePainelCard('⇄','Em Andamento',cnt.vagas_andamento??0,'Processos ativos','#63ccb0','vagas')}
+          ${homePainelCard('✓','Concluídas',cnt.vagas_fechadas??0,'Vagas encerradas','#6b7280','vagas')}
+          ${homePainelCard('📋','Indicações',cnt.indicacoes_pendentes??0,'Pendentes de análise','#a855f7','indicacoes')}
+        </div>
+      </div>
+      <div class="home-section">
+        <h3>▤ Vagas Recentes <a onclick="navTo('vagas')">Ver todas →</a></h3>
+        <div id="home-vagas-recentes"><div style="color:var(--muted);font-size:12.5px;padding:8px 0">Carregando…</div></div>
+      </div>`;
+  }
 
-  grid.innerHTML = `
-    <!-- LINHA 1: Cards de contadores largos -->
-    <div class="home-kpi-row">
-      ${destaques.map(m => `
-        <div class="home-kpi-card" style="--mc-color:${m.color}"
-             onclick="${m.external ? `window.open('${m.external}')` : `navTo('${m.page}')`}">
-          <div class="hkc-left">
-            <div class="hkc-icon">${m.icon}</div>
-            <div>
-              <div class="hkc-label">${m.label}</div>
-              <div class="hkc-sub">${m.sub}</div>
-            </div>
-          </div>
-          <div class="hkc-right">
-            <div class="hkc-value">${m.value !== '' ? m.value : ''}</div>
-            <div class="hkc-arrow">Acessar →</div>
-          </div>
-          <div class="hkc-bar"></div>
-        </div>`).join('')}
+  // Carregar vagas recentes se o elemento existir
+  renderHomeVagasRecentes();
+  renderHomeIndicacoesRecentes();
+}
+
+function homePainelCard(icon, label, value, sub, color, page) {
+  const clickable = page ? `onclick="navTo('${page}')" style="cursor:pointer"` : '';
+  const numStr = typeof value === 'number'
+    ? `<div style="font-size:28px;font-weight:800;color:${color};margin:6px 0">${value}</div>`
+    : `<div style="font-size:22px;font-weight:800;color:${color};margin:6px 0">${value}</div>`;
+  return `<div class="stat-card" ${clickable}
+    onmouseover="if(this.onclick)this.style.borderColor='${color}'"
+    onmouseout="this.style.borderColor=''">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <span style="font-size:16px">${icon}</span>
+      <span style="font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">${label}</span>
     </div>
+    ${numStr}
+    <div style="font-size:11px;color:var(--muted)">${sub}</div>
+  </div>`;
+}
 
-    <!-- LINHA 2: Cards de navegação menores -->
-    <div class="home-nav-row">
-      ${resto.map(m => `
-        <div class="home-nav-card" style="--mc-color:${m.color}"
-             onclick="${m.external ? `window.open('${m.external}')` : `navTo('${m.page}')`}">
-          <div class="hnc-icon">${m.icon}</div>
-          <div class="hnc-label">${m.label}</div>
-          <div class="hnc-sub">${m.sub}</div>
-          <div class="hnc-arrow">Acessar →</div>
-        </div>`).join('')}
-    </div>
-  `;
+function renderHomeVagasRecentes() {
+  const el = document.getElementById('home-vagas-recentes'); if (!el) return;
+  const recentes = vagasNoEscopo().slice(0,5);
+  if (!recentes.length) { el.innerHTML='<div style="color:var(--muted);font-size:12.5px">Nenhuma vaga recente.</div>'; return; }
+  el.innerHTML = recentes.map(v=>`
+    <div class="activity-row" onclick="abrirModalVaga('${(v.jira||'').replace(/'/g,"\\'")}')">
+      <div class="ar-icon">▤</div>
+      <div class="ar-content">
+        <strong>${v.jira||'—'}</strong>
+        <span>${v.nomeConsultor||''} · ${v.operacaoNome||''}</span>
+      </div>
+      <span class="pill ${v.statusVaga?.includes('Prazo')?'vaga-noprazo':'vaga-atrasada'}" style="font-size:10px">${v.statusVaga||'—'}</span>
+    </div>`).join('');
+}
 
-  // ── Vagas recentes ───────────────────────────
-  const vagasEl = document.getElementById('home-vagas-recentes');
-  if (vagasEl) {
-    const recentes = vagasNoEscopo().slice(0,5);
-    vagasEl.innerHTML = recentes.length
-      ? recentes.map(v => `
-          <div class="activity-row" onclick="abrirModalVaga('${(v.jira||'').replace(/'/g,"\\'")}')" style="cursor:pointer">
-            <div class="ar-ico">▤</div>
-            <div class="ar-main">
-              <div class="ar-title">${v.colaborador || v.jira || '—'}</div>
-              <div class="ar-sub">${v.consultor||'—'} · ${v.regional||'—'}</div>
-            </div>
-            <div class="ar-right">${v.statusVaga ? `<span class="pill muted" style="font-size:9.5px">${v.statusVaga.split(' ').slice(-2).join(' ')}</span>` : ''}</div>
-          </div>`).join('')
-      : '<div style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma vaga no seu escopo</div>';
-  }
-
-  // ── Indicações recentes ──────────────────────
-  const indEl = document.getElementById('home-ind-recentes');
-  if (indEl) {
-    const recentes = INDICACOES.slice(0,5);
-    indEl.innerHTML = recentes.length
-      ? recentes.map(i => `
-          <div class="activity-row">
-            <div class="ar-ico">📋</div>
-            <div class="ar-main">
-              <div class="ar-title">${i.nome_candidato||'—'}</div>
-              <div class="ar-sub">${i.nome_lider||'—'} · ${i.operacao||'—'}</div>
-            </div>
-            <div class="ar-right">${pillStatus(i.status)}</div>
-          </div>`).join('')
-      : '<div style="color:var(--muted);font-size:12.5px;padding:12px 0">Nenhuma indicação no seu escopo</div>';
-  }
+function renderHomeIndicacoesRecentes() {
+  const el = document.getElementById('home-ind-recentes'); if (!el) return;
+  const rec = INDICACOES.filter(i=>i.status==='pendente').slice(0,5);
+  if (!rec.length) { el.innerHTML='<div style="color:var(--muted);font-size:12.5px">Nenhuma indicação pendente.</div>'; return; }
+  el.innerHTML = rec.map(i=>`
+    <div class="activity-row">
+      <div class="ar-icon">📋</div>
+      <div class="ar-content">
+        <strong>${i.nome_candidato||'—'}</strong>
+        <span>${i.nome_lider||''} · ${i.operacao_nome||''}</span>
+      </div>
+      <span class="pill pill-muted" style="font-size:10px">Pendente</span>
+    </div>`).join('');
 }
 
 // ── INDICAÇÕES ────────────────────────────────
@@ -5178,44 +5170,73 @@ function integRenderColmeias() {
     porData[col.data_admissao].push(col);
   });
 
-  wrap.innerHTML = Object.entries(porData).map(([data, cols]) => {
-    const totalGeral    = cols.reduce((s,c)=>s+Number(c.total),0);
-    const pagosGeral    = cols.reduce((s,c)=>s+Number(c.pagos),0);
-    const noshowGeral   = cols.reduce((s,c)=>s+Number(c.noshow),0);
-    const pendentesGeral= cols.reduce((s,c)=>s+Number(c.pendentes),0);
-    const todasFechadas = cols.every(c=>c.status==='fechada');
+  const datas = Object.keys(porData).sort((a,b) => b.localeCompare(a));
+  // Pegar aba ativa (padrão: primeira)
+  const abaAtiva = window._integAbaAtiva || datas[0];
+  window._integAbaAtiva = abaAtiva;
 
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden">
-      <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--surface2)">
-        <div>
-          <span style="font-size:15px;font-weight:700">📅 Integração ${data}</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:12px">${cols.length} departamento(s) · ${totalGeral} pessoa(s)</span>
-        </div>
-        <div style="display:flex;gap:12px;font-size:12px">
-          <span style="color:var(--success)">✅ ${pagosGeral} PAGAR</span>
-          <span style="color:var(--danger)">⊘ ${noshowGeral} NO SHOW</span>
-          ${pendentesGeral > 0 ? `<span style="color:var(--warning)">⏳ ${pendentesGeral} pendente(s)</span>` : ''}
-          ${todasFechadas ? '<span style="color:var(--muted);font-size:11px">🔒 FECHADA</span>' : ''}
-        </div>
-      </div>
-      <div style="padding:10px 18px;display:flex;flex-wrap:wrap;gap:8px">
-        ${cols.map(col => `
-          <button onclick="integAbrirColmeia('${col.id}')"
-            style="background:${col.status==='fechada'?'var(--surface3)':'var(--surface2)'};border:1px solid var(--border);
-            border-radius:8px;padding:10px 14px;cursor:pointer;text-align:left;min-width:180px;transition:border-color .15s"
-            onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <div style="font-size:12.5px;font-weight:600;color:var(--text)">${col.depto_nome||col.depto_cod}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">
-              ${col.total} pessoa(s)
-              ${col.pagos > 0 ? ` · <span style="color:var(--success)">${col.pagos} ✅</span>` : ''}
-              ${col.noshow > 0 ? ` · <span style="color:var(--danger)">${col.noshow} ⊘</span>` : ''}
-              ${col.pendentes > 0 ? ` · <span style="color:var(--warning)">${col.pendentes} ⏳</span>` : ''}
-              ${col.status==='fechada' ? ' · 🔒' : ''}
-            </div>
-          </button>`).join('')}
-      </div>
-    </div>`;
+  // Abas por data
+  const abas = datas.map(data => {
+    const cols = porData[data];
+    const pend = cols.reduce((s,c)=>s+Number(c.pendentes),0);
+    const ativa = data === abaAtiva;
+    return `<button onclick="window._integAbaAtiva='${data}';integRenderColmeias()"
+      style="padding:8px 16px;border:none;border-bottom:2px solid ${ativa?'var(--accent)':'transparent'};
+      background:none;cursor:pointer;font-size:13px;font-weight:${ativa?'700':'400'};
+      color:${ativa?'var(--accent)':'var(--muted)'};font-family:var(--font);white-space:nowrap;
+      transition:all .15s;position:relative">
+      ${data}
+      ${pend > 0 ? `<span style="background:var(--warning);color:#000;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:5px">${pend}</span>` : ''}
+    </button>`;
   }).join('');
+
+  // Conteúdo da aba ativa
+  const cols = porData[abaAtiva] || [];
+  const totalGeral    = cols.reduce((s,c)=>s+Number(c.total),0);
+  const pagosGeral    = cols.reduce((s,c)=>s+Number(c.pagos),0);
+  const noshowGeral   = cols.reduce((s,c)=>s+Number(c.noshow),0);
+  const pendentesGeral= cols.reduce((s,c)=>s+Number(c.pendentes),0);
+  const todasFechadas = cols.every(c=>c.status==='fechada');
+
+  const cards = cols.map(col => `
+    <div onclick="integAbrirColmeia('${col.id}')"
+      style="background:${col.status==='fechada'?'var(--surface2)':'var(--surface)'};
+      border:1px solid var(--border);border-radius:10px;padding:16px 18px;cursor:pointer;
+      min-width:200px;max-width:260px;flex:1;transition:border-color .15s"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;white-space:normal;line-height:1.3">
+        ${col.depto_nome || col.depto_cod || 'Sem departamento'}
+        ${col.status==='fechada' ? ' <span style="font-size:10px;color:var(--muted)">🔒</span>' : ''}
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">${col.total} colaborador(es)</div>
+      <div style="display:flex;gap:10px;font-size:11px">
+        <span style="color:var(--success);font-weight:600">✅ ${col.pagos}</span>
+        <span style="color:var(--danger);font-weight:600">⊘ ${col.noshow}</span>
+        ${Number(col.pendentes) > 0 ? `<span style="color:var(--warning);font-weight:600">⏳ ${col.pendentes}</span>` : '<span style="color:var(--muted)">✓ Completo</span>'}
+      </div>
+    </div>`).join('');
+
+  wrap.innerHTML = `
+    <!-- Abas de data -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto">
+      ${abas}
+    </div>
+    <!-- Resumo da aba -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;color:var(--muted)">
+        ${cols.length} departamento(s) · ${totalGeral} pessoa(s)
+        ${todasFechadas ? ' · <span style="color:var(--muted)">🔒 Todos fechados</span>' : ''}
+      </div>
+      <div style="display:flex;gap:14px;font-size:12.5px">
+        <span style="color:var(--success)">✅ ${pagosGeral} PAGAR</span>
+        <span style="color:var(--danger)">⊘ ${noshowGeral} NO SHOW</span>
+        ${pendentesGeral > 0 ? `<span style="color:var(--warning)">⏳ ${pendentesGeral} pendente(s)</span>` : ''}
+      </div>
+    </div>
+    <!-- Cards de departamento -->
+    <div style="display:flex;flex-wrap:wrap;gap:12px">
+      ${cards || '<div style="color:var(--muted);font-size:13px">Nenhum departamento nesta data.</div>'}
+    </div>`;
 }
 
 // ── Abrir colmeia ──
@@ -5247,62 +5268,60 @@ function integRenderColabs() {
   const content = document.getElementById('integ-colmeia-content');
   if (!content) return;
 
-  const pagos   = INTEG_COLABS.filter(c=>c.presenca==='PAGAR').length;
-  const noshow  = INTEG_COLABS.filter(c=>c.presenca==='NO SHOW').length;
-  const pend    = INTEG_COLABS.filter(c=>!c.presenca).length;
+  const pagos  = INTEG_COLABS.filter(c=>c.presenca==='PAGAR').length;
+  const noshow = INTEG_COLABS.filter(c=>c.presenca==='NO SHOW').length;
+  const pend   = INTEG_COLABS.filter(c=>!c.presenca).length;
   const fechada = INTEG_COL_ABERTA?.status === 'fechada';
 
   const badges = document.getElementById('integ-modal-badges');
-  if (badges) badges.innerHTML = `<span style="color:var(--success)">✅ ${pagos}</span> &nbsp; <span style="color:var(--danger)">⊘ ${noshow}</span> &nbsp; <span style="color:var(--warning)">⏳ ${pend}</span>`;
+  if (badges) badges.innerHTML =
+    `<span style="color:var(--success)">✅ ${pagos}</span> &nbsp;` +
+    `<span style="color:var(--danger)">⊘ ${noshow}</span> &nbsp;` +
+    `<span style="color:var(--warning)">⏳ ${pend}</span>`;
 
-  content.innerHTML = `
-    <table class="main-table" style="margin-top:8px">
-      <thead><tr>
-        <th>Cód.</th><th>Nome</th><th>Cargo</th><th>Benefícios</th>
-        <th style="text-align:center">Presença</th><th>Obs / Confirmado por</th>
-      </tr></thead>
-      <tbody>
-        ${INTEG_COLABS.map(col => {
-          const ben = [col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).join(' · ') || '—';
-          const confirmInfo = col.confirmado_por
-            ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px">👤 ${col.confirmado_por}</div>` : '';
-          return `<tr id="integ-row-${col.id}">
-            <td style="color:var(--muted);font-size:11.5px">${col.codigo||'—'}</td>
-            <td><strong>${col.nome}</strong></td>
-            <td style="font-size:12px;color:var(--muted)">${col.cargo||'—'}</td>
-            <td style="font-size:11.5px;color:var(--muted);max-width:160px;white-space:normal">${ben}</td>
-            <td style="text-align:center">
-              ${fechada
-                ? (()=>{
-                    const cor = col.presenca==='PAGAR' ? 'var(--success)' : col.presenca==='NO SHOW' ? 'var(--danger)' : 'var(--muted)';
-                    return `<span style="font-size:12px;font-weight:700;color:${cor}">${col.presenca||'—'}</span>`;
-                  })()
-                : `<div style="display:flex;gap:6px;justify-content:center">
-                    <button onclick="integConfirmar('${col.id}','PAGAR')"
-                      style="padding:4px 10px;border-radius:6px;border:1px solid;font-size:12px;cursor:pointer;font-weight:600;
-                      background:${col.presenca==='PAGAR'?'var(--success)':'transparent'};
-                      color:${col.presenca==='PAGAR'?'#fff':'var(--success)'};border-color:var(--success)">PAGAR</button>
-                    <button onclick="integConfirmar('${col.id}','NO SHOW')"
-                      style="padding:4px 10px;border-radius:6px;border:1px solid;font-size:12px;cursor:pointer;font-weight:600;
-                      background:${col.presenca==='NO SHOW'?'var(--danger)':'transparent'};
-                      color:${col.presenca==='NO SHOW'?'#fff':'var(--danger)'};border-color:var(--danger)">NO SHOW</button>
-                  </div>`
-              }
-              ${confirmInfo}
-            </td>
-            <td>
-              ${fechada
-                ? `<span style="font-size:12px;color:var(--muted)">${col.obs||'—'}</span>${confirmInfo}`
-                : `<input type="text" value="${col.obs||''}" placeholder="Observação…"
-                    onchange="integSalvarObs('${col.id}',this.value)"
-                    style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;width:100%;font-family:var(--font)"/>
-                  ${confirmInfo}`
-              }
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+  // Cards compactos — sem tabela, sem scroll horizontal
+  content.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;padding:8px 0">` +
+    INTEG_COLABS.map(col => {
+      const ben = [col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).join(' · ') || '—';
+      const cor = col.presenca==='PAGAR' ? 'var(--success)' : col.presenca==='NO SHOW' ? 'var(--danger)' : 'var(--border)';
+      const confirmInfo = col.confirmado_por
+        ? `<span style="font-size:10px;color:var(--muted)">👤 ${col.confirmado_por}</span>` : '';
+
+      return `<div id="integ-row-${col.id}"
+        style="border:1px solid ${cor};border-radius:8px;padding:10px 14px;
+        background:var(--surface2);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <!-- Info -->
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:13px;font-weight:600">${col.nome}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">
+            ${col.codigo ? col.codigo+' · ' : ''}${col.cargo||''}
+          </div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:2px">${ben}</div>
+        </div>
+        <!-- Presença -->
+        ${fechada
+          ? `<div style="font-size:12px;font-weight:700;color:${cor};text-align:center;min-width:80px">
+               ${col.presenca||'—'}<br/>${confirmInfo}
+             </div>`
+          : `<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+               <button onclick="integConfirmar('${col.id}','PAGAR')"
+                 style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--success);font-size:12px;cursor:pointer;font-weight:700;
+                 background:${col.presenca==='PAGAR'?'var(--success)':'transparent'};
+                 color:${col.presenca==='PAGAR'?'#fff':'var(--success)'}">✅ PAGAR</button>
+               <button onclick="integConfirmar('${col.id}','NO SHOW')"
+                 style="padding:5px 12px;border-radius:6px;border:1.5px solid var(--danger);font-size:12px;cursor:pointer;font-weight:700;
+                 background:${col.presenca==='NO SHOW'?'var(--danger)':'transparent'};
+                 color:${col.presenca==='NO SHOW'?'#fff':'var(--danger)'}">⊘ NO SHOW</button>
+               ${confirmInfo}
+             </div>`
+        }
+        <!-- Obs -->
+        ${!fechada ? `<input type="text" value="${col.obs||''}" placeholder="Obs…"
+          onchange="integSalvarObs('${col.id}',this.value)"
+          style="background:var(--surface);border:1px solid var(--border);color:var(--text);
+          border-radius:6px;padding:4px 8px;font-size:11.5px;width:140px;font-family:var(--font)"/>` : ''}
+      </div>`;
+    }).join('') + `</div>`;
 }
 
 async function integConfirmar(colabId, presenca) {
@@ -5498,19 +5517,19 @@ async function integFecharColmeia() {
 
 <!-- MODAL COLMEIA -->
 <div class="modal-backdrop" id="integ-modal-colmeia" onclick="if(event.target===this)fecharModal('integ-modal-colmeia')">
-  <div class="modal" style="width:800px;max-width:97vw">
-    <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between">
+  <div class="modal" style="width:640px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div>
         <h2 id="integ-modal-titulo">Colmeia</h2>
         <p id="integ-modal-sub" style="font-size:12px;color:var(--muted);margin-top:3px"></p>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span id="integ-modal-badges" style="font-size:12px;color:var(--muted)"></span>
         <button class="btn btn-ghost btn-sm" id="integ-btn-fechar-col" onclick="integFecharColmeia()" style="display:none">✅ Fechar colmeia</button>
         <button class="btn btn-ghost btn-sm" onclick="fecharModal('integ-modal-colmeia')">✕</button>
       </div>
     </div>
-    <div class="modal-body" style="padding:0 26px 6px">
+    <div style="flex:1;overflow-y:auto;padding:0 26px 20px">
       <div id="integ-colmeia-content">
         <div class="loading-overlay"><span class="spinner"></span></div>
       </div>
