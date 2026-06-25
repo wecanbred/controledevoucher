@@ -714,7 +714,7 @@
         <a id="nav-vagas" onclick="navTo('vagas')" data-page="vagas" title="Vagas / Admissões"><span class="ico">▤</span><span class="sb-txt"> Vagas / Admissões</span></a>
         <a id="nav-voucher" onclick="navTo('voucher')" data-page="voucher" title="Fila de Voucher"><span class="ico">⇄</span><span class="sb-txt"> Fila de Voucher</span> <span class="count-badge alert" id="nav-voucher-count">0</span></a>
         <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes" title="Indicações"><span class="ico">📋</span><span class="sb-txt"> Indicações</span> <span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
-        <a id="nav-integracao" onclick="navTo('integracao')" data-page="integracao" title="Integração"><span class="ico">🐝</span><span class="sb-txt"> Integração</span></a>
+        <a id="nav-integracao" onclick="navTo('integracao')" data-page="integracao" title="Gestão de Benefícios"><span class="ico">🐝</span><span class="sb-txt"> Gestão de Benefícios</span></a>
         <!-- nav-usuarios removido -->
       </div>
     </div>
@@ -1264,7 +1264,7 @@
   <div class="page" id="page-integracao">
     <div class="page-header">
       <div>
-        <h1>🐝 Integração</h1>
+        <h1>🐝 Gestão de Benefícios</h1>
         <p>Suba a planilha de admitidos e confirme a presença por departamento</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="integ-btns-admin">
@@ -2657,7 +2657,8 @@ async function renderHome() {
       <div style="margin-bottom:28px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
-          ${homePainelCard('🐝','Integrações',cnt.integ_abertas??0,'Colmeias abertas','#f59e0b','integracao')}
+          ${homePainelCard('🐝','Benefícios Pendentes',cnt.integ_pendentes??0,'Confirmações em aberto','#f59e0b','integracao')}
+          ${homePainelCard('🐝','Integrações Abertas',cnt.integ_abertas??0,'Colmeias sem fechar','#63ccb0','integracao')}
           ${homePainelCard('🎟️','Vouchers Ativos',cnt.voucher_ativos??0,'Colaboradores com voucher','#63ccb0','vchr-controle')}
           ${homePainelCard('⊘','Inativos',cnt.voucher_inativos??0,'Desligados no sistema','#ef4444','vchr-controle')}
         </div>
@@ -2679,7 +2680,7 @@ async function renderHome() {
       <div style="margin-bottom:24px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
-          ${homePainelCard('🐝','Integrações Pendentes',cnt.integ_abertas??0,'Confirmações em aberto','#f59e0b','integracao')}
+          ${homePainelCard('🐝','Benefícios Pendentes',cnt.integ_pendentes??0,'Confirmações aguardando','#f59e0b','integracao')}
           ${homePainelCard('⊘','Inativar Colaborador','→','Registrar desligamento','#ef4444','vchr-inativar')}
           ${homePainelCard('🎟️','Meus Vouchers',cnt.voucher_ativos??0,'Ativos no meu depto','#63ccb0','vchr-controle')}
         </div>
@@ -5514,14 +5515,19 @@ async function integAbrirColmeia(colmeiaId) {
   } catch(e) { if(content) content.innerHTML = `<div style="color:var(--danger);padding:16px">${e.message}</div>`; }
 }
 
+function integTemControle() {
+  return temPermissao('rs_gestao_beneficios');
+}
+
 function integRenderColabs() {
   const content = document.getElementById('integ-colmeia-content');
   if (!content) return;
 
-  const pagos  = INTEG_COLABS.filter(c=>c.presenca==='PAGAR').length;
-  const noshow = INTEG_COLABS.filter(c=>c.presenca==='NO SHOW').length;
-  const pend   = INTEG_COLABS.filter(c=>!c.presenca).length;
+  const pagos   = INTEG_COLABS.filter(c=>c.presenca==='PAGAR').length;
+  const noshow  = INTEG_COLABS.filter(c=>c.presenca==='NO SHOW').length;
+  const pend    = INTEG_COLABS.filter(c=>!c.presenca).length;
   const fechada = INTEG_COL_ABERTA?.status === 'fechada';
+  const isControle = integTemControle();
 
   const badges = document.getElementById('integ-modal-badges');
   if (badges) badges.innerHTML =
@@ -5529,8 +5535,19 @@ function integRenderColabs() {
     `<span style="color:var(--danger)">⊘ ${noshow}</span> &nbsp;` +
     `<span style="color:var(--warning)">⏳ ${pend}</span>`;
 
-  // Cards compactos — sem tabela, sem scroll horizontal
-  content.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;padding:8px 0">` +
+  // Campo data de pagamento — só para quem tem controle
+  const dataPag = INTEG_COL_ABERTA?.data_pagamento || '';
+  const dataPagHtml = isControle ? `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--border)">
+      <label style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap">💰 Data de Pagamento:</label>
+      <input type="date" id="integ-data-pag" value="${dataPag}"
+        onchange="integSalvarDataPag(this.value)"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);
+        border-radius:6px;padding:5px 10px;font-size:13px;font-family:var(--font);outline:none"/>
+      <span style="font-size:11px;color:var(--muted)">Data prevista para pagamento dos benefícios</span>
+    </div>` : (dataPag ? `<div style="font-size:12px;color:var(--muted);padding:8px 0;margin-bottom:8px;border-bottom:1px solid var(--border)">💰 Pagamento previsto: <strong>${dataPag.split('-').reverse().join('/')}</strong></div>` : '');
+
+  content.innerHTML = dataPagHtml + `<div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">` +
     INTEG_COLABS.map(col => {
       const ben = [col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).join(' · ') || '—';
       const cor = col.presenca==='PAGAR' ? 'var(--success)' : col.presenca==='NO SHOW' ? 'var(--danger)' : 'var(--border)';
@@ -5540,13 +5557,15 @@ function integRenderColabs() {
       return `<div id="integ-row-${col.id}"
         style="border:1px solid ${cor};border-radius:8px;padding:10px 14px;
         background:var(--surface2);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <!-- Info -->
         <div style="flex:1;min-width:160px">
           <div style="font-size:13px;font-weight:600">${col.nome}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">
             ${col.codigo ? col.codigo+' · ' : ''}${col.cargo||''}
           </div>
-          <div style="font-size:10.5px;color:var(--muted);margin-top:2px">${ben}</div>
+          ${isControle
+            ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px;white-space:normal">${ben}</div>`
+            : `<div style="font-size:10.5px;color:var(--muted);margin-top:2px">${ben}</div>`
+          }
         </div>
         <!-- Presença -->
         ${fechada
@@ -5565,13 +5584,30 @@ function integRenderColabs() {
                ${confirmInfo}
              </div>`
         }
-        <!-- Obs -->
-        ${!fechada ? `<input type="text" value="${col.obs||''}" placeholder="Obs…"
-          onchange="integSalvarObs('${col.id}',this.value)"
-          style="background:var(--surface);border:1px solid var(--border);color:var(--text);
-          border-radius:6px;padding:4px 8px;font-size:11.5px;width:140px;font-family:var(--font)"/>` : ''}
+        <!-- Obs e benefícios editáveis (só controle) -->
+        ${isControle && !fechada
+          ? `<div style="display:flex;flex-direction:column;gap:4px;min-width:200px">
+               <input type="text" value="${col.obs||''}" placeholder="Observações…"
+                 onchange="integSalvarObs('${col.id}',this.value)"
+                 style="background:var(--surface);border:1px solid var(--border);color:var(--text);
+                 border-radius:6px;padding:4px 8px;font-size:11.5px;font-family:var(--font)"/>
+             </div>`
+          : col.obs ? `<div style="font-size:11.5px;color:var(--muted);min-width:120px">${col.obs}</div>` : ''
+        }
       </div>`;
     }).join('') + `</div>`;
+}
+
+async function integSalvarDataPag(data) {
+  if (!INTEG_COL_ABERTA) return;
+  try {
+    await rpc('wc_integ_salvar_data_pag', {
+      p_colmeia_id: INTEG_COL_ABERTA.id,
+      p_data_pag: data
+    });
+    if (INTEG_COL_ABERTA) INTEG_COL_ABERTA.data_pagamento = data;
+    showToast('Data de pagamento salva.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 async function integConfirmar(colabId, presenca) {
