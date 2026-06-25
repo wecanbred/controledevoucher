@@ -1167,7 +1167,7 @@
   <div class="page" id="page-vchr-dashboard">
     <div class="page-header">
       <div><h1>Dashboard · Voucher</h1><p>Visão geral do sistema de vouchers</p></div>
-      <button class="btn btn-ghost btn-sm" onclick="vchrAtualizarDados()">🔄 Atualizar</button>
+      <button class="btn btn-ghost btn-sm" onclick="vchrAtualizarDados().then(()=>vchrRenderDashboard())">🔄 Atualizar</button>
     </div>
     <div class="vchr-cards">
       <div class="vchr-card"><div class="vchr-card-label">Ativos</div><div class="vchr-card-value teal" id="vchr-kpi-ativos">—</div></div>
@@ -1193,7 +1193,7 @@
     <div class="page-header">
       <div><h1>Controle de Vouchers</h1><p>Colaboradores com benefício de voucher cadastrados</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="vchrAtualizarDados().then(vchrRenderControle)">🔄 Atualizar</button>
+        <button class="btn btn-ghost btn-sm" onclick="vchrAtualizarDados().then(()=>vchrRenderControle())">🔄 Atualizar</button>
         <button class="btn btn-ghost btn-sm" onclick="vchrAbrirImportar()">📥 Importar planilha</button>
         <button class="btn btn-primary" onclick="vchrAbrirModalColab(null)">+ Adicionar Colaborador</button>
       </div>
