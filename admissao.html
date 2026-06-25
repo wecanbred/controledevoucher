@@ -4511,32 +4511,58 @@ function vchrRenderControle() {
 }
 
 function vchrAbrirModalColab(c) {
-  document.getElementById('vchr-mc-title').textContent=c?'Editar Colaborador':'Adicionar Colaborador';
-  document.getElementById('vchr-mc-id').value=c?.id||'';
-  document.getElementById('vchr-mc-matricula').value=c?.matricula||'';
-  document.getElementById('vchr-mc-unidade').value=c?.unidade||'';
-  document.getElementById('vchr-mc-nome').value=c?.nome||'';
-  document.getElementById('vchr-mc-cpf').value=c?.cpf||'';
-  document.getElementById('vchr-mc-celular').value=c?.celular||'';
-  document.getElementById('vchr-mc-entrada').value=c?.hora_entrada||'';
-  document.getElementById('vchr-mc-saida').value=c?.hora_saida||'';
-  document.getElementById('vchr-mc-trajeto').value=c?.trajeto||'';
-  document.getElementById('vchr-mc-codvoucher').value=c?.cod_voucher||'';
-  document.getElementById('vchr-mc-valor').value=c?.valor||'100,00';
-  document.getElementById('vchr-mc-app').value=c?.aplicativo||'UBER/99';
-  document.getElementById('vchr-mc-beneficio').value=c?.beneficio_original||'';
+  // Carrega deptos se ainda não carregou
+  if (!VCHR_DEPTOS.length) vchrCarregarDeptos();
+  document.getElementById('vchr-mc-title').textContent = c ? 'Editar Colaborador' : 'Adicionar Colaborador';
+  document.getElementById('vchr-mc-id').value        = c?.id||'';
+  document.getElementById('vchr-mc-matricula').value = c?.matricula||'';
+  document.getElementById('vchr-mc-nome').value      = c?.nome||'';
+  document.getElementById('vchr-mc-cpf').value       = c?.cpf||'';
+  document.getElementById('vchr-mc-celular').value   = c?.celular||'';
+  document.getElementById('vchr-mc-entrada').value   = c?.hora_entrada||'';
+  document.getElementById('vchr-mc-saida').value     = c?.hora_saida||'';
+  document.getElementById('vchr-mc-trajeto').value   = c?.trajeto||'';
+  document.getElementById('vchr-mc-codvoucher').value= c?.cod_voucher||'';
+  document.getElementById('vchr-mc-valor').value     = c?.valor||'100,00';
+  document.getElementById('vchr-mc-app').value       = c?.aplicativo||'UBER/99';
+  document.getElementById('vchr-mc-beneficio').value = c?.beneficio_original||'';
+  // Seleciona departamento ao editar
+  if (c?.unidade) {
+    setTimeout(() => {
+      const sel = document.getElementById('vchr-mc-depto');
+      if (sel) sel.value = c.unidade;
+    }, 80);
+  } else {
+    const sel = document.getElementById('vchr-mc-depto');
+    if (sel) sel.value = '';
+  }
   abrirModal('vchr-modal-colab');
 }
 
 async function vchrSalvarColab() {
-  const btn=document.getElementById('vchr-btn-salvar-colab');
-  const g=id=>document.getElementById('vchr-mc-'+id)?.value.trim()||'';
-  const colab={id:g('id')||undefined,matricula:g('matricula'),nome:g('nome'),unidade:g('unidade'),cpf:g('cpf'),celular:g('celular'),hora_entrada:g('entrada'),hora_saida:g('saida'),horario_full:[g('entrada'),g('saida')].filter(Boolean).join(' AS '),trajeto:document.getElementById('vchr-mc-trajeto').value||null,cod_voucher:g('codvoucher'),valor:g('valor')||'100,00',aplicativo:document.getElementById('vchr-mc-app').value,beneficio_original:g('beneficio')};
+  const btn = document.getElementById('vchr-btn-salvar-colab');
+  const g = id => document.getElementById('vchr-mc-'+id)?.value.trim()||'';
+  const unidade = document.getElementById('vchr-mc-depto')?.value || '';
+  const colab = {
+    id: g('id')||undefined,
+    matricula: g('matricula'), nome: g('nome'), unidade: unidade,
+    cpf: g('cpf'), celular: g('celular'),
+    hora_entrada: g('entrada'), hora_saida: g('saida'),
+    horario_full: [g('entrada'),g('saida')].filter(Boolean).join(' AS '),
+    trajeto: document.getElementById('vchr-mc-trajeto').value||null,
+    cod_voucher: g('codvoucher'), valor: g('valor')||'100,00',
+    aplicativo: document.getElementById('vchr-mc-app').value,
+    beneficio_original: g('beneficio')
+  };
   if(!colab.matricula||!colab.nome){showToast('Matrícula e nome são obrigatórios.','error');return;}
-  btn.disabled=true;btn.textContent='Salvando…';
-  try{await rpc('wc_voucher_adicionar',{p_colab:colab});fecharModal('vchr-modal-colab');await vchrAtualizarDados();vchrRenderControle();showToast('Colaborador salvo!','success');}
-  catch(e){showToast(e.message,'error');}
-  finally{btn.disabled=false;btn.textContent='Salvar';}
+  btn.disabled=true; btn.textContent='Salvando…';
+  try {
+    await rpc('wc_voucher_adicionar',{p_colab:colab});
+    fecharModal('vchr-modal-colab');
+    await vchrAtualizarDados(); vchrRenderControle();
+    showToast('Colaborador salvo!','success');
+  } catch(e) { showToast(e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='Salvar'; }
 }
 
 function vchrBuscarParaInativar() {
@@ -4637,58 +4663,8 @@ async function vchrCarregarDeptos() {
   }
 }
 
-// Chamar vchrCarregarDeptos quando abrir o modal
-const _vchrOrigAbrirModalColab = vchrAbrirModalColab;
-vchrAbrirModalColab = function(c) {
-  if (!VCHR_DEPTOS.length) vchrCarregarDeptos();
-  _vchrOrigAbrirModalColab(c);
-  // Selecionar depto correto ao editar
-  setTimeout(() => {
-    const sel = document.getElementById('vchr-mc-depto');
-    if (sel && c?.unidade) {
-      const opt = [...sel.options].find(o => o.value === c.unidade);
-      if (opt) sel.value = opt.value;
-    }
-  }, 50);
-};
-
-// Também carregar ao abrir página de controle
-const _vchrOrigRenderPagina = vchrRenderPagina;
-vchrRenderPagina = function(id) {
-  _vchrOrigRenderPagina(id);
-  if (id === 'vchr-controle' && !VCHR_DEPTOS.length) vchrCarregarDeptos();
-};
-
-// ── vchrSalvarColab: usar depto ──
-const _vchrOrigSalvarColab = vchrSalvarColab;
-vchrSalvarColab = async function() {
-  // Pegar valor do select de depto
-  const sel = document.getElementById('vchr-mc-depto');
-  const unidade = sel ? sel.value : '';
-  // Injetar no campo oculto temporariamente via override
-  const g = id => document.getElementById('vchr-mc-'+id)?.value.trim()||'';
-  const btn = document.getElementById('vchr-btn-salvar-colab');
-  const colab = {
-    id: g('id')||undefined,
-    matricula: g('matricula'), nome: g('nome'), unidade: unidade,
-    cpf: g('cpf'), celular: g('celular'),
-    hora_entrada: g('entrada'), hora_saida: g('saida'),
-    horario_full: [g('entrada'),g('saida')].filter(Boolean).join(' AS '),
-    trajeto: document.getElementById('vchr-mc-trajeto').value||null,
-    cod_voucher: g('codvoucher'), valor: g('valor')||'100,00',
-    aplicativo: document.getElementById('vchr-mc-app').value,
-    beneficio_original: g('beneficio')
-  };
-  if(!colab.matricula||!colab.nome){showToast('Matrícula e nome são obrigatórios.','error');return;}
-  btn.disabled=true; btn.textContent='Salvando…';
-  try {
-    await rpc('wc_voucher_adicionar',{p_colab:colab});
-    fecharModal('vchr-modal-colab');
-    await vchrAtualizarDados(); vchrRenderControle();
-    showToast('Colaborador salvo!','success');
-  } catch(e) { showToast(e.message,'error'); }
-  finally { btn.disabled=false; btn.textContent='Salvar'; }
-};
+// Carregar deptos ao abrir página de controle (integrado em vchrRenderPagina)
+// vchrSalvarColab e vchrAbrirModalColab já estão definidos diretamente abaixo
 
 // ── Ordenação de colunas ──
 let VCHR_SORT = { col: 'nome', dir: 1 };
