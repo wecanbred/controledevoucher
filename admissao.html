@@ -1175,23 +1175,40 @@
   <div class="page" id="page-vchr-controle">
     <div class="page-header">
       <div><h1>Controle de Vouchers</h1><p>Colaboradores com benefício de voucher cadastrados</p></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="vchrAtualizarDados()">🔄 Atualizar</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="vchrAtualizarDados().then(vchrRenderControle)">🔄 Atualizar</button>
+        <button class="btn btn-ghost btn-sm" onclick="vchrAbrirImportar()">📥 Importar planilha</button>
         <button class="btn btn-primary" onclick="vchrAbrirModalColab(null)">+ Adicionar Colaborador</button>
       </div>
     </div>
     <div class="toolbar">
-      <input type="text" id="vchr-busca-colab" placeholder="Buscar por nome, matrícula, CPF…" oninput="vchrRenderControle()"/>
+      <input type="text" id="vchr-busca-colab" placeholder="🔍 Buscar por nome, matrícula, CPF, unidade…" oninput="vchrRenderControle()"/>
       <select id="vchr-filtro-status" onchange="vchrRenderControle()">
         <option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option><option value="TODOS">Todos</option>
       </select>
       <select id="vchr-filtro-trajeto" onchange="vchrRenderControle()">
         <option value="">Todos os trajetos</option><option>IDA</option><option>VOLTA</option><option>IDA E VOLTA</option>
       </select>
+      <select id="vchr-filtro-depto" onchange="vchrRenderControle()">
+        <option value="">Todos os departamentos</option>
+      </select>
     </div>
     <div class="table-wrap">
-      <table class="main-table">
-        <thead><tr><th>Status</th><th>Matrícula</th><th>Nome</th><th>Unidade</th><th>Horário</th><th>Trajeto</th><th>Cód Voucher</th><th>Aplicativo</th><th>Dt. Inclusão</th><th>Ações</th></tr></thead>
+      <table class="main-table" id="vchr-tabela-controle">
+        <thead>
+          <tr>
+            <th style="cursor:pointer" onclick="vchrOrdenar('status')">Status <span class="sort-ico" data-col="status">⇅</span></th>
+            <th style="cursor:pointer" onclick="vchrOrdenar('matricula')">Matrícula <span class="sort-ico" data-col="matricula">⇅</span></th>
+            <th style="cursor:pointer" onclick="vchrOrdenar('nome')">Nome <span class="sort-ico" data-col="nome">⇅</span></th>
+            <th style="cursor:pointer" onclick="vchrOrdenar('unidade')">Unidade <span class="sort-ico" data-col="unidade">⇅</span></th>
+            <th>Hor. Inicial → Final</th>
+            <th style="cursor:pointer" onclick="vchrOrdenar('trajeto')">Trajeto <span class="sort-ico" data-col="trajeto">⇅</span></th>
+            <th>Cód Voucher</th>
+            <th>Aplicativo</th>
+            <th style="cursor:pointer" onclick="vchrOrdenar('data_inclusao')">Dt. Inclusão <span class="sort-ico" data-col="data_inclusao">⇅</span></th>
+            <th>Ações</th>
+          </tr>
+        </thead>
         <tbody id="vchr-tbody-controle"></tbody>
       </table>
     </div>
@@ -4583,28 +4600,277 @@ function vchrRenderHistorico() {
   const ico={'INATIVAÇÃO':'⊘','REATIVAÇÃO':'✅','CADASTRO':'➕','EDIÇÃO':'✏️'};
   el.innerHTML=lista.slice(0,100).map(h=>`<div class="vchr-hist-row"><div class="vchr-hist-ico">${ico[h.tipo]||'📌'}</div><div class="vchr-hist-main"><div class="vchr-hist-tipo">${h.tipo||'—'} — ${h.matricula||'—'}</div><div class="vchr-hist-sub">${h.motivo||'—'} · ${h.responsavel||'—'} · ${h.created_at?new Date(h.created_at).toLocaleString('pt-BR'):''}</div></div></div>`).join('');
 }
+
+// ── Carregar departamentos no select do modal ──
+let VCHR_DEPTOS = [];
+async function vchrCarregarDeptos() {
+  try {
+    const r = await rpc('wc_listar_deptos', {});
+    VCHR_DEPTOS = r.deptos || [];
+    const sel = document.getElementById('vchr-mc-depto');
+    const filtro = document.getElementById('vchr-filtro-depto');
+    const opts = '<option value="">— Selecione o departamento —</option>' +
+      VCHR_DEPTOS.map(d => `<option value="${d.descricao}" data-id="${d.id}">${d.descricao}</option>`).join('');
+    if (sel) sel.innerHTML = opts;
+    if (filtro) filtro.innerHTML = '<option value="">Todos os departamentos</option>' +
+      VCHR_DEPTOS.map(d => `<option value="${d.descricao}">${d.descricao}</option>`).join('');
+  } catch(e) {
+    const sel = document.getElementById('vchr-mc-depto');
+    if (sel) sel.innerHTML = '<option value="">Erro ao carregar departamentos</option>';
+  }
+}
+
+// Chamar vchrCarregarDeptos quando abrir o modal
+const _vchrOrigAbrirModalColab = vchrAbrirModalColab;
+vchrAbrirModalColab = function(c) {
+  if (!VCHR_DEPTOS.length) vchrCarregarDeptos();
+  _vchrOrigAbrirModalColab(c);
+  // Selecionar depto correto ao editar
+  setTimeout(() => {
+    const sel = document.getElementById('vchr-mc-depto');
+    if (sel && c?.unidade) {
+      const opt = [...sel.options].find(o => o.value === c.unidade);
+      if (opt) sel.value = opt.value;
+    }
+  }, 50);
+};
+
+// Também carregar ao abrir página de controle
+const _vchrOrigRenderPagina = vchrRenderPagina;
+vchrRenderPagina = function(id) {
+  _vchrOrigRenderPagina(id);
+  if (id === 'vchr-controle' && !VCHR_DEPTOS.length) vchrCarregarDeptos();
+};
+
+// ── vchrSalvarColab: usar depto ──
+const _vchrOrigSalvarColab = vchrSalvarColab;
+vchrSalvarColab = async function() {
+  // Pegar valor do select de depto
+  const sel = document.getElementById('vchr-mc-depto');
+  const unidade = sel ? sel.value : '';
+  // Injetar no campo oculto temporariamente via override
+  const g = id => document.getElementById('vchr-mc-'+id)?.value.trim()||'';
+  const btn = document.getElementById('vchr-btn-salvar-colab');
+  const colab = {
+    id: g('id')||undefined,
+    matricula: g('matricula'), nome: g('nome'), unidade: unidade,
+    cpf: g('cpf'), celular: g('celular'),
+    hora_entrada: g('entrada'), hora_saida: g('saida'),
+    horario_full: [g('entrada'),g('saida')].filter(Boolean).join(' AS '),
+    trajeto: document.getElementById('vchr-mc-trajeto').value||null,
+    cod_voucher: g('codvoucher'), valor: g('valor')||'100,00',
+    aplicativo: document.getElementById('vchr-mc-app').value,
+    beneficio_original: g('beneficio')
+  };
+  if(!colab.matricula||!colab.nome){showToast('Matrícula e nome são obrigatórios.','error');return;}
+  btn.disabled=true; btn.textContent='Salvando…';
+  try {
+    await rpc('wc_voucher_adicionar',{p_colab:colab});
+    fecharModal('vchr-modal-colab');
+    await vchrAtualizarDados(); vchrRenderControle();
+    showToast('Colaborador salvo!','success');
+  } catch(e) { showToast(e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='Salvar'; }
+};
+
+// ── Ordenação de colunas ──
+let VCHR_SORT = { col: 'nome', dir: 1 };
+function vchrOrdenar(col) {
+  if (VCHR_SORT.col === col) VCHR_SORT.dir *= -1;
+  else { VCHR_SORT.col = col; VCHR_SORT.dir = 1; }
+  document.querySelectorAll('.sort-ico').forEach(el => el.textContent = el.dataset.col === col ? (VCHR_SORT.dir === 1 ? '↑' : '↓') : '⇅');
+  vchrRenderControle();
+}
+
+// ── vchrRenderControle: com ordenação e filtro depto ──
+const _vchrOrigRenderControle = vchrRenderControle;
+vchrRenderControle = function() {
+  const busca   = (document.getElementById('vchr-busca-colab')?.value||'').toLowerCase();
+  const status  = document.getElementById('vchr-filtro-status')?.value||'ATIVO';
+  const trajeto = document.getElementById('vchr-filtro-trajeto')?.value||'';
+  const depto   = document.getElementById('vchr-filtro-depto')?.value||'';
+  let lista = status==='TODOS' ? VCHR_COLABORADORES : VCHR_COLABORADORES.filter(c=>c.status===status);
+  if(busca)  lista = lista.filter(c=>[c.nome,c.matricula,c.cpf,c.unidade].some(f=>(f||'').toLowerCase().includes(busca)));
+  if(trajeto)lista = lista.filter(c=>(c.trajeto||vchrDefinirTrajeto(c.hora_entrada,c.hora_saida))===trajeto);
+  if(depto)  lista = lista.filter(c=>(c.unidade||'')===depto);
+  // Ordenação
+  const col = VCHR_SORT.col, dir = VCHR_SORT.dir;
+  lista.sort((a,b)=>{
+    const va = (a[col]||'').toString().toLowerCase();
+    const vb = (b[col]||'').toString().toLowerCase();
+    return va < vb ? -dir : va > vb ? dir : 0;
+  });
+  const tbody = document.getElementById('vchr-tbody-controle');
+  const count = document.getElementById('vchr-controle-count');
+  if(!tbody) return;
+  if(!lista.length){
+    tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div style="font-size:32px;margin-bottom:10px">🎟️</div>Nenhum colaborador encontrado</div></td></tr>';
+    if(count) count.textContent=''; return;
+  }
+  if(count) count.textContent=`${lista.length} colaborador(es)`;
+  tbody.innerHTML = lista.map(c=>{
+    const traj = c.trajeto||vchrDefinirTrajeto(c.hora_entrada,c.hora_saida)||'—';
+    const dataInc = c.data_inclusao ? new Date(c.data_inclusao+'T00:00').toLocaleDateString('pt-BR') : '—';
+    const horario = [c.hora_entrada,c.hora_saida].filter(Boolean).join(' → ')||'—';
+    return `<tr>
+      <td>${c.status==='ATIVO'?'<span class="vchr-pill-ativo">ATIVO</span>':'<span class="vchr-pill-inativo">INATIVO</span>'}</td>
+      <td><strong>${c.matricula||'—'}</strong></td>
+      <td>${c.nome||'—'}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.unidade||''}">${c.unidade||'—'}</td>
+      <td>${horario}</td>
+      <td><span class="vchr-pill-muted">${traj}</span></td>
+      <td>${c.cod_voucher||'—'}</td>
+      <td>${c.aplicativo||'—'}</td>
+      <td>${dataInc}</td>
+      <td class="actions-cell">
+        <button class="btn btn-ghost btn-sm" onclick='vchrAbrirModalColab(${JSON.stringify(c)})'>Editar</button>
+        ${c.status==='ATIVO'
+          ? `<button class="btn btn-warning btn-sm" onclick="vchrAbrirInativar('${c.matricula}','${(c.nome||'').replace(/'/g,"\'")}')">Inativar</button>`
+          : `<button class="btn btn-success btn-sm" onclick="vchrReativar('${c.matricula}')">Reativar</button>`
+        }
+      </td>
+    </tr>`;
+  }).join('');
+};
+
+// ── Importação de planilha ──
+let VCHR_IMPORT_ROWS = [];
+
+function vchrAbrirImportar() {
+  VCHR_IMPORT_ROWS = [];
+  document.getElementById('vchr-import-nome').textContent = '';
+  document.getElementById('vchr-import-preview-wrap').style.display = 'none';
+  document.getElementById('vchr-import-log').textContent = '';
+  document.getElementById('vchr-btn-confirmar-import').style.display = 'none';
+  document.getElementById('vchr-import-file').value = '';
+  abrirModal('vchr-modal-importar');
+}
+
+function vchrBaixarModeloImport() {
+  if(typeof XLSX==='undefined'){showToast('XLSX não carregado.','error');return;}
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['MATRICULA','NOME COMPLETO','UNIDADE','CPF','CELULAR','HORA INICIAL','HORA FINAL','TRAJETO','VALOR','APLICATIVO','BENEFICIO ORIGINAL'],
+    ['WE000000','NOME DO COLABORADOR','LM Hub_SP_Campinas','000.000.000-00','11999999999','22:00','02:00','IDA','100,00','UBER/99','VT + VOUCHER'],
+  ]);
+  ws['!cols'] = Array(11).fill({wch:22});
+  XLSX.utils.book_append_sheet(wb,ws,'Modelo');
+  XLSX.writeFile(wb,'modelo_importacao_voucher.xlsx');
+}
+
+function vchrCarregarImport(input) {
+  const file = input.files[0]; if(!file) return;
+  document.getElementById('vchr-import-nome').textContent = file.name;
+  document.getElementById('vchr-import-log').textContent = 'Lendo planilha…';
+
+  const processar = rows => {
+    if(!rows.length){document.getElementById('vchr-import-log').textContent='Planilha vazia.';return;}
+    const header = rows[0].map(h=>(h||'').toString().trim().toUpperCase());
+    const MAP = {
+      'MATRICULA':'matricula','MATRÍCULA':'matricula',
+      'NOME COMPLETO':'nome','NOME':'nome',
+      'UNIDADE':'unidade','DEPARTAMENTO':'unidade',
+      'CPF':'cpf','CELULAR':'celular','TELEFONE':'celular',
+      'HORA INICIAL':'hora_entrada','HORA ENTRADA':'hora_entrada','HORA INICIAL (VOUCHER)':'hora_entrada',
+      'HORA FINAL':'hora_saida','HORA SAÍDA':'hora_saida','HORA FINAL (VOUCHER)':'hora_saida',
+      'TRAJETO':'trajeto','VALOR':'valor',
+      'APLICATIVO':'aplicativo','BENEFICIO ORIGINAL':'beneficio_original','BENEFÍCIO ORIGINAL':'beneficio_original',
+    };
+    VCHR_IMPORT_ROWS = [];
+    const erros = [];
+    rows.slice(1).forEach((row,i) => {
+      if(row.every(v=>!v)) return;
+      const obj = {};
+      header.forEach((h,j) => { if(MAP[h]) obj[MAP[h]] = (row[j]||'').toString().trim(); });
+      if(!obj.matricula){erros.push(`Linha ${i+2}: matrícula ausente`);return;}
+      if(!obj.nome){erros.push(`Linha ${i+2}: nome ausente`);return;}
+      if(obj.hora_entrada && obj.hora_saida)
+        obj.horario_full = obj.hora_entrada + ' AS ' + obj.hora_saida;
+      obj.status = 'ATIVO';
+      obj.aplicativo = obj.aplicativo || 'UBER/99';
+      obj.valor = obj.valor || '100,00';
+      VCHR_IMPORT_ROWS.push(obj);
+    });
+    // Preview
+    const wrap = document.getElementById('vchr-import-preview-wrap');
+    const tbl  = document.getElementById('vchr-import-preview-table');
+    const cols = ['matricula','nome','unidade','hora_entrada','hora_saida','trajeto','valor'];
+    tbl.innerHTML = `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${VCHR_IMPORT_ROWS.slice(0,15).map(r=>`<tr>${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('')}</tbody>`;
+    wrap.style.display = 'block';
+    document.getElementById('vchr-import-count').textContent = `${VCHR_IMPORT_ROWS.length} colaborador(es) encontrado(s)${erros.length?` · ${erros.length} linha(s) ignorada(s)`:''}`;
+    document.getElementById('vchr-import-log').textContent = erros.join('\n');
+    document.getElementById('vchr-btn-confirmar-import').style.display = VCHR_IMPORT_ROWS.length ? 'flex' : 'none';
+  };
+
+  const reader = new FileReader();
+  reader.onerror = () => { document.getElementById('vchr-import-log').textContent = 'Erro ao ler o arquivo.'; };
+  if(file.name.toLowerCase().endsWith('.csv')) {
+    reader.onload = e => {
+      const rows = e.target.result.split(/
+?
+/).filter(l=>l.trim())
+        .map(l=>l.split(',').map(v=>v.replace(/^"|"$/g,'').trim()));
+      processar(rows);
+    };
+    reader.readAsText(file,'UTF-8');
+  } else {
+    reader.onload = e => {
+      const wb = XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      processar(XLSX.utils.sheet_to_json(ws,{header:1,defval:null}));
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+async function vchrConfirmarImport() {
+  if(!VCHR_IMPORT_ROWS.length) return;
+  const btn = document.getElementById('vchr-btn-confirmar-import');
+  const log = document.getElementById('vchr-import-log');
+  btn.disabled = true; btn.textContent = 'Importando…';
+  log.textContent = '';
+  let ok=0, err=0;
+  for(const colab of VCHR_IMPORT_ROWS) {
+    try {
+      await rpc('wc_voucher_adicionar',{p_colab:colab}); ok++;
+    } catch(e) { err++; log.textContent += `✗ ${colab.matricula}: ${e.message}\n`; }
+    log.textContent = `✓ ${ok} importado(s)${err?` · ✗ ${err} erro(s)`:''} (${ok+err}/${VCHR_IMPORT_ROWS.length})\n` + log.textContent.replace(/^✓.*\n/,'');
+    log.scrollTop = 0;
+  }
+  log.textContent = `══ CONCLUÍDO ══\n✓ ${ok} colaborador(es) importado(s)${err?`\n✗ ${err} erro(s)`:''}\n\n` + log.textContent;
+  await vchrAtualizarDados(); vchrRenderControle();
+  btn.disabled=false; btn.textContent='✅ Importação concluída';
+  showToast(`${ok} importado(s)${err?`, ${err} erros`:''}`, err?'info':'success');
+}
+
 // ═══════════════ FIM VOUCHER INTEGRADO ═══════════════
 </script>
 
 <!-- MODAL COLABORADOR VOUCHER -->
 <div class="modal-backdrop" id="vchr-modal-colab">
-  <div class="modal" style="width:600px">
+  <div class="modal" style="width:620px">
     <div class="modal-head"><h2 id="vchr-mc-title">Adicionar Colaborador</h2><p>Dados do colaborador com benefício de Voucher</p></div>
     <div class="modal-body">
       <input type="hidden" id="vchr-mc-id"/>
       <div class="form-row">
         <div class="form-group"><label>Matrícula *</label><input type="text" id="vchr-mc-matricula" placeholder="WE000000"/></div>
-        <div class="form-group"><label>Unidade</label><input type="text" id="vchr-mc-unidade" placeholder="HUB Campinas"/></div>
+        <div class="form-group"><label>Departamento / Unidade</label>
+          <select id="vchr-mc-depto">
+            <option value="">Carregando departamentos…</option>
+          </select>
+        </div>
       </div>
       <div class="form-group"><label>Nome Completo *</label><input type="text" id="vchr-mc-nome" placeholder="NOME EM MAIÚSCULO"/></div>
       <div class="form-row">
         <div class="form-group"><label>CPF</label><input type="text" id="vchr-mc-cpf" placeholder="000.000.000-00"/></div>
         <div class="form-group"><label>Celular</label><input type="text" id="vchr-mc-celular" placeholder="11999999999"/></div>
       </div>
-      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0"/>
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0"/>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Horário de validade do voucher (início e fim do período autorizado)</p>
       <div class="form-row three">
-        <div class="form-group"><label>Hora Entrada</label><input type="text" id="vchr-mc-entrada" placeholder="22:00"/></div>
-        <div class="form-group"><label>Hora Saída</label><input type="text" id="vchr-mc-saida" placeholder="02:00"/></div>
+        <div class="form-group"><label>Hora Inicial</label><input type="text" id="vchr-mc-entrada" placeholder="22:00"/></div>
+        <div class="form-group"><label>Hora Final</label><input type="text" id="vchr-mc-saida" placeholder="02:00"/></div>
         <div class="form-group"><label>Trajeto</label>
           <select id="vchr-mc-trajeto"><option value="">Calcular auto</option><option>IDA</option><option>VOLTA</option><option>IDA E VOLTA</option></select>
         </div>
@@ -4653,6 +4919,45 @@ function vchrRenderHistorico() {
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModal('vchr-modal-inativar')">Cancelar</button>
       <button class="btn btn-danger" onclick="vchrConfirmarInativar()">Confirmar Inativação</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL IMPORTAR VOUCHERS -->
+<div class="modal-backdrop" id="vchr-modal-importar">
+  <div class="modal" style="width:660px">
+    <div class="modal-head">
+      <h2>📥 Importar Colaboradores</h2>
+      <p>Importe a planilha no mesmo formato da exportação</p>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:12.5px">
+        <strong>Colunas esperadas:</strong><br/>
+        <span style="color:var(--muted)">MATRICULA · NOME COMPLETO · UNIDADE · CPF · CELULAR · HORA INICIAL · HORA FINAL · TRAJETO · VALOR · APLICATIVO · BENEFICIO ORIGINAL</span><br/>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="vchrBaixarModeloImport()">⬇️ Baixar modelo (.xlsx)</button>
+      </div>
+      <div style="margin-bottom:14px">
+        <button class="btn btn-ghost" onclick="document.getElementById('vchr-import-file').click()">
+          📂 Selecionar planilha (.xlsx ou .csv)
+        </button>
+        <input type="file" id="vchr-import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="vchrCarregarImport(this)"/>
+        <span id="vchr-import-nome" style="font-size:11.5px;color:var(--muted);margin-left:10px"></span>
+      </div>
+      <div id="vchr-import-preview-wrap" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--muted)" id="vchr-import-count"></span>
+          <span style="font-size:11px;color:var(--muted)">Verifique antes de confirmar</span>
+        </div>
+        <div style="overflow-x:auto;max-height:220px;border:1px solid var(--border);border-radius:8px">
+          <table class="main-table" id="vchr-import-preview-table"></table>
+        </div>
+      </div>
+      <div id="vchr-import-log" style="font-size:12px;color:var(--muted);margin-top:10px;white-space:pre-wrap;max-height:100px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('vchr-modal-importar')">Cancelar</button>
+      <button class="btn btn-primary" id="vchr-btn-confirmar-import" onclick="vchrConfirmarImport()" style="display:none">✅ Confirmar Importação</button>
     </div>
   </div>
 </div>
