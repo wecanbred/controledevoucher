@@ -4600,29 +4600,67 @@ let VCHR_EXPORT_ROWS=[];
 function _vchrPH(h){const m=String(h).match(/(\d{2}:\d{2})\s+AS\s+(\d{2}:\d{2})/i);if(!m)return{entrada:null,saida:null};return{entrada:m[1],saida:m[2]};}
 function _vchrFD(dt){return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();}
 function _vchrFH(dt){return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');}
-function _vchrCD(horario,dataBase,dataVenc){
-  const {entrada,saida}=_vchrPH(horario);const v={dII:'',hII:'',dFI:'',hFI:'',dIV:'',hIV:'',dFV:'',hFV:''};if(!entrada||!saida||!dataBase)return v;
-  const [hE,mE]=entrada.split(':').map(Number),[hS,mS]=saida.split(':').map(Number),[ano,mes,dia]=dataBase.split('-').map(Number);
-  const calc=(bD,bM,bA,hMin,add)=>{const tot=hMin+add,d=bD+Math.floor(tot/1440),h=((tot%1440)+1440)%1440;return new Date(bA,bM-1,d,Math.floor(h/60),h%60,0);};
-  if(dataVenc){const [av,mv,dv]=dataVenc.split('-').map(Number);return{dII:_vchrFD(calc(dia,mes,ano,hE*60+mE,-120)),hII:_vchrFH(calc(dia,mes,ano,hE*60+mE,-120)),dFI:_vchrFD(calc(dv,mv,av,hE*60+mE,60)),hFI:_vchrFH(calc(dv,mv,av,hE*60+mE,60)),dIV:_vchrFD(calc(dia,mes,ano,hS*60+mS,-60)),hIV:_vchrFH(calc(dia,mes,ano,hS*60+mS,-60)),dFV:_vchrFD(calc(dv,mv,av,hS*60+mS,120)),hFV:_vchrFH(calc(dv,mv,av,hS*60+mS,120))};}
-  const d1=dia+1;return{dII:_vchrFD(calc(d1,mes,ano,hE*60+mE,-120)),hII:_vchrFH(calc(d1,mes,ano,hE*60+mE,-120)),dFI:_vchrFD(calc(d1,mes,ano,hE*60+mE,60)),hFI:_vchrFH(calc(d1,mes,ano,hE*60+mE,60)),dIV:_vchrFD(calc(d1,mes,ano,hS*60+mS,-60)),hIV:_vchrFH(calc(d1,mes,ano,hS*60+mS,-60)),dFV:_vchrFD(calc(d1,mes,ano,hS*60+mS,120)),hFV:_vchrFH(calc(d1,mes,ano,hS*60+mS,120))};
-}
+function _vchrCD(horario, dataBase, dataVenc) {
+  const {entrada, saida} = _vchrPH(horario);
+  const vazio = {dII:'',hII:'',dFI:'',hFI:''};
+  if (!entrada || !saida || !dataBase) return vazio;
 
+  const [hE, mE] = entrada.split(':').map(Number);
+  const [hS, mS] = saida.split(':').map(Number);
+  const [ano, mes, dia] = dataBase.split('-').map(Number);
+
+  // Início: se hora inicial <= 05:00, considera dia seguinte à data base (madrugada)
+  const diaInicio = (hE <= 5) ? dia + 1 : dia;
+  const dtInicio  = new Date(ano, mes - 1, diaInicio, hE, mE, 0);
+
+  // Fim: sempre na data de vencimento informada + hora final cadastrada
+  // Se não informar vencimento, usa o mesmo dia do início + 1 (dia seguinte)
+  let dtFim;
+  if (dataVenc) {
+    const [av, mv, dv] = dataVenc.split('-').map(Number);
+    dtFim = new Date(av, mv - 1, dv, hS, mS, 0);
+  } else {
+    dtFim = new Date(ano, mes - 1, diaInicio + 1, hS, mS, 0);
+  }
+
+  return {
+    dII: _vchrFD(dtInicio), hII: _vchrFH(dtInicio),
+    dFI: _vchrFD(dtFim),    hFI: _vchrFH(dtFim),
+  };
+}
 function vchrGerarExportacao() {
-  const dataBase=document.getElementById('vchr-exp-data-base').value,dataVenc=document.getElementById('vchr-exp-data-venc').value||null;
-  if(!dataBase){showToast('Selecione a Data Base.','error');return;}
-  VCHR_EXPORT_ROWS=[];let semV=0;
-  VCHR_COLABORADORES.filter(c=>c.status==='ATIVO').forEach(c=>{
-    const h=c.horario_full||[c.hora_entrada,c.hora_saida].filter(Boolean).join(' AS '),t=c.trajeto||vchrDefinirTrajeto(c.hora_entrada,c.hora_saida);
-    if(!t){semV++;return;}const d=_vchrCD(h,dataBase,dataVenc);
-    VCHR_EXPORT_ROWS.push({'TRAJETO':t,'UNIDADE':c.unidade,'MATRICULA':c.matricula,'NOME COMPLETO':c.nome,'CELULAR':c.celular,'CPF':c.cpf,'DATA INICIO':t==='IDA'?d.dII:d.dIV,'HORA INICIO':t==='IDA'?d.hII:d.hIV,'DATA FIM':t==='IDA'?d.dFI:d.dFV,'HORA FIM':t==='IDA'?d.hFI:d.hFV,'VOUCHER':'','VALOR':c.valor||'100,00','MOTIVO':'ESCALA DE TRABALHO','APLICATIVO':c.aplicativo||'UBER/99'});
+  const dataBase = document.getElementById('vchr-exp-data-base').value;
+  const dataVenc = document.getElementById('vchr-exp-data-venc').value || null;
+  if (!dataBase) { showToast('Selecione a Data Base.','error'); return; }
+  VCHR_EXPORT_ROWS = []; let semV = 0;
+  VCHR_COLABORADORES.filter(c => c.status === 'ATIVO').forEach(c => {
+    const h = c.horario_full || [c.hora_entrada, c.hora_saida].filter(Boolean).join(' AS ');
+    const t = c.trajeto || vchrDefinirTrajeto(c.hora_entrada, c.hora_saida);
+    if (!t) { semV++; return; }
+    const d = _vchrCD(h, dataBase, dataVenc);
+    VCHR_EXPORT_ROWS.push({
+      'TRAJETO':       t,
+      'UNIDADE':       c.unidade    || '',
+      'MATRICULA':     c.matricula  || '',
+      'NOME COMPLETO': c.nome       || '',
+      'CELULAR':       c.celular    || '',
+      'CPF':           c.cpf        || '',
+      'DATA INICIO':   d.dII,
+      'HORA INICIO':   d.hII,
+      'DATA FIM':      d.dFI,
+      'HORA FIM':      d.hFI,
+      'VOUCHER':       '',
+      'VALOR':         c.valor      || '100,00',
+      'MOTIVO':        'ESCALA DE TRABALHO',
+      'APLICATIVO':    c.aplicativo || 'UBER/99',
+    });
   });
-  const cols=Object.keys(VCHR_EXPORT_ROWS[0]||{});
-  document.getElementById('vchr-exp-head').innerHTML=`<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
-  document.getElementById('vchr-exp-body').innerHTML=VCHR_EXPORT_ROWS.slice(0,20).map(r=>`<tr>${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('');
-  document.getElementById('vchr-export-preview').style.display='block';
-  document.getElementById('vchr-exp-info').textContent=`${VCHR_EXPORT_ROWS.length} colaborador(es)${semV?` · ${semV} sem trajeto (ignorados)`:''}`;
-  document.getElementById('vchr-btn-baixar-xlsx').style.display='inline-flex';
+  const cols = Object.keys(VCHR_EXPORT_ROWS[0] || {});
+  document.getElementById('vchr-exp-head').innerHTML = `<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+  document.getElementById('vchr-exp-body').innerHTML = VCHR_EXPORT_ROWS.slice(0,20).map(r=>`<tr>${cols.map(c=>`<td>${r[c]||'—'}</td>`).join('')}</tr>`).join('');
+  document.getElementById('vchr-export-preview').style.display = 'block';
+  document.getElementById('vchr-exp-info').textContent = `${VCHR_EXPORT_ROWS.length} colaborador(es)${semV ? ` · ${semV} sem trajeto (ignorados)` : ''}`;
+  document.getElementById('vchr-btn-baixar-xlsx').style.display = 'inline-flex';
 }
 
 function vchrBaixarExcel() {
