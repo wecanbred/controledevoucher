@@ -5044,8 +5044,10 @@ function integLerPlanilha(input) {
 
       const iNome    = idx('Nome do Funcionário');
       const iAdmiss  = idx('Data de Admissão');
-      const iDepto   = idx('Depto/Centro de Custo');
-      const iDeptoNm = idx('Departamento');
+      const iDepto   = idx('Depto/Centro de Custo');   // código ex: HUB-LSP-04
+      const iDeptoNm = idx('Departamento');              // nome ex: LM Hub_SP_São José dos Campos
+      const iCliente = idx('Cliente');                   // código numérico do cliente
+      const iRazao   = idx('Razão Social');              // nome do cliente
       const iCargo   = idx('Cargo ou Função');
       const iHorario = idx('Descrição do Horário');
       const iCodigo  = idx('Código');
@@ -5064,7 +5066,7 @@ function integLerPlanilha(input) {
         const admiss = row[iAdmiss];
         const demiss = iDemiss >= 0 ? row[iDemiss] : null;
         if (!nome || !admiss) return;
-        if (demiss && String(demiss).trim()) return; // ignorar demitidos
+        if (demiss && String(demiss).trim() && String(demiss).trim() !== 'null') return;
 
         // Formatar data
         let dataStr = '';
@@ -5072,14 +5074,17 @@ function integLerPlanilha(input) {
           dataStr = admiss.toISOString().split('T')[0];
         } else {
           const s = String(admiss).trim();
-          // DD/MM/YYYY
           const m = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
           if (m) dataStr = `${m[3]}-${m[2]}-${m[1]}`;
           else dataStr = s;
         }
 
+        // Usar código do depto (cli_codigo no sistema) como chave de agrupamento
         const depto_cod  = iDepto  >= 0 ? (row[iDepto]  || '').toString().trim() : '';
-        const depto_nome = iDeptoNm >= 0 ? (row[iDeptoNm]|| '').toString().trim() : depto_cod;
+        // Nome do departamento = "Razão Social · Departamento" para ficar claro pro Onsite
+        const razao      = iRazao  >= 0 ? (row[iRazao]  || '').toString().trim() : '';
+        const deptoNome  = iDeptoNm >= 0 ? (row[iDeptoNm]|| '').toString().trim() : depto_cod;
+        const depto_nome = razao ? `${razao} — ${deptoNome}` : deptoNome;
         const key = `${dataStr}||${depto_cod}`;
 
         if (!grupos[key]) grupos[key] = { data_admissao: dataStr, depto_cod, depto_nome, colaboradores: [] };
@@ -5138,7 +5143,9 @@ function integCancelarPreview() {
 async function integCriarColmeias() {
   try {
     const r = await rpc('wc_integ_criar_colmeia', { p_lote: INTEG_LOTE });
-    showToast(`${r.colmeias} colmeia(s) criada(s) · ${r.colaboradores} colaborador(es)`, 'success');
+    const msg = `${r.colmeias} colmeia(s) criada(s) · ${r.colaboradores} colaborador(es)` +
+      (r.puladas > 0 ? ` · ${r.puladas} data(s) fechada(s) preservada(s) 🔒` : '');
+    showToast(msg, 'success');
     integCancelarPreview();
     integCarregarColmeias();
   } catch(e) { showToast(e.message, 'error'); }
@@ -5175,22 +5182,23 @@ function integRenderColmeias() {
   const abaAtiva = window._integAbaAtiva || datas[0];
   window._integAbaAtiva = abaAtiva;
 
-  // Abas por data
-  const abas = datas.map(data => {
-    const cols = porData[data];
-    const pend = cols.reduce((s,c)=>s+Number(c.pendentes),0);
-    const ativa = data === abaAtiva;
-    return `<button onclick="window._integAbaAtiva='${data}';integRenderColmeias()"
-      style="padding:8px 16px;border:none;border-bottom:2px solid ${ativa?'var(--accent)':'transparent'};
-      background:none;cursor:pointer;font-size:13px;font-weight:${ativa?'700':'400'};
-      color:${ativa?'var(--accent)':'var(--muted)'};font-family:var(--font);white-space:nowrap;
-      transition:all .15s;position:relative">
-      ${data}
-      ${pend > 0 ? `<span style="background:var(--warning);color:#000;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:5px">${pend}</span>` : ''}
-    </button>`;
-  }).join('');
+  // Select compacto de datas
+  const abas = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+    <label style="font-size:12px;color:var(--muted);font-weight:600">📅 Data:</label>
+    <select onchange="window._integAbaAtiva=this.value;integRenderColmeias()"
+      style="background:var(--surface2);border:1px solid var(--border);color:var(--text);
+      border-radius:8px;padding:6px 12px;font-size:13px;font-family:var(--font);cursor:pointer;outline:none">
+      ${datas.map(data => {
+        const cols = porData[data];
+        const pend = cols.reduce((s,c)=>s+Number(c.pendentes),0);
+        const label = data + (pend > 0 ? ` (⏳ ${pend})` : cols.every(c=>c.status==='fechada') ? ' 🔒' : ' ✓');
+        return `<option value="${data}" ${data===abaAtiva?'selected':''}>${label}</option>`;
+      }).join('')}
+    </select>
+    <span style="font-size:11px;color:var(--muted)">${datas.length} data(s) no histórico</span>
+  </div>`;
 
-  // Conteúdo da aba ativa
+  // Conteúdo da data selecionada
   const cols = porData[abaAtiva] || [];
   const totalGeral    = cols.reduce((s,c)=>s+Number(c.total),0);
   const pagosGeral    = cols.reduce((s,c)=>s+Number(c.pagos),0);
@@ -5217,10 +5225,7 @@ function integRenderColmeias() {
     </div>`).join('');
 
   wrap.innerHTML = `
-    <!-- Abas de data -->
-    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto">
-      ${abas}
-    </div>
+    ${abas}
     <!-- Resumo da aba -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div style="font-size:13px;color:var(--muted)">
