@@ -4725,17 +4725,20 @@ function vchrRenderHistorico() {
   const pagina = lista.slice(inicio, inicio + VCHR_HIST_POR_PAG);
 
   const ico = {'INATIVAÇÃO':'⊘','REATIVAÇÃO':'✅','CADASTRO':'➕','EDIÇÃO':'✏️','EXCLUSÃO':'🗑️','CADASTRO/EDIÇÃO':'✏️'};
+  const isMaster = session?.perfil === 'master';
   const itens = pagina.map(h => {
     const dt = h.created_at ? new Date(h.created_at) : null;
     const dataHora = dt ? dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '—';
     const corTipo = h.tipo==='INATIVAÇÃO' ? 'color:var(--danger)' : h.tipo==='REATIVAÇÃO' ? 'color:var(--success)' : 'color:var(--muted)';
+    const nomeLabel = h.nome_colaborador ? `${h.nome_colaborador} (${h.matricula||'—'})` : (h.matricula||'—');
     return `<div class="vchr-hist-row">
       <div class="vchr-hist-ico">${ico[h.tipo]||'📌'}</div>
-      <div class="vchr-hist-main">
-        <div class="vchr-hist-tipo" style="${corTipo}"><strong>${h.tipo||'—'}</strong> — ${h.matricula||'—'}</div>
+      <div class="vchr-hist-main" style="flex:1">
+        <div class="vchr-hist-tipo" style="${corTipo}"><strong>${h.tipo||'—'}</strong> — ${nomeLabel}</div>
         <div style="font-size:12.5px;margin-top:2px">${h.motivo||'—'}</div>
         <div class="vchr-hist-sub" style="margin-top:3px">👤 <strong>${h.responsavel||'—'}</strong> &nbsp;·&nbsp; 🕐 ${dataHora}</div>
       </div>
+      ${isMaster ? `<button onclick="vchrExcluirHistorico(${h.id})" title="Excluir registro" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:4px 6px;border-radius:6px;flex-shrink:0" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">🗑</button>` : ''}
     </div>`;
   }).join('');
 
@@ -4986,6 +4989,17 @@ async function vchrExcluir(matricula, nome) {
     await vchrAtualizarDados();
     vchrRenderControle();
     showToast(`${nome} excluído do sistema.`, 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function vchrExcluirHistorico(id) {
+  if (!confirm('Excluir este registro do histórico? Esta ação não pode ser desfeita.')) return;
+  try {
+    await rpc('wc_voucher_excluir_historico', { p_id: id });
+    // Remove da lista local sem precisar recarregar tudo
+    VCHR_HISTORICO = VCHR_HISTORICO.filter(h => h.id !== id);
+    vchrRenderHistorico();
+    showToast('Registro excluído.', 'success');
   } catch(e) { showToast(e.message, 'error'); }
 }
 
