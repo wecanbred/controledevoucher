@@ -808,6 +808,7 @@
           </button>
           <div class="nav-group-items">
             <a id="nav-integracao" onclick="navTo('integracao')" data-page="integracao" title="Gestão de Benefícios" style="padding-left:28px;display:none"><span class="ico">✅</span><span class="sb-txt"> Gestão de Benefícios</span></a>
+            <a id="nav-pagar-ben" onclick="navTo('pagar-beneficios')" data-page="pagar-beneficios" title="Pagar Benefícios" style="padding-left:28px;display:none"><span class="ico">💰</span><span class="sb-txt"> Pagar Benefícios</span></a>
             <a style="padding-left:28px;opacity:.5;cursor:default"><span class="ico">📊</span><span class="sb-txt"> Dashboard <span style="font-size:9px">(em breve)</span></span></a>
             <a style="padding-left:28px;opacity:.5;cursor:default"><span class="ico">🕐</span><span class="sb-txt"> Histórico <span style="font-size:9px">(em breve)</span></span></a>
           </div>
@@ -1464,6 +1465,93 @@
     </div>
   </div>
 
+
+  <!-- PAGE: PAGAR BENEFÍCIOS -->
+  <div class="page" id="page-pagar-beneficios">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <div>
+        <h1 style="font-size:20px;font-weight:800;margin:0">💰 Pagar Benefícios</h1>
+        <p style="font-size:12px;color:var(--muted);margin-top:2px">Programar datas de pagamento para colaboradores confirmados</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="pagarBenCarregar()">🔄 Atualizar</button>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <select id="pagar-filtro-data" onchange="pagarBenFiltrar()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none">
+        <option value="">Todas as datas</option>
+      </select>
+      <select id="pagar-filtro-cc" onchange="pagarBenFiltrar()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none">
+        <option value="">Todos os CCs</option>
+      </select>
+      <div style="flex:1;min-width:180px;max-width:280px;position:relative">
+        <input type="text" id="pagar-busca" placeholder="Buscar nome…" oninput="pagarBenFiltrar()"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px 7px 32px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">🔍</span>
+      </div>
+      <span id="pagar-contador" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+
+    <!-- Ação em lote (aparece ao selecionar) -->
+    <div id="pagar-lote-bar" style="display:none;background:var(--surface2);border:1.5px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span id="pagar-lote-count" style="font-size:13px;font-weight:700;color:var(--accent)"></span>
+        <input type="date" id="pagar-lote-data"
+          style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 10px;font-size:13px;font-family:var(--font);outline:none"/>
+        <button class="btn btn-primary btn-sm" onclick="pagarBenLote()">💰 Marcar selecionados como Pago</button>
+        <button class="btn btn-ghost btn-sm" onclick="pagarBenDeselecionarTodos()">✕ Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm)">
+      <table class="main-table" style="width:100%">
+        <thead>
+          <tr>
+            <th style="width:36px">
+              <input type="checkbox" id="pagar-chk-all" onchange="pagarBenSelecionarTodos(this.checked)" style="cursor:pointer;width:14px;height:14px"/>
+            </th>
+            <th>Nome</th>
+            <th>CC / Depto</th>
+            <th>Benefícios</th>
+            <th>Integração</th>
+            <th>Confirmado por</th>
+            <th style="width:190px;text-align:center">Pagamento</th>
+          </tr>
+        </thead>
+        <tbody id="pagar-tabela-body">
+          <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL: programar pagamento individual -->
+  <div class="modal-backdrop" id="pagar-modal-pago" onclick="if(event.target===this)fecharModal('pagar-modal-pago')">
+    <div class="modal" style="width:400px">
+      <div class="modal-head">
+        <h2 style="font-size:15px" id="pagar-modal-nome"></h2>
+        <p style="font-size:12px;color:var(--muted);margin-top:3px" id="pagar-modal-sub"></p>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pagar-modal-id"/>
+        <div class="form-group">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Data que o dinheiro cai na conta</label>
+          <input type="date" id="pagar-modal-data"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px"/>
+        </div>
+        <div style="margin-top:8px;font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 12px">
+          📋 Seu nome e a data/hora desta programação serão registrados automaticamente.
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="fecharModal('pagar-modal-pago')">Cancelar</button>
+        <button class="btn btn-primary" onclick="pagarBenConfirmar()">💰 Confirmar Pagamento</button>
+      </div>
+    </div>
+  </div>
 
 <!-- MODAL COLABORADOR INTEGRAÇÃO -->
 <div class="modal-backdrop" id="integ-modal-colab" onclick="if(event.target===this)fecharModal('integ-modal-colab')">
@@ -2424,7 +2512,8 @@ const PERMISSOES_GRUPOS = [
     { id:'adp_voucher_historico', nome:'Voucher — Histórico',         descricao:'Registro de inativações e reativações' },
   ]},
   { grupo: 'Administração de Pessoal — Benefícios', itens: [
-    { id:'adp_beneficios',          nome:'Gestão de Benefícios',   descricao:'Confirmação de presença para pagamento de benefícios' },
+    { id:'adp_beneficios',          nome:'Gestão de Benefícios',   descricao:'Confirmação de presença — vê apenas os próprios CCs' },
+    { id:'adp_beneficios_pagar',    nome:'Pagar Benefícios',       descricao:'Vê todos os CCs e programa datas de pagamento' },
     { id:'adp_beneficios_historico',nome:'Benefícios — Histórico', descricao:'Histórico de integrações e confirmações', em_breve:true },
   ]},
   { grupo: 'Administração de Pessoal — Tickets Shopee', itens: [
@@ -2654,9 +2743,10 @@ async function iniciarSessao(conta) {
   show('nav-adp-historico', temPermissao('adp_voucher_historico'));
 
   // Benefícios sub
+  const _algumBen = temPermissao('adp_beneficios') || temPermissao('adp_beneficios_pagar');
   showBlock('navgroup-adp-beneficios', _algumBen);
-  show('nav-integracao', _algumBen);
-
+  show('nav-integracao', temPermissao('adp_beneficios'));
+  show('nav-pagar-ben',  temPermissao('adp_beneficios_pagar'));
   // Tickets sub
   showBlock('navgroup-adp-tickets', _algumTicket);
 
@@ -5909,4 +5999,225 @@ async function integFecharTodosGrupos() {
   } catch(e) { showToast(e.message, 'error'); }
 }
 // ═══════════════ FIM INTEGRAÇÃO ═══════════════
+
+// ════════════════════════════════════════════════════════════
+//  PAGAR BENEFÍCIOS
+// ════════════════════════════════════════════════════════════
+let PAGAR_BEN_LISTA = [];   // lista completa do banco
+let PAGAR_BEN_SELECIONADOS = new Set();
+
+// Navegar para página
+const _origNavToPagar = window.navTo;
+window.navTo = function(id) {
+  if (id === 'pagar-beneficios') {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav a, .nav-suporte-item').forEach(a => a.classList.remove('active'));
+    const pg = document.getElementById('page-pagar-beneficios');
+    if (pg) pg.classList.add('active');
+    document.querySelector('[data-page="pagar-beneficios"]')?.classList.add('active');
+    pagarBenCarregar();
+    return;
+  }
+  _origNavToPagar(id);
+};
+
+async function pagarBenCarregar() {
+  const tbody = document.getElementById('pagar-tabela-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">Carregando…</td></tr>';
+  try {
+    const r = await rpc('wc_integ_listar_para_pagar', {});
+    PAGAR_BEN_LISTA = r.lista || [];
+    PAGAR_BEN_SELECIONADOS.clear();
+    pagarBenPopularFiltros();
+    pagarBenFiltrar();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function pagarBenPopularFiltros() {
+  // Datas únicas
+  const datas = [...new Set(PAGAR_BEN_LISTA.map(c => c.data_admissao_fmt))].sort().reverse();
+  const selData = document.getElementById('pagar-filtro-data');
+  selData.innerHTML = '<option value="">Todas as datas</option>' +
+    datas.map(d => `<option value="${d}">${d}${PAGAR_BEN_LISTA.some(c => c.data_admissao_fmt===d && c.atrasado) ? ' ⚠️' : ''}</option>`).join('');
+
+  // CCs únicos
+  const ccs = [...new Set(PAGAR_BEN_LISTA.map(c => c.depto_cod))].sort();
+  const selCC = document.getElementById('pagar-filtro-cc');
+  selCC.innerHTML = '<option value="">Todos os CCs</option>' +
+    ccs.map(cc => `<option value="${cc}">${cc}</option>`).join('');
+}
+
+function pagarBenFiltrar() {
+  const filtData = document.getElementById('pagar-filtro-data')?.value || '';
+  const filtCC   = document.getElementById('pagar-filtro-cc')?.value || '';
+  const busca    = (document.getElementById('pagar-busca')?.value || '').toLowerCase();
+
+  let lista = [...PAGAR_BEN_LISTA];
+  if (filtData) lista = lista.filter(c => c.data_admissao_fmt === filtData);
+  if (filtCC)   lista = lista.filter(c => c.depto_cod === filtCC);
+  if (busca)    lista = lista.filter(c => (c.nome||'').toLowerCase().includes(busca));
+
+  const cont = document.getElementById('pagar-contador');
+  if (cont) cont.textContent = `${lista.length} colaborador(es)` + (PAGAR_BEN_LISTA.length !== lista.length ? ` de ${PAGAR_BEN_LISTA.length}` : '');
+
+  pagarBenRenderTabela(lista);
+}
+
+function abrevBenPagar(s) {
+  if (!s) return '';
+  if (/vale.transporte|\bvt\b/i.test(s)) return 'VT';
+  if (/vale.refei|\bvr\b/i.test(s)) return 'VR';
+  if (/mobilidade|mob|auxilio.mob/i.test(s)) return 'MOB';
+  if (/vale.aliment|\bva\b/i.test(s)) return 'VA';
+  if (/cesta.basica/i.test(s)) return 'CB';
+  if (/dinheiro|reembolso/i.test(s)) return 'VT$';
+  return s.substring(0, 6);
+}
+
+function pagarBenRenderTabela(lista) {
+  const tbody = document.getElementById('pagar-tabela-body');
+  if (!tbody) return;
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">' +
+      (PAGAR_BEN_LISTA.length === 0 ? '✅ Nenhum benefício pendente de pagamento.' : 'Nenhum resultado para este filtro.') +
+      '</td></tr>';
+    return;
+  }
+
+  // Agrupar por data de integração para separadores visuais
+  let dataAtual = null;
+  tbody.innerHTML = lista.map((col, i) => {
+    const ben = [...new Set([col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).map(abrevBenPagar))].join(' · ') || '—';
+    const benTooltip = [col.beneficio_mob, col.beneficio_vr, col.beneficio_vt].filter(Boolean).join(' | ');
+    const selecionado = PAGAR_BEN_SELECIONADOS.has(col.id);
+    const atrasadoBg = col.atrasado ? 'background:rgba(239,68,68,.06)' : '';
+
+    // Separador de data
+    let separador = '';
+    if (col.data_admissao_fmt !== dataAtual) {
+      dataAtual = col.data_admissao_fmt;
+      const label = col.atrasado
+        ? `<span style="color:var(--danger);font-weight:700">⚠️ Integração ${col.data_admissao_fmt} — ATRASADO</span>`
+        : `<span style="color:var(--muted)">📅 Integração ${col.data_admissao_fmt}</span>`;
+      separador = `<tr style="background:var(--surface2)">
+        <td colspan="7" style="padding:6px 14px;font-size:11px;border-bottom:1px solid var(--border)">${label}</td>
+      </tr>`;
+    }
+
+    const row = `<tr id="pagar-row-${col.id}" style="border-bottom:1px solid var(--border);${atrasadoBg}${selecionado ? ';background:rgba(99,204,176,.07)' : ''}">
+      <td style="text-align:center">
+        <input type="checkbox" ${selecionado ? 'checked' : ''} onchange="pagarBenToggle('${col.id}', this.checked)"
+          style="cursor:pointer;width:14px;height:14px"/>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${col.nome}</div>
+        ${col.codigo ? `<div style="font-size:11px;color:var(--muted)">${col.codigo}</div>` : ''}
+      </td>
+      <td style="font-size:12px">${col.depto_cod || '—'}</td>
+      <td style="font-size:12px;font-weight:500" title="${benTooltip}">${ben}</td>
+      <td style="font-size:12px;color:var(--muted)">${col.data_admissao_fmt || '—'}</td>
+      <td style="font-size:11.5px;color:var(--muted)">
+        ${col.confirmado_por || '—'}
+        ${col.confirmado_at ? `<div style="font-size:10px">${new Date(col.confirmado_at).toLocaleDateString('pt-BR')}</div>` : ''}
+      </td>
+      <td style="text-align:center">
+        <button onclick="pagarBenAbrirModal('${col.id}')"
+          style="padding:5px 12px;border-radius:8px;border:1.5px solid var(--success);font-size:11.5px;cursor:pointer;font-weight:700;background:transparent;color:var(--success);font-family:var(--font)">
+          💰 Programar
+        </button>
+      </td>
+    </tr>`;
+
+    return separador + row;
+  }).join('');
+
+  pagarBenAtualizarLoteBar();
+}
+
+function pagarBenToggle(id, checked) {
+  if (checked) PAGAR_BEN_SELECIONADOS.add(id);
+  else PAGAR_BEN_SELECIONADOS.delete(id);
+  pagarBenAtualizarLoteBar();
+}
+
+function pagarBenSelecionarTodos(checked) {
+  const rows = document.querySelectorAll('#pagar-tabela-body input[type=checkbox]');
+  PAGAR_BEN_SELECIONADOS.clear();
+  if (checked) {
+    // Selecionar apenas os visíveis
+    const filtData = document.getElementById('pagar-filtro-data')?.value || '';
+    const filtCC   = document.getElementById('pagar-filtro-cc')?.value || '';
+    const busca    = (document.getElementById('pagar-busca')?.value || '').toLowerCase();
+    PAGAR_BEN_LISTA
+      .filter(c => (!filtData || c.data_admissao_fmt === filtData) &&
+                   (!filtCC   || c.depto_cod === filtCC) &&
+                   (!busca    || (c.nome||'').toLowerCase().includes(busca)))
+      .forEach(c => PAGAR_BEN_SELECIONADOS.add(c.id));
+  }
+  rows.forEach(cb => cb.checked = checked);
+  pagarBenAtualizarLoteBar();
+}
+
+function pagarBenDeselecionarTodos() {
+  PAGAR_BEN_SELECIONADOS.clear();
+  document.getElementById('pagar-chk-all').checked = false;
+  pagarBenFiltrar();
+}
+
+function pagarBenAtualizarLoteBar() {
+  const bar   = document.getElementById('pagar-lote-bar');
+  const count = document.getElementById('pagar-lote-count');
+  if (!bar) return;
+  const n = PAGAR_BEN_SELECIONADOS.size;
+  bar.style.display = n > 0 ? 'block' : 'none';
+  if (count) count.textContent = `${n} colaborador(es) selecionado(s)`;
+}
+
+function pagarBenAbrirModal(colabId) {
+  const col = PAGAR_BEN_LISTA.find(c => c.id === colabId);
+  if (!col) return;
+  document.getElementById('pagar-modal-id').value  = colabId;
+  document.getElementById('pagar-modal-nome').textContent = col.nome;
+  document.getElementById('pagar-modal-sub').textContent  =
+    (col.cargo || '') + ' · ' + (col.depto_cod || '') + ' · Integração: ' + (col.data_admissao_fmt || '');
+  // Sugerir data +5 dias da integração
+  if (col.data_admissao) {
+    const dt = new Date(col.data_admissao);
+    dt.setDate(dt.getDate() + 5);
+    document.getElementById('pagar-modal-data').value = dt.toISOString().split('T')[0];
+  } else {
+    document.getElementById('pagar-modal-data').value = '';
+  }
+  abrirModal('pagar-modal-pago');
+}
+
+async function pagarBenConfirmar() {
+  const id   = document.getElementById('pagar-modal-id').value;
+  const data = document.getElementById('pagar-modal-data').value;
+  if (!data) { showToast('Informe a data de pagamento.', 'error'); return; }
+  try {
+    await rpc('wc_integ_marcar_pago', { p_colab_ids: [id], p_data_pagto: data });
+    PAGAR_BEN_LISTA = PAGAR_BEN_LISTA.filter(c => c.id !== id);
+    fecharModal('pagar-modal-pago');
+    pagarBenFiltrar();
+    showToast('Pagamento programado!', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function pagarBenLote() {
+  const data = document.getElementById('pagar-lote-data').value;
+  if (!data) { showToast('Informe a data de pagamento.', 'error'); return; }
+  const ids = [...PAGAR_BEN_SELECIONADOS];
+  if (!ids.length) return;
+  try {
+    const r = await rpc('wc_integ_marcar_pago', { p_colab_ids: ids, p_data_pagto: data });
+    PAGAR_BEN_LISTA = PAGAR_BEN_LISTA.filter(c => !PAGAR_BEN_SELECIONADOS.has(c.id));
+    PAGAR_BEN_SELECIONADOS.clear();
+    pagarBenFiltrar();
+    showToast(`${r.atualizados || ids.length} pagamento(s) programado(s)!`, 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+// ═══════════════ FIM PAGAR BENEFÍCIOS ═══════════════
 </script>
