@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>WeCan System | Integrado</title>
+<title>System Integrated | WeCan</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -4929,9 +4929,26 @@ const IMPORT_SCHEMA = {
   cc: {
     rpc: 'wc_salvar_cc',
     param: 'p_cc',
-    required: ['descricao'],
-    cols: { 'Código (COD)':'cod', 'Cliente':'cliente', 'Descrição':'descricao', 'CEP':'cep', 'UF':'uf', 'Logradouro':'logradouro', 'Número':'numero', 'Complemento':'complemento', 'Bairro':'bairro', 'Cidade':'cidade', 'Ativo':'ativo' },
-    modelo: [['Código (COD)','Cliente','Descrição','CEP','UF','Logradouro','Número','Complemento','Bairro','Cidade','Ativo'],['CC-0001','SPX LOGISTICA LTDA','HUB Campinas','13000-000','SP','Rua das Flores','100','','Centro','Campinas','SIM']],
+    required: ['cli_codigo','descricao'],
+    cols: {
+      'Código do Cliente': 'cli_codigo',   // obrigatório — ex: 14093
+      'Razão Social':      'cliente',       // preenchido automaticamente, mas pode vir na planilha
+      'Descrição':         'descricao',     // nome do hub/operação — obrigatório
+      'Tipo de Operação':  'tipo_operacao', // Last Mile / First Mile / Last Mile + First Mile
+      'CEP':               'cep',
+      'UF':                'uf',
+      'Logradouro':        'logradouro',
+      'Número':            'numero',
+      'Complemento':       'complemento',
+      'Bairro':            'bairro',
+      'Cidade':            'cidade',
+      'Ativo':             'ativo',
+    },
+    modelo: [
+      ['Código do Cliente','Razão Social','Descrição','Tipo de Operação','CEP','UF','Logradouro','Número','Complemento','Bairro','Cidade','Ativo'],
+      ['14093','SHPX LOGISTICA LTDA','HUB-LSP-07','Last Mile','08295-015','SP','Avenida Jean Khoury Farah','123','','Vila Carmosina','São Paulo','SIM'],
+      ['14093','SHPX LOGISTICA LTDA','FMH-SAO-07','First Mile','08295-015','SP','Avenida Jean Khoury Farah','123','','Vila Carmosina','São Paulo','SIM'],
+    ],
   },
   cli: {
     rpc: 'wc_salvar_cliente',
@@ -4943,9 +4960,19 @@ const IMPORT_SCHEMA = {
   dep: {
     rpc: 'wc_salvar_depto',
     param: 'p_depto',
-    required: ['descricao'],
-    cols: { 'Código do Cliente':'cli_codigo', 'Código':'codigo', 'Descrição':'descricao', 'Observações':'observacoes' },
-    modelo: [['Código do Cliente','Código','Descrição','Observações'],['CC-0001','1','LM Hub_PA_Belém','']],
+    required: ['cli_codigo','descricao'],
+    cols: {
+      'Código do Cliente': 'cli_codigo',   // obrigatório — ex: 14093
+      'Nome do Cliente':   'cli_nome',      // opcional
+      'Descrição':         'descricao',     // nome do departamento — obrigatório
+      'Tipo de Operação':  'tipo_operacao', // Last Mile / First Mile / etc
+      'Observações':       'observacoes',
+    },
+    modelo: [
+      ['Código do Cliente','Nome do Cliente','Descrição','Tipo de Operação','Observações'],
+      ['14093','SHPX LOGISTICA LTDA','LM Hub_SP_São Paulo','Last Mile',''],
+      ['14093','SHPX LOGISTICA LTDA','FM Hub_SP_São Paulo','First Mile',''],
+    ],
   },
 };
 
