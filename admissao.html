@@ -2225,9 +2225,17 @@
           <input type="text" id="cc-cod" placeholder="Ex: HUB-LSP-105"/>
           <small style="color:var(--muted);font-size:11px">Código único. Ex: HUB-LSP-105, SOC-RJ1</small>
         </div>
-        <div class="form-group"><label>Cliente (Razão Social)</label>
-          <input type="text" id="cc-cliente" placeholder="SHPX LOGISTICA LTDA" value="SHPX LOGISTICA LTDA"/>
+        <div class="form-group">
+          <label>Código do Cliente</label>
+          <input type="text" id="cc-cli-codigo" placeholder="Ex: 3228"
+            oninput="ccPreencherCliente(this.value)"/>
         </div>
+      </div>
+      <div class="form-group">
+        <label>Razão Social</label>
+        <input type="text" id="cc-cliente" placeholder="Preenchido automaticamente pelo código" readonly
+          style="opacity:.7;cursor:default"/>
+        <input type="hidden" id="cc-cli-codigo-hidden"/>
       </div>
       <div class="form-row-2">
         <div class="form-group"><label>Descrição</label><input type="text" id="cc-descricao" placeholder="Nome do hub ou operação"/></div>
@@ -4491,7 +4499,7 @@ function renderCentrosCusto() {
   const busca  = (document.getElementById('busca-cc')?.value||'').toLowerCase();
   const filtro = document.getElementById('filtro-cc-status')?.value||'';
   let lista = [...CENTROS_CUSTO];
-  if (busca)  lista = lista.filter(c=>[c.cod,c.cliente,c.descricao,c.cidade,c.uf].some(f=>(f||'').toLowerCase().includes(busca)));
+  if (busca)  lista = lista.filter(c=>[c.cod,c.cli_codigo,c.cliente,c.descricao,c.cidade,c.uf].some(f=>(f||'').toLowerCase().includes(busca)));
   if (filtro==='ativo')   lista = lista.filter(c=>c.ativo);
   if (filtro==='inativo') lista = lista.filter(c=>!c.ativo);
   const tbody=document.getElementById('tbody-cc'), count=document.getElementById('cc-count');
@@ -4503,7 +4511,11 @@ function renderCentrosCusto() {
     const end=[c.logradouro,c.numero,c.complemento].filter(Boolean).join(', ')||'—';
     return `<tr>
       <td><code style="font-size:11.5px;font-weight:700">${c.cod}</code></td>
-      <td>${c.cliente||'—'}</td><td>${c.descricao||'—'}</td>
+      <td>
+        ${c.cli_codigo ? `<div style="font-size:10px;color:var(--muted);font-weight:700">${c.cli_codigo}</div>` : ''}
+        <div>${c.cliente||'—'}</div>
+      </td>
+      <td>${c.descricao||'—'}</td>
       <td>${c.tipo_operacao ? '<span class=\"pill\" style=\"background:rgba(99,204,176,.15);color:var(--accent);font-size:10px\">' + c.tipo_operacao + '</span>' : '<span style=\"color:var(--muted)\">—</span>'}</td>
       <td>${[c.cidade,c.uf].filter(Boolean).join(' / ')||'—'}</td>
       <td><span class="pill ${c.ativo?'pill-ativo':'pill-inativo'}">${c.ativo?'ATIVO':'INATIVO'}</span></td>
@@ -4523,6 +4535,8 @@ function abrirModalCC(c) {
   s('cc-id').value         = c?.id||'';
   s('cc-cod').value        = c?.cod||'';
   s('cc-cliente').value    = c?.cliente||'SPX LOGISTICA LTDA';
+  s('cc-cli-codigo').value     = c?.cli_codigo||'';
+  s('cc-cliente').value        = c?.cliente||'';
   s('cc-descricao').value      = c?.descricao||'';
   s('cc-tipo-operacao').value  = c?.tipo_operacao||'';
   s('cc-ativo').checked        = c ? c.ativo : true;
@@ -4537,10 +4551,22 @@ function abrirModalCC(c) {
 }
 function fecharModalCC() { document.getElementById('modal-cc').classList.remove('open'); }
 
+function ccPreencherCliente(codigo) {
+  const cli = CLIENTES.find(c => c.codigo === codigo.trim());
+  const el  = document.getElementById('cc-cliente');
+  if (cli) {
+    el.value = cli.razao_social || '';
+    el.style.opacity = '.7';
+  } else {
+    el.value = '';
+  }
+}
+
 async function salvarCC() {
   const btn=document.getElementById('btn-salvar-cc'), g=id=>document.getElementById(id)?.value||'';
   const cc = { id:g('cc-id')||undefined, cod:g('cc-cod').trim(), cliente:g('cc-cliente').trim(),
-    descricao:g('cc-descricao').trim(), tipo_operacao:g('cc-tipo-operacao'),
+    cli_codigo:g('cc-cli-codigo').trim(), descricao:g('cc-descricao').trim(),
+    tipo_operacao:g('cc-tipo-operacao'),
     ativo:document.getElementById('cc-ativo').checked,
     cep:g('cc-cep').trim(), logradouro:g('cc-logradouro').trim(), numero:g('cc-numero').trim(),
     complemento:g('cc-complemento').trim(), bairro:g('cc-bairro').trim(),
