@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Wecan System — WeCan</title>
+<title>WeCan System | Integrado</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -2222,21 +2222,25 @@
       <div class="modal-section-label">Identificação</div>
       <div class="form-row-2">
         <div class="form-group">
-          <label>Código do CC</label>
-          <input type="text" id="cc-cod" placeholder="Ex: HUB-LSP-105"/>
-          <small style="color:var(--muted);font-size:11px">Código único. Ex: HUB-LSP-105, SOC-RJ1</small>
+          <label>Código do Cliente</label>
+          <input type="text" id="cc-cli-codigo" placeholder="Ex: 14093"
+            oninput="ccPreencherCliente(this.value)"/>
         </div>
         <div class="form-group">
-          <label>Código do Cliente</label>
-          <input type="text" id="cc-cli-codigo" placeholder="Ex: 3228"
-            oninput="ccPreencherCliente(this.value)"/>
+          <label>Nº do CC</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="text" id="cc-cod" readonly
+              style="background:var(--surface3);opacity:.8;cursor:default;flex:1"
+              placeholder="Gerado automaticamente"/>
+            <span id="cc-cod-hint" style="font-size:11px;color:var(--muted);white-space:nowrap"></span>
+          </div>
+          <small style="color:var(--muted);font-size:11px">Gerado automaticamente pelo sistema</small>
         </div>
       </div>
       <div class="form-group">
         <label>Razão Social</label>
-        <input type="text" id="cc-cliente" placeholder="Preenchido automaticamente pelo código" readonly
-          style="opacity:.7;cursor:default"/>
-        <input type="hidden" id="cc-cli-codigo-hidden"/>
+        <input type="text" id="cc-cliente" placeholder="Preenchida automaticamente pelo código do cliente" readonly
+          style="opacity:.8;cursor:default"/>
       </div>
       <div class="form-row-2">
         <div class="form-group"><label>Descrição</label><input type="text" id="cc-descricao" placeholder="Nome do hub ou operação"/></div>
@@ -2465,7 +2469,16 @@
       </div>
       <div class="modal-section-label">Departamento</div>
       <div class="form-row-2">
-        <div class="form-group"><label>Código</label><input type="text" id="dep-codigo" placeholder="Ex: HUB-LSP-105"/></div>
+        <div class="form-group">
+          <label>Nº do Departamento</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="text" id="dep-codigo" readonly
+              style="background:var(--surface3);opacity:.8;cursor:default;flex:1"
+              placeholder="Gerado automaticamente"/>
+            <span id="dep-codigo-hint" style="font-size:11px;color:var(--muted);white-space:nowrap"></span>
+          </div>
+          <small style="color:var(--muted);font-size:11px">Gerado automaticamente pelo sistema</small>
+        </div>
         <div class="form-group">
           <label>Tipo de Operação</label>
           <select id="dep-tipo-operacao" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none">
@@ -4533,11 +4546,18 @@ function abrirModalCC(c) {
   const s=id=>document.getElementById(id);
   s('modal-cc-title').textContent = c ? 'Editar Centro de Custo' : 'Novo Centro de Custo';
   s('modal-cc-sub').textContent   = c ? `Código: ${c.cod}` : 'Preencha os dados';
-  s('cc-id').value         = c?.id||'';
-  s('cc-cod').value        = c?.cod||'';
-  s('cc-cliente').value    = c?.cliente||'SPX LOGISTICA LTDA';
+  s('cc-id').value             = c?.id||'';
+  s('cc-cod').value            = c?.cod||'';
   s('cc-cli-codigo').value     = c?.cli_codigo||'';
   s('cc-cliente').value        = c?.cliente||'';
+  // Em edição: mostrar número do CC e hint; campo cod readonly sempre
+  const hint = document.getElementById('cc-cod-hint');
+  if (c) {
+    if (hint) hint.textContent = c.cli_codigo ? `CC ${c.cod} do cliente ${c.cli_codigo}` : '';
+  } else {
+    s('cc-cod').value = '';
+    if (hint) hint.textContent = '';
+  }
   s('cc-descricao').value      = c?.descricao||'';
   s('cc-tipo-operacao').value  = c?.tipo_operacao||'';
   s('cc-ativo').checked        = c ? c.ativo : true;
@@ -4553,23 +4573,35 @@ function abrirModalCC(c) {
 function fecharModalCC() { document.getElementById('modal-cc').classList.remove('open'); }
 
 function ccPreencherCliente(codigo) {
-  const q = codigo.trim().replace(/^0+/, ''); // remove zeros à esquerda
+  const q   = codigo.trim().replace(/^0+/, '');
   const cli = CLIENTES.find(c =>
-    c.codigo === codigo.trim() ||           // exato
-    c.codigo === q ||                        // sem zeros
-    (c.codigo||'').replace(/^0+/,'') === q  // ambos sem zeros
+    c.codigo === codigo.trim() ||
+    c.codigo === q ||
+    (c.codigo||'').replace(/^0+/,'') === q
   );
-  const el = document.getElementById('cc-cliente');
+  const elNome = document.getElementById('cc-cliente');
+  const elCod  = document.getElementById('cc-cod');
+  const elHint = document.getElementById('cc-cod-hint');
+  const isNovo = !document.getElementById('cc-id').value; // só gera sequencial em novo cadastro
+
   if (cli) {
-    el.value = cli.razao_social || '';
-    el.style.color   = 'var(--text)';
-    el.style.opacity = '1';
-    // Mostra sugestão visual de código normalizado
-    const inp = document.getElementById('cc-cli-codigo');
-    if (inp && cli.codigo !== codigo.trim()) inp.placeholder = `Código: ${cli.codigo}`;
+    elNome.value       = cli.razao_social || '';
+    elNome.style.color = 'var(--text)';
+
+    if (isNovo) {
+      // Contar quantos CCs esse cliente já tem e gerar próximo número
+      const ccsDoCliente = CENTROS_CUSTO.filter(c => {
+        const cq = (c.cli_codigo||'').replace(/^0+/,'');
+        return c.cli_codigo === codigo.trim() || c.cli_codigo === q || cq === q;
+      });
+      const proximo = ccsDoCliente.length + 1;
+      elCod.value  = String(proximo);
+      if (elHint) elHint.textContent = `(${ccsDoCliente.length} CC${ccsDoCliente.length!==1?'s':''} já cadastrado${ccsDoCliente.length!==1?'s':''})`;
+    }
   } else {
-    el.value = codigo.length >= 2 ? '⚠️ Cliente não encontrado' : '';
-    el.style.color   = 'var(--warning)';
+    elNome.value       = codigo.length >= 2 ? '⚠️ Cliente não encontrado' : '';
+    elNome.style.color = codigo.length >= 2 ? 'var(--warning)' : 'var(--muted)';
+    if (isNovo && elCod) { elCod.value = ''; if (elHint) elHint.textContent = ''; }
   }
 }
 
@@ -4734,23 +4766,64 @@ function renderDeptos() {
 
 function abrirModalDepto(d) {
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
-  document.getElementById('modal-dep-title').textContent=d?'Editar Departamento':'Novo Departamento';
-  document.getElementById('modal-dep-sub').textContent=d?`Código: ${d.codigo}`:'Preencha os dados';
-  set('dep-id',d?.id);set('dep-cli-codigo',d?.cli_codigo);set('dep-cli-nome',d?.cli_nome);
-  set('dep-codigo',d?.codigo);set('dep-descricao',d?.descricao);set('dep-tipo-operacao',d?.tipo_operacao);
-  const obs=document.getElementById('dep-observacoes');if(obs) obs.value=d?.observacoes||'';
-  document.getElementById('modal-depto').classList.add('open');
-  document.getElementById('dep-cli-codigo').oninput=function(){
-    const cli=CLIENTES.find(c=>c.codigo===this.value.trim());
-    document.getElementById('dep-cli-nome').value=cli?.razao_social||'';
+  document.getElementById('modal-dep-title').textContent = d ? 'Editar Departamento' : 'Novo Departamento';
+  document.getElementById('modal-dep-sub').textContent   = d ? `Código: ${d.codigo}` : 'Preencha os dados';
+
+  const hint = document.getElementById('dep-codigo-hint');
+
+  if (d) {
+    // Edição — campos travados com valores existentes
+    set('dep-id', d?.id); set('dep-cli-codigo', d?.cli_codigo);
+    set('dep-cli-nome', d?.cli_nome); set('dep-codigo', d?.codigo);
+    set('dep-descricao', d?.descricao); set('dep-tipo-operacao', d?.tipo_operacao);
+    if (hint) hint.textContent = d.cli_codigo ? `Depto ${d.codigo} do cliente ${d.cli_codigo}` : '';
+  } else {
+    // Novo — limpar tudo
+    ['dep-id','dep-cli-codigo','dep-cli-nome','dep-codigo','dep-descricao','dep-tipo-operacao'].forEach(id=>set(id,''));
+    if (hint) hint.textContent = '';
+  }
+
+  const obs = document.getElementById('dep-observacoes');
+  if (obs) obs.value = d?.observacoes || '';
+
+  // Autocomplete + sequencial ao digitar código do cliente
+  document.getElementById('dep-cli-codigo').oninput = function() {
+    const raw = this.value.trim();
+    const q   = raw.replace(/^0+/,'');
+    const cli = CLIENTES.find(c =>
+      c.codigo === raw || c.codigo === q ||
+      (c.codigo||'').replace(/^0+/,'') === q
+    );
+    const nomeEl = document.getElementById('dep-cli-nome');
+    const codEl  = document.getElementById('dep-codigo');
+    const hintEl = document.getElementById('dep-codigo-hint');
+    const isNovo = !document.getElementById('dep-id').value;
+
+    if (cli) {
+      nomeEl.value = cli.razao_social || '';
+      if (isNovo) {
+        const depsDoCli = DEPTOS.filter(dep => {
+          const dq = (dep.cli_codigo||'').replace(/^0+/,'');
+          return dep.cli_codigo === raw || dep.cli_codigo === q || dq === q;
+        });
+        codEl.value = String(depsDoCli.length + 1);
+        if (hintEl) hintEl.textContent = `(${depsDoCli.length} depto${depsDoCli.length!==1?'s':''} já cadastrado${depsDoCli.length!==1?'s':''})`;
+      }
+    } else {
+      nomeEl.value = raw.length >= 2 ? '⚠️ Cliente não encontrado' : '';
+      if (isNovo) { codEl.value = ''; if (hintEl) hintEl.textContent = ''; }
+    }
   };
+
+  document.getElementById('modal-depto').classList.add('open');
 }
 function fecharModalDepto(){document.getElementById('modal-depto').classList.remove('open');}
 
 async function salvarDepto() {
   const btn=document.getElementById('btn-salvar-dep'),g=id=>document.getElementById(id)?.value||'';
   const dep={id:g('dep-id')||undefined,cli_codigo:g('dep-cli-codigo').trim(),tipo_operacao:g('dep-tipo-operacao'),
-    codigo:g('dep-codigo').trim(),descricao:g('dep-descricao').trim(),observacoes:g('dep-observacoes').trim()};
+    codigo:g('dep-codigo').trim()||undefined, // undefined = banco gera sequencial
+    descricao:g('dep-descricao').trim(),observacoes:g('dep-observacoes').trim()};
   if(!dep.descricao){toast('Informe a descrição.','error');return;}
   btn.disabled=true;btn.textContent='Salvando…';
   try{await rpc('wc_salvar_depto',{p_depto:dep});fecharModalDepto();await carregarDeptos();toast('Departamento salvo!','success');}
