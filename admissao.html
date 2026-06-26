@@ -60,7 +60,7 @@
   #sidebar.sb-col nav a { padding: 8px 0; justify-content: center; gap: 0; }
   #sidebar.sb-col .nav-suporte-item { padding: 8px 0; justify-content: center; gap: 0; }
   #sidebar.sb-col .nav-group-header { padding: 8px 0; justify-content: center; }
-  #sidebar.sb-col .ico { display: none; }
+  #sidebar.sb-col .ico { width: 100%; text-align: center; font-size: 15px; }
   #sidebar.sb-col .sidebar-user { padding: 8px 0; justify-content: center; gap: 0; }
   #sidebar.sb-col .user-avatar { margin: 0 auto; }
   #sidebar.sb-col #sb-toggle-btn { justify-content: center; padding: 6px 0; }
@@ -188,7 +188,37 @@
   .btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 10px; padding: 2px 6px; border-radius: 5px; cursor: pointer; transition: all .15s; flex-shrink: 0; }
   .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
-  /* ── Main ── */
+  /* ── Gaveta lateral estilo Jira ── */
+  #gaveta { transition: transform .2s cubic-bezier(.4,0,.2,1); }
+  #gaveta.open { display:flex !important; }
+  body.sb-collapsed #gaveta { left: var(--sb-col); }
+  #gaveta-items a, #gaveta-items .gav-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 16px; font-size:12.5px; color:var(--muted);
+    cursor:pointer; border-left:3px solid transparent;
+    transition:all .12s; white-space:nowrap; text-decoration:none;
+  }
+  #gaveta-items a:hover, #gaveta-items .gav-item:hover { color:var(--text); background:var(--surface2); }
+  #gaveta-items a.active, #gaveta-items .gav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(99,204,176,.08); font-weight:600; }
+  #gaveta-items .gav-section { font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);padding:10px 16px 4px; }
+  #gaveta-items a .sb-ico { width:18px; text-align:center; font-size:13px; flex-shrink:0; }
+
+  /* ── Flat nav items ── */
+  .sb-section-label {
+    font-size:9.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.8px; color:var(--muted); padding:12px 14px 4px;
+  }
+  nav a .sb-ico, .nav-suporte-item .sb-ico { width:18px; text-align:center; font-size:13px; flex-shrink:0; }
+  nav a .sb-arr { margin-left:auto; font-size:14px; color:var(--muted); }
+  .sb-has-sub { position:relative; }
+  .sb-has-sub.gaveta-open { color:var(--accent) !important; background:rgba(99,204,176,.08) !important; border-left-color:var(--accent) !important; }
+
+  /* ── Sidebar collapsed: esconde sb-arr e section labels ── */
+  #sidebar.sb-col .sb-arr,
+  #sidebar.sb-col .sb-section-label { display:none !important; }
+  #sidebar.sb-col nav a { padding:8px 0; justify-content:center; gap:0; }
+  #sidebar.sb-col .nav-suporte-item { padding:8px 0; justify-content:center; gap:0; }
+  #sidebar.sb-col .sb-ico { width:100%; text-align:center; font-size:15px; }
   #main { margin-left: var(--sb-w); flex: 1; padding: 28px 36px; min-height: 100vh; transition: margin-left .22s cubic-bezier(.4,0,.2,1); }
   body.sb-collapsed #main { margin-left: var(--sb-col); }
 
@@ -721,6 +751,16 @@
 <button id="btn-menu-mobile" onclick="toggleSidebarMobile()" aria-label="Menu">☰</button>
 <div id="sidebar-overlay" onclick="fecharSidebarMobile()"></div>
 
+<!-- GAVETA lateral (estilo Jira) -->
+<div id="gaveta-overlay" onclick="fecharGaveta()" style="display:none;position:fixed;inset:0;z-index:199;background:transparent"></div>
+<div id="gaveta" style="display:none;position:fixed;top:0;bottom:0;left:var(--sb-w);width:220px;background:var(--surface);border-right:1px solid var(--border);z-index:200;flex-direction:column;box-shadow:4px 0 18px rgba(0,0,0,.18)">
+  <div id="gaveta-header" style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <span id="gaveta-titulo" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)"></span>
+    <button onclick="fecharGaveta()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1">✕</button>
+  </div>
+  <div id="gaveta-items" style="flex:1;overflow-y:auto;padding:4px 0"></div>
+</div>
+
 <!-- SIDEBAR -->
 <div id="sidebar" style="display:none">
   <div class="sidebar-logo">
@@ -734,135 +774,45 @@
   </button>
   <nav id="nav">
     <!-- ── INÍCIO ── -->
-    <a onclick="navTo('home')" data-page="home" title="Início"><span class="sb-txt"> Início</span></a>
+    <a onclick="navTo('home')" data-page="home" title="Início"><span class="sb-ico">🏠</span><span class="sb-txt">Início</span></a>
 
     <!-- ── SELEÇÃO & ADMISSÃO ── -->
-    <div class="nav-group" id="navgroup-selecao">
-      <button class="nav-group-header" onclick="toggleNavGroup('selecao')">
-        <span>Seleção &amp; Admissão</span><span class="chevron">▾</span>
-      </button>
-      <div class="nav-group-items">
-        <a id="nav-dashboard" onclick="navTo('dashboard')" data-page="dashboard" title="Dashboard"><span class="sb-txt"> Dashboard</span></a>
-
-        <!-- Vagas com sub -->
-        <div class="nav-group nav-subgroup" id="navgroup-vagas" style="margin:0">
-          <button class="nav-group-header nav-subgroup-header" onclick="toggleNavGroup('vagas')" title="Vagas / Admissões">
-            <span class="sb-txt"> Vagas / Admissões</span><span class="chevron">▾</span>
-          </button>
-          <div class="nav-group-items" id="navgroup-vagas-items">
-            <a id="nav-vagas" onclick="navTo('vagas')" data-page="vagas" title="Vagas Abertas" style="padding-left:28px"><span class="sb-txt"> Vagas Abertas</span></a>
-            <a id="nav-vagas-fechadas" onclick="navTo('vagas')" data-page="vagas-fechadas" title="Vagas Fechadas" style="padding-left:28px;opacity:.6"><span class="sb-txt"> Vagas Fechadas</span> <span style="font-size:9px;color:var(--muted)">(em breve)</span></a>
-          </div>
-        </div>
-
-        <a id="nav-voucher" onclick="navTo('voucher')" data-page="voucher" title="Fila de Voucher"><span class="sb-txt"> Fila de Voucher</span> <span class="count-badge alert" id="nav-voucher-count">0</span></a>
-        <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes" title="Indicações"><span class="sb-txt"> Indicações</span> <span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
-
-        <!-- No Show (em breve) -->
-        <a id="nav-noshow" title="No Show (em breve)" style="opacity:.45;cursor:default;display:none"><span class="sb-txt"> No Show <span style="font-size:9px">(em breve)</span></span></a>
-
-        <!-- EPI (em breve) -->
-        <a id="nav-epi" title="Estoque de EPI (em breve)" style="opacity:.45;cursor:default;display:none"><span class="sb-txt"> Estoque de EPI <span style="font-size:9px">(em breve)</span></span></a>
-      </div>
+    <div class="sb-section-label sb-txt">Seleção &amp; Admissão</div>
+    <div id="navgroup-selecao">
+      <a id="nav-dashboard" onclick="navTo('dashboard')" data-page="dashboard" title="Dashboard"><span class="sb-ico">◆</span><span class="sb-txt">Dashboard</span></a>
+      <a onclick="abrirGaveta('vagas')" title="Vagas / Admissões" class="sb-has-sub" id="sb-btn-vagas"><span class="sb-ico">📂</span><span class="sb-txt">Vagas / Admissões</span><span class="sb-arr sb-txt">›</span></a>
+      <a id="nav-voucher" onclick="navTo('voucher')" data-page="voucher" title="Fila de Voucher"><span class="sb-ico">⇄</span><span class="sb-txt">Fila de Voucher</span><span class="count-badge alert" id="nav-voucher-count">0</span></a>
+      <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes" title="Indicações"><span class="sb-ico">📋</span><span class="sb-txt">Indicações</span><span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
+      <a id="nav-noshow" title="No Show (em breve)" style="opacity:.4;cursor:default;display:none"><span class="sb-ico">🚫</span><span class="sb-txt">No Show <small>(em breve)</small></span></a>
+      <a id="nav-epi" title="Estoque de EPI (em breve)" style="opacity:.4;cursor:default;display:none"><span class="sb-ico">🦺</span><span class="sb-txt">Estoque de EPI <small>(em breve)</small></span></a>
     </div>
 
     <!-- ── ADM. DE PESSOAL ── -->
-    <div class="nav-group" id="navgroup-admpessoal" style="display:none">
-      <button class="nav-group-header" onclick="toggleNavGroup('admpessoal')">
-        <span>Adm. de Pessoal</span><span class="chevron">▾</span>
-      </button>
-      <div class="nav-group-items">
-
-        <!-- Voucher Uber sub -->
-        <div class="nav-group nav-subgroup" id="navgroup-voucher-uber" style="margin:0;display:none">
-          <button class="nav-group-header nav-subgroup-header" onclick="toggleNavGroup('voucher-uber')" title="Voucher Uber">
-            <span class="sb-txt"> Voucher Uber</span><span class="chevron">▾</span>
-          </button>
-          <div class="nav-group-items">
-            <!-- i. Dashboard -->
-            <a id="nav-adp-dashboard" onclick="navTo('vchr-dashboard')" data-page="vchr-dashboard" data-vp="dashboard" title="Dashboard Voucher" style="padding-left:28px;display:none"><span class="sb-txt"> Dashboard</span></a>
-            <!-- ii. Fila Voucher (só Pré Aprovados dentro) -->
-            <div class="nav-group nav-subgroup" id="navgroup-adp-fila" style="margin:0">
-              <button class="nav-group-header nav-subgroup-header" onclick="toggleNavGroup('adp-fila')" title="Fila Voucher" style="padding-left:28px">
-                <span class="sb-txt"> Fila Voucher</span><span class="chevron">▾</span>
-              </button>
-              <div class="nav-group-items">
-                <a style="padding-left:44px;opacity:.5;cursor:default"><span class="sb-txt"> Pré Aprovados <span style="font-size:9px">(em breve)</span></span></a>
-              </div>
-            </div>
-            <!-- iii. Controle do Voucher -->
-            <a id="nav-adp-controle" onclick="navTo('vchr-controle')" data-page="vchr-controle" data-vp="controle" title="Controle do Voucher" style="padding-left:28px;display:none"><span class="sb-txt"> Controle do Voucher</span> <span class="count-badge" id="vchr-badge-ativos"></span></a>
-            <!-- iv. Inativar -->
-            <a id="nav-adp-inativar" onclick="navTo('vchr-inativar')" data-page="vchr-inativar" data-vp="inativar" title="Inativar" style="padding-left:28px;display:none"><span class="sb-txt"> Inativar</span></a>
-            <!-- v. Exportar Planilha -->
-            <a id="nav-adp-exportar" onclick="navTo('vchr-exportar')" data-page="vchr-exportar" data-vp="exportar" title="Exportar Planilha" style="padding-left:28px;display:none"><span class="sb-txt"> Exportar Planilha</span></a>
-            <!-- vi. Histórico -->
-            <a id="nav-adp-historico" onclick="navTo('vchr-historico')" data-page="vchr-historico" data-vp="historico" title="Histórico Voucher" style="padding-left:28px;display:none"><span class="sb-txt"> Histórico</span></a>
-          </div>
-        </div>
-
-        <!-- Benefícios sub -->
-        <div class="nav-group nav-subgroup" id="navgroup-adp-beneficios" style="margin:0;display:none">
-          <button class="nav-group-header nav-subgroup-header" onclick="toggleNavGroup('adp-beneficios')" title="Benefícios">
-            <span class="sb-txt"> Benefícios</span><span class="chevron">▾</span>
-          </button>
-          <div class="nav-group-items">
-            <a id="nav-integracao" onclick="navTo('integracao')" data-page="integracao" title="Gestão de Benefícios" style="padding-left:28px;display:none"><span class="sb-txt"> Gestão de Benefícios</span></a>
-            <a id="nav-pagar-ben" onclick="navTo('pagar-beneficios')" data-page="pagar-beneficios" title="Pagar Benefícios" style="padding-left:28px;display:none"><span class="sb-txt"> Pagar Benefícios</span></a>
-            <a style="padding-left:28px;opacity:.5;cursor:default"><span class="sb-txt"> Dashboard <span style="font-size:9px">(em breve)</span></span></a>
-            <a id="nav-ben-historico" onclick="navTo('ben-historico')" data-page="ben-historico" title="Histórico de Benefícios" style="padding-left:28px;display:none"><span class="sb-txt"> Histórico</span></a>
-          </div>
-        </div>
-
-        <!-- Tickets Shopee sub -->
-        <div class="nav-group nav-subgroup" id="navgroup-adp-tickets" style="margin:0;display:none">
-          <button class="nav-group-header nav-subgroup-header" onclick="toggleNavGroup('adp-tickets')" title="Tickets Shopee">
-            <span class="sb-txt"> Tickets Shopee</span><span class="chevron">▾</span>
-          </button>
-          <div class="nav-group-items">
-            <a style="padding-left:28px;opacity:.5;cursor:default"><span class="sb-txt"> Dashboard <span style="font-size:9px">(em breve)</span></span></a>
-            <a style="padding-left:28px;opacity:.5;cursor:default"><span class="sb-txt"> Desligamento <span style="font-size:9px">(em breve)</span></span></a>
-            <a style="padding-left:28px;opacity:.5;cursor:default"><span class="sb-txt"> Movimentação <span style="font-size:9px">(em breve)</span></span></a>
-            <a style="padding-left:28px;opacity:.5;cursor:default"><span class="sb-txt"> Voucher Uber <span style="font-size:9px">(em breve)</span></span></a>
-          </div>
-        </div>
-
-        <!-- Central de Solicitações (em breve) -->
-        <a style="opacity:.45;cursor:default;display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;color:var(--muted)"><span class="sb-txt"> Solicitações <span style="font-size:9px">(em breve)</span></span></a>
-
+    <div id="navgroup-admpessoal" style="display:none">
+      <div class="sb-section-label sb-txt">Adm. de Pessoal</div>
+      <div id="navgroup-voucher-uber" style="display:none">
+        <a onclick="abrirGaveta('voucher-uber')" class="sb-has-sub" id="sb-btn-voucher-uber" title="Voucher Uber"><span class="sb-ico">🚗</span><span class="sb-txt">Voucher Uber</span><span class="sb-arr sb-txt">›</span></a>
       </div>
+      <div id="navgroup-adp-beneficios" style="display:none">
+        <a onclick="abrirGaveta('beneficios')" class="sb-has-sub" id="sb-btn-beneficios" title="Benefícios"><span class="sb-ico">🐝</span><span class="sb-txt">Benefícios</span><span class="sb-arr sb-txt">›</span></a>
+      </div>
+      <div id="navgroup-adp-tickets" style="display:none">
+        <a onclick="abrirGaveta('tickets')" class="sb-has-sub" title="Tickets Shopee"><span class="sb-ico">🎫</span><span class="sb-txt">Tickets Shopee</span><span class="sb-arr sb-txt">›</span></a>
+      </div>
+      <a style="opacity:.4;cursor:default"><span class="sb-ico">📨</span><span class="sb-txt">Solicitações <small>(em breve)</small></span></a>
     </div>
 
   </nav>
 
-  <!-- SUPORTE — rodapé do menu, acima do usuário -->
+  <!-- SUPORTE — rodapé -->
   <div class="sidebar-footer">
-    <!-- Suporte colapsável -->
-    <div class="nav-group" id="navgroup-footer-suporte" style="margin:0">
-      <button class="nav-group-header" onclick="document.getElementById('navgroup-footer-suporte').classList.toggle('collapsed')"
-        style="padding:7px 14px;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">
-        <span class="sb-txt">Suporte</span><span class="chevron">▾</span>
-      </button>
-      <div class="nav-group-items">
-        <div class="nav-suporte-item" onclick="navTo('configuracoes')" data-page="configuracoes">
-          <span class="sb-txt"> Configurações</span>
-        </div>
-        <div class="nav-suporte-item" id="nav-suporte-usuarios" onclick="navTo('suporte-usuarios')" data-page="suporte-usuarios" style="display:none">
-          <span class="sb-txt"> Gestão de Usuários</span>
-        </div>
-      </div>
-    </div>
-    <!-- Cadastros colapsável — só Master e Gestor -->
-    <div class="nav-group" id="navgroup-suporte-cadastros" style="margin:0;display:none">
-      <button class="nav-group-header" onclick="toggleNavGroup('suporte-cadastros')"
-        style="padding:7px 14px;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">
-        <span class="sb-txt">Cadastros</span><span class="chevron">▾</span>
-      </button>
-      <div class="nav-group-items">
-        <div class="nav-suporte-item" onclick="navTo('cad-clientes')" data-page="cad-clientes"><span class="sb-txt"> Clientes</span></div>
-        <div class="nav-suporte-item" onclick="navTo('cad-cc')"       data-page="cad-cc"><span class="sb-txt"> Centro de Custo</span></div>
-        <div class="nav-suporte-item" onclick="navTo('cad-deptos')"   data-page="cad-deptos"><span class="sb-txt"> Departamentos</span></div>
-      </div>
+    <div class="sb-section-label sb-txt" style="padding:8px 14px 4px">Suporte</div>
+    <div class="nav-suporte-item" onclick="navTo('configuracoes')" data-page="configuracoes"><span class="sb-ico">⚙️</span><span class="sb-txt">Configurações</span></div>
+    <div class="nav-suporte-item" id="nav-suporte-usuarios" onclick="navTo('suporte-usuarios')" data-page="suporte-usuarios" style="display:none"><span class="sb-ico">🛡️</span><span class="sb-txt">Gestão de Usuários</span></div>
+
+    <!-- Cadastros -->
+    <div id="navgroup-suporte-cadastros" style="display:none">
+      <a onclick="abrirGaveta('cadastros')" class="sb-has-sub nav-suporte-item" title="Cadastros"><span class="sb-ico">🗂️</span><span class="sb-txt">Cadastros</span><span class="sb-arr sb-txt">›</span></a>
     </div>
     <hr class="section-divider" style="margin:6px 14px;"/>
     <div class="sidebar-user">
@@ -2952,6 +2902,7 @@ async function logout() {
 // ── NAV ───────────────────────────────────────
 function navTo(id) {
   fecharSidebarMobile();
+  if (typeof fecharGaveta === 'function') fecharGaveta();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav a, .nav-suporte-item').forEach(a => a.classList.remove('active'));
   const page = document.getElementById('page-' + id);
@@ -2976,7 +2927,108 @@ function navTo(id) {
   if (id==='cad-deptos')       carregarDeptos();
   atualizarBadgeFila();
 }
-function toggleNavGroup(nome) { document.getElementById('navgroup-'+nome).classList.toggle('collapsed'); }
+function toggleNavGroup(nome) { /* legado — mantido para compatibilidade */ try { document.getElementById('navgroup-'+nome).classList.toggle('collapsed'); } catch(e){} }
+
+// ── Gaveta lateral estilo Jira ──────────────────────────────────────
+const GAVETA_MENUS = {
+  'vagas': {
+    titulo: 'Vagas / Admissões',
+    items: [
+      { id:'nav-vagas',         label:'📂 Vagas Abertas',   page:'vagas' },
+      { id:'nav-vagas-fechadas',label:'📁 Vagas Fechadas',  page:'vagas-fechadas', disabled:true, soon:true },
+    ]
+  },
+  'voucher-uber': {
+    titulo: 'Voucher Uber',
+    items: [
+      { id:'nav-adp-dashboard', label:'📊 Dashboard',          page:'vchr-dashboard', hidden:true },
+      { label:'⇄ Fila Voucher', section:true },
+      { label:'🔑 Pré Aprovados', disabled:true, soon:true },
+      { id:'nav-adp-controle',  label:'☰ Controle do Voucher', page:'vchr-controle', hidden:true },
+      { id:'nav-adp-inativar',  label:'⊘ Inativar',            page:'vchr-inativar', hidden:true },
+      { id:'nav-adp-exportar',  label:'↓ Exportar Planilha',   page:'vchr-exportar', hidden:true },
+      { id:'nav-adp-historico', label:'🕐 Histórico',          page:'vchr-historico',hidden:true },
+    ]
+  },
+  'beneficios': {
+    titulo: 'Benefícios',
+    items: [
+      { id:'nav-integracao',   label:'✅ Gestão de Benefícios', page:'integracao',        hidden:true },
+      { id:'nav-pagar-ben',    label:'💰 Pagar Benefícios',     page:'pagar-beneficios',  hidden:true },
+      { label:'📊 Dashboard',  disabled:true, soon:true },
+      { id:'nav-ben-historico',label:'🕐 Histórico',            page:'ben-historico',     hidden:true },
+    ]
+  },
+  'tickets': {
+    titulo: 'Tickets Shopee',
+    items: [
+      { label:'📊 Dashboard',    disabled:true, soon:true },
+      { label:'🔴 Desligamento', disabled:true, soon:true },
+      { label:'🔄 Movimentação', disabled:true, soon:true },
+      { label:'🚗 Voucher Uber', disabled:true, soon:true },
+    ]
+  },
+  'cadastros': {
+    titulo: 'Cadastros',
+    items: [
+      { label:'🏭 Clientes',        page:'cad-clientes' },
+      { label:'🏢 Centro de Custo', page:'cad-cc' },
+      { label:'🗂️ Departamentos',  page:'cad-deptos' },
+    ]
+  },
+};
+
+let _gavetaAtual = null;
+
+function abrirGaveta(key) {
+  const menu = GAVETA_MENUS[key];
+  if (!menu) return;
+
+  // Fechar se clicar no mesmo botão
+  if (_gavetaAtual === key) { fecharGaveta(); return; }
+  _gavetaAtual = key;
+
+  // Highlight no botão da sidebar
+  document.querySelectorAll('.sb-has-sub').forEach(el => el.classList.remove('gaveta-open'));
+  const btn = document.getElementById('sb-btn-' + key);
+  if (btn) btn.classList.add('gaveta-open');
+
+  // Titulo
+  document.getElementById('gaveta-titulo').textContent = menu.titulo;
+
+  // Renderizar items
+  const container = document.getElementById('gaveta-items');
+  const activePages = [...document.querySelectorAll('nav a.active, .nav-suporte-item.active')].map(el => el.dataset?.page);
+
+  container.innerHTML = menu.items.map(item => {
+    if (item.section) return `<div class="gav-section">${item.label}</div>`;
+    const isActive = item.page && activePages.includes(item.page);
+    const isDisabled = item.disabled;
+    const soon = item.soon ? ' <small style="font-size:9px;opacity:.6">(em breve)</small>' : '';
+    // Verificar se item hidden deve aparecer (baseado no display do elemento original)
+    if (item.hidden) {
+      const el = item.id ? document.getElementById(item.id) : null;
+      if (!el || el.style.display === 'none') return '';
+    }
+    const onclick = (!isDisabled && item.page) ? `onclick="navTo('${item.page}');fecharGaveta()"` : '';
+    const cls = `${isActive?'active':''} ${isDisabled?'':''}`;
+    const style = isDisabled ? 'opacity:.45;cursor:default' : '';
+    return `<a class="${cls}" ${onclick} style="${style}" data-page="${item.page||''}">${item.label}${soon}</a>`;
+  }).join('');
+
+  // Mostrar gaveta
+  const gaveta = document.getElementById('gaveta');
+  gaveta.style.display = 'flex';
+  document.getElementById('gaveta-overlay').style.display = 'block';
+}
+
+function fecharGaveta() {
+  document.getElementById('gaveta').style.display = 'none';
+  document.getElementById('gaveta-overlay').style.display = 'none';
+  document.querySelectorAll('.sb-has-sub').forEach(el => el.classList.remove('gaveta-open'));
+  _gavetaAtual = null;
+}
+
 
 // Voucher agora é integrado nativamente — sem redirect
 function irParaVoucher() {}
