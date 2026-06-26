@@ -753,7 +753,7 @@
 
 <!-- GAVETA lateral (estilo Jira) -->
 <div id="gaveta-overlay" onclick="fecharGaveta()" style="display:none;position:fixed;inset:0;z-index:199;background:transparent"></div>
-<div id="gaveta" style="display:none;position:fixed;top:0;bottom:0;left:var(--sb-w);width:220px;background:var(--surface);border-right:1px solid var(--border);z-index:200;flex-direction:column;box-shadow:4px 0 18px rgba(0,0,0,.18)">
+<div id="gaveta" style="display:none;position:fixed;top:0;left:var(--sb-w);width:200px;background:var(--surface);border:1px solid var(--border);border-left:none;z-index:200;flex-direction:column;box-shadow:4px 4px 16px rgba(0,0,0,.18);border-radius:0 8px 8px 0">
   <div id="gaveta-header" style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
     <span id="gaveta-titulo" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)"></span>
     <button onclick="fecharGaveta()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1">✕</button>
@@ -2934,29 +2934,29 @@ const GAVETA_MENUS = {
   'vagas': {
     titulo: 'Vagas / Admissões',
     items: [
-      { id:'nav-vagas',         label:'📂 Vagas Abertas',   page:'vagas' },
-      { id:'nav-vagas-fechadas',label:'📁 Vagas Fechadas',  page:'vagas-fechadas', disabled:true, soon:true },
+      { id:'nav-vagas',         label:'📂 Vagas Abertas',  page:'vagas' },
+      { id:'nav-vagas-fechadas',label:'📁 Vagas Fechadas', page:'vagas-fechadas', disabled:true, soon:true },
     ]
   },
   'voucher-uber': {
     titulo: 'Voucher Uber',
     items: [
-      { id:'nav-adp-dashboard', label:'📊 Dashboard',          page:'vchr-dashboard', hidden:true },
-      { label:'⇄ Fila Voucher', section:true },
+      { id:'nav-adp-dashboard', label:'📊 Dashboard',          page:'vchr-dashboard', perm:'adp_vchr_dashboard' },
+      { id:'nav-adp-fila',      label:'⇄ Fila Voucher',        page:null, section:true },
       { label:'🔑 Pré Aprovados', disabled:true, soon:true },
-      { id:'nav-adp-controle',  label:'☰ Controle do Voucher', page:'vchr-controle', hidden:true },
-      { id:'nav-adp-inativar',  label:'⊘ Inativar',            page:'vchr-inativar', hidden:true },
-      { id:'nav-adp-exportar',  label:'↓ Exportar Planilha',   page:'vchr-exportar', hidden:true },
-      { id:'nav-adp-historico', label:'🕐 Histórico',          page:'vchr-historico',hidden:true },
+      { id:'nav-adp-controle',  label:'☰ Controle do Voucher', page:'vchr-controle',  perm:'adp_vchr_controle' },
+      { id:'nav-adp-inativar',  label:'⊘ Inativar',            page:'vchr-inativar',  perm:'adp_vchr_inativar' },
+      { id:'nav-adp-exportar',  label:'↓ Exportar Planilha',   page:'vchr-exportar',  perm:'adp_vchr_exportar' },
+      { id:'nav-adp-historico', label:'🕐 Histórico',          page:'vchr-historico', perm:'adp_vchr_historico' },
     ]
   },
   'beneficios': {
     titulo: 'Benefícios',
     items: [
-      { id:'nav-integracao',   label:'✅ Gestão de Benefícios', page:'integracao',        hidden:true },
-      { id:'nav-pagar-ben',    label:'💰 Pagar Benefícios',     page:'pagar-beneficios',  hidden:true },
-      { label:'📊 Dashboard',  disabled:true, soon:true },
-      { id:'nav-ben-historico',label:'🕐 Histórico',            page:'ben-historico',     hidden:true },
+      { id:'nav-integracao',    label:'✅ Gestão de Benefícios', page:'integracao',       perm:'adp_beneficios' },
+      { id:'nav-pagar-ben',     label:'💰 Pagar Benefícios',     page:'pagar-beneficios', perm:'adp_beneficios_pagar' },
+      { label:'📊 Dashboard',   disabled:true, soon:true },
+      { id:'nav-ben-historico', label:'🕐 Histórico',            page:'ben-historico',    perm:'adp_beneficios_historico' },
     ]
   },
   'tickets': {
@@ -2971,9 +2971,9 @@ const GAVETA_MENUS = {
   'cadastros': {
     titulo: 'Cadastros',
     items: [
-      { label:'🏭 Clientes',        page:'cad-clientes' },
-      { label:'🏢 Centro de Custo', page:'cad-cc' },
-      { label:'🗂️ Departamentos',  page:'cad-deptos' },
+      { label:'🏭 Clientes',        page:'cad-clientes', perm:'cad_clientes' },
+      { label:'🏢 Centro de Custo', page:'cad-cc',       perm:'cad_cc' },
+      { label:'🗂️ Departamentos',  page:'cad-deptos',   perm:'cad_deptos' },
     ]
   },
 };
@@ -2984,40 +2984,43 @@ function abrirGaveta(key) {
   const menu = GAVETA_MENUS[key];
   if (!menu) return;
 
-  // Fechar se clicar no mesmo botão
   if (_gavetaAtual === key) { fecharGaveta(); return; }
   _gavetaAtual = key;
 
-  // Highlight no botão da sidebar
   document.querySelectorAll('.sb-has-sub').forEach(el => el.classList.remove('gaveta-open'));
   const btn = document.getElementById('sb-btn-' + key);
   if (btn) btn.classList.add('gaveta-open');
 
-  // Titulo
   document.getElementById('gaveta-titulo').textContent = menu.titulo;
 
-  // Renderizar items
   const container = document.getElementById('gaveta-items');
-  const activePages = [...document.querySelectorAll('nav a.active, .nav-suporte-item.active')].map(el => el.dataset?.page);
+  const activePages = [...document.querySelectorAll('[data-page].active')].map(el => el.dataset.page);
+  const isMasterGestor = session && (session.perfil === 'master' || session.perfil === 'gestor' || session.perfil === 'gestor_adm' || session.perfil === 'gestor_rs');
 
   container.innerHTML = menu.items.map(item => {
+    // Seção separadora
     if (item.section) return `<div class="gav-section">${item.label}</div>`;
-    const isActive = item.page && activePages.includes(item.page);
+
+    // Verificar permissão — Master/Gestor vê tudo; outros precisam da perm
+    if (item.perm && !isMasterGestor && !temPermissao(item.perm)) return '';
+
+    const isActive  = item.page && activePages.includes(item.page);
     const isDisabled = item.disabled;
     const soon = item.soon ? ' <small style="font-size:9px;opacity:.6">(em breve)</small>' : '';
-    // Verificar se item hidden deve aparecer (baseado no display do elemento original)
-    if (item.hidden) {
-      const el = item.id ? document.getElementById(item.id) : null;
-      if (!el || el.style.display === 'none') return '';
-    }
-    const onclick = (!isDisabled && item.page) ? `onclick="navTo('${item.page}');fecharGaveta()"` : '';
-    const cls = `${isActive?'active':''} ${isDisabled?'':''}`;
+    const onclick = (!isDisabled && item.page) ? `onclick="navTo('${item.page}')"` : '';
+    const cls   = isActive ? 'active' : '';
     const style = isDisabled ? 'opacity:.45;cursor:default' : '';
     return `<a class="${cls}" ${onclick} style="${style}" data-page="${item.page||''}">${item.label}${soon}</a>`;
   }).join('');
 
-  // Mostrar gaveta
   const gaveta = document.getElementById('gaveta');
+  // Posicionar na altura do botão clicado
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    gaveta.style.top = Math.min(rect.top, window.innerHeight - 300) + 'px';
+  } else {
+    gaveta.style.top = '80px';
+  }
   gaveta.style.display = 'flex';
   document.getElementById('gaveta-overlay').style.display = 'block';
 }
