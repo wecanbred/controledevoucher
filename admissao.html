@@ -108,9 +108,18 @@
   .nav-group { margin-bottom: 0; }
   .nav-subgroup > .nav-subgroup-header {
     padding: 7px 16px 7px 20px !important;
-    font-size: 12px !important;
+    font-size: 11.5px !important;
     color: var(--muted) !important;
     font-weight: 600 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .nav-subgroup > .nav-subgroup-header .sb-txt {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
   }
   .nav-subgroup > .nav-subgroup-header:hover { color: var(--text) !important; }
   .nav-subgroup .nav-group-items { padding-left: 0; }
@@ -756,20 +765,25 @@
             <span class="ico">🚗</span><span class="sb-txt"> Voucher Uber</span><span class="chevron">▾</span>
           </button>
           <div class="nav-group-items">
+            <!-- i. Dashboard -->
             <a id="nav-adp-dashboard" onclick="navTo('vchr-dashboard')" data-page="vchr-dashboard" data-vp="dashboard" title="Dashboard Voucher" style="padding-left:28px;display:none"><span class="ico">📊</span><span class="sb-txt"> Dashboard</span></a>
-            <!-- Fila Voucher sub -->
-            <div class="nav-group nav-subgroup" id="navgroup-adp-fila" style="margin:0;display:none">
+            <!-- ii. Fila Voucher (só Pré Aprovados dentro) -->
+            <div class="nav-group nav-subgroup" id="navgroup-adp-fila" style="margin:0">
               <button class="nav-group-header nav-subgroup-header" onclick="toggleNavGroup('adp-fila')" title="Fila Voucher" style="padding-left:28px">
                 <span class="ico">⇄</span><span class="sb-txt"> Fila Voucher</span><span class="chevron">▾</span>
               </button>
               <div class="nav-group-items">
                 <a style="padding-left:44px;opacity:.5;cursor:default"><span class="ico">🔑</span><span class="sb-txt"> Pré Aprovados <span style="font-size:9px">(em breve)</span></span></a>
-                <a id="nav-adp-controle" onclick="navTo('vchr-controle')" data-page="vchr-controle" data-vp="controle" title="Controle do Voucher" style="padding-left:44px;display:none"><span class="ico">☰</span><span class="sb-txt"> Controle</span> <span class="count-badge" id="vchr-badge-ativos"></span></a>
-                <a id="nav-adp-inativar" onclick="navTo('vchr-inativar')" data-page="vchr-inativar" data-vp="inativar" title="Inativar" style="padding-left:44px;display:none"><span class="ico">⊘</span><span class="sb-txt"> Inativar</span></a>
-                <a id="nav-adp-exportar" onclick="navTo('vchr-exportar')" data-page="vchr-exportar" data-vp="exportar" title="Exportar Planilha" style="padding-left:44px;display:none"><span class="ico">↓</span><span class="sb-txt"> Exportar Planilha</span></a>
-                <a id="nav-adp-historico" onclick="navTo('vchr-historico')" data-page="vchr-historico" data-vp="historico" title="Histórico Voucher" style="padding-left:44px;display:none"><span class="ico">🕐</span><span class="sb-txt"> Histórico</span></a>
               </div>
             </div>
+            <!-- iii. Controle do Voucher -->
+            <a id="nav-adp-controle" onclick="navTo('vchr-controle')" data-page="vchr-controle" data-vp="controle" title="Controle do Voucher" style="padding-left:28px;display:none"><span class="ico">☰</span><span class="sb-txt"> Controle do Voucher</span> <span class="count-badge" id="vchr-badge-ativos"></span></a>
+            <!-- iv. Inativar -->
+            <a id="nav-adp-inativar" onclick="navTo('vchr-inativar')" data-page="vchr-inativar" data-vp="inativar" title="Inativar" style="padding-left:28px;display:none"><span class="ico">⊘</span><span class="sb-txt"> Inativar</span></a>
+            <!-- v. Exportar Planilha -->
+            <a id="nav-adp-exportar" onclick="navTo('vchr-exportar')" data-page="vchr-exportar" data-vp="exportar" title="Exportar Planilha" style="padding-left:28px;display:none"><span class="ico">↓</span><span class="sb-txt"> Exportar Planilha</span></a>
+            <!-- vi. Histórico -->
+            <a id="nav-adp-historico" onclick="navTo('vchr-historico')" data-page="vchr-historico" data-vp="historico" title="Histórico Voucher" style="padding-left:28px;display:none"><span class="ico">🕐</span><span class="sb-txt"> Histórico</span></a>
           </div>
         </div>
 
