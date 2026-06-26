@@ -2870,28 +2870,35 @@ async function renderHome() {
 
   if (podeVerTudo()) {
     // ── PAINEL GESTOR / MASTER ──
+    // Verificar se tem permissões ADP para mostrar bloco correspondente
+    const temADP = ['adp_beneficios','adp_voucher_dashboard','adp_voucher_controle',
+      'adp_voucher_inativar','adp_voucher_exportar','adp_voucher_historico'].some(p => temPermissao(p));
+    const temRS  = ['rs_dashboard','rs_vagas','rs_voucher','rs_indicacoes'].some(p => temPermissao(p));
+
     el.innerHTML = `
-      <!-- S&A -->
+      <!-- S&A — só se tiver permissão RS -->
+      ${temRS ? `
       <div style="margin-bottom:28px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📋 Seleção &amp; Admissão</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
           ${homePainelCard('▤','Tarefas Pendentes',cnt.vagas_abertas??0,'Vagas abertas aguardando','#f59e0b','vagas')}
           ${homePainelCard('⇄','Em Andamento',cnt.vagas_andamento??0,'Processos ativos','#63ccb0','vagas')}
           ${homePainelCard('✓','Concluídas',cnt.vagas_fechadas??0,'Vagas encerradas','#6b7280','vagas')}
-          ${homePainelCard('⊘','Fila de Voucher',cnt.voucher_pendente??0,'Aguardando aprovação','#4f7cff','voucher')}
-          ${homePainelCard('📋','Indicações',cnt.indicacoes_pendentes??0,'Pendentes de análise','#a855f7','indicacoes')}
+          ${temPermissao('rs_voucher') ? homePainelCard('⊘','Fila de Voucher',cnt.voucher_pendente??0,'Aguardando aprovação','#4f7cff','voucher') : ''}
+          ${temPermissao('rs_indicacoes') ? homePainelCard('📋','Indicações',cnt.indicacoes_pendentes??0,'Pendentes de análise','#a855f7','indicacoes') : ''}
         </div>
-      </div>
-      <!-- Adm Pessoal -->
+      </div>` : ''}
+      <!-- Adm Pessoal — só se tiver permissão ADP -->
+      ${temADP ? `
       <div style="margin-bottom:28px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
-          ${homePainelCard('🐝','Benefícios Pendentes',cnt.integ_pendentes??0,'Confirmações em aberto','#f59e0b','integracao')}
-          ${homePainelCard('🐝','Integrações Abertas',cnt.integ_abertas??0,'Colmeias sem fechar','#63ccb0','integracao')}
-          ${homePainelCard('🎟️','Vouchers Ativos',cnt.voucher_ativos??0,'Colaboradores com voucher','#63ccb0','vchr-controle')}
-          ${homePainelCard('⊘','Inativos',cnt.voucher_inativos??0,'Desligados no sistema','#ef4444','vchr-controle')}
+          ${temPermissao('adp_beneficios') ? homePainelCard('🐝','Benefícios Pendentes',cnt.integ_pendentes??0,'Confirmações em aberto','#f59e0b','integracao') : ''}
+          ${temPermissao('adp_beneficios') ? homePainelCard('🐝','Integrações Abertas',cnt.integ_abertas??0,'Colmeias sem fechar','#63ccb0','integracao') : ''}
+          ${temPermissao('adp_voucher_controle') ? homePainelCard('🎟️','Vouchers Ativos',cnt.voucher_ativos??0,'Colaboradores com voucher','#63ccb0','vchr-controle') : ''}
+          ${temPermissao('adp_voucher_inativar') ? homePainelCard('⊘','Inativos',cnt.voucher_inativos??0,'Desligados no sistema','#ef4444','vchr-controle') : ''}
         </div>
-      </div>
+      </div>` : ''}
       <!-- Recentes -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
         <div class="home-section">
