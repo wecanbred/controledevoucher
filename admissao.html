@@ -2753,7 +2753,7 @@ async function iniciarSessao(conta) {
   // ── Adm. de Pessoal — grupo pai ──
   const _algumVoucher = ['adp_voucher_dashboard','adp_voucher_controle','adp_voucher_inativar',
     'adp_voucher_exportar','adp_voucher_historico'].some(i => temPermissao(i));
-  const _algumBen = temPermissao('adp_beneficios');
+  const _algumBen = temPermissao('adp_beneficios') || temPermissao('adp_beneficios_pagar');
   const _algumTicket = ['adp_tickets_deslig','adp_tickets_movim','adp_tickets_voucher'].some(i=>temPermissao(i));
   const _algumADP = _algumVoucher || _algumBen || _algumTicket;
   showBlock('navgroup-admpessoal', _algumADP);
@@ -2769,7 +2769,7 @@ async function iniciarSessao(conta) {
   show('nav-adp-historico', temPermissao('adp_voucher_historico'));
 
   // Benefícios sub
-  const _algumBen = temPermissao('adp_beneficios') || temPermissao('adp_beneficios_pagar');
+  // Benefícios sub
   showBlock('navgroup-adp-beneficios', _algumBen);
   show('nav-integracao', temPermissao('adp_beneficios'));
   show('nav-pagar-ben',  temPermissao('adp_beneficios_pagar'));
@@ -4407,7 +4407,7 @@ function renderCentrosCusto() {
     return `<tr>
       <td><code style="font-size:11.5px;font-weight:700">${c.cod}</code></td>
       <td>${c.cliente||'—'}</td><td>${c.descricao||'—'}</td>
-      <td>${c.tipo_operacao ? `<span class="pill" style="background:rgba(99,204,176,.15);color:var(--accent);font-size:10px">${c.tipo_operacao}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${c.tipo_operacao ? '<span class=\"pill\" style=\"background:rgba(99,204,176,.15);color:var(--accent);font-size:10px\">' + c.tipo_operacao + '</span>' : '<span style=\"color:var(--muted)\">—</span>'}</td>
       <td>${[c.cidade,c.uf].filter(Boolean).join(' / ')||'—'}</td>
       <td><span class="pill ${c.ativo?'pill-ativo':'pill-inativo'}">${c.ativo?'ATIVO':'INATIVO'}</span></td>
       <td class="actions-cell">
@@ -4588,7 +4588,7 @@ function renderDeptos() {
   tbody.innerHTML=lista.map(d=>`<tr>
     <td><code style="font-size:11.5px;font-weight:700">${d.codigo||'—'}</code></td>
     <td>${d.descricao||'—'}</td>
-    <td>${d.tipo_operacao?`<span class="pill" style="background:rgba(99,204,176,.15);color:var(--accent);font-size:10px">${d.tipo_operacao}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    <td>${d.tipo_operacao ? '<span class=\"pill\" style=\"background:rgba(99,204,176,.15);color:var(--accent);font-size:10px\">' + d.tipo_operacao + '</span>' : '<span style=\"color:var(--muted)\">—</span>'}</td>
     <td><code style="font-size:11px">${d.cli_codigo||'—'}</code></td>
     <td style="max-width:200px;white-space:normal;font-size:12px;color:var(--muted)">${d.observacoes||'—'}</td>
     <td class="actions-cell">
