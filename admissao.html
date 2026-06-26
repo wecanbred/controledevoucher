@@ -810,7 +810,7 @@
             <a id="nav-integracao" onclick="navTo('integracao')" data-page="integracao" title="Gestão de Benefícios" style="padding-left:28px;display:none"><span class="ico">✅</span><span class="sb-txt"> Gestão de Benefícios</span></a>
             <a id="nav-pagar-ben" onclick="navTo('pagar-beneficios')" data-page="pagar-beneficios" title="Pagar Benefícios" style="padding-left:28px;display:none"><span class="ico">💰</span><span class="sb-txt"> Pagar Benefícios</span></a>
             <a style="padding-left:28px;opacity:.5;cursor:default"><span class="ico">📊</span><span class="sb-txt"> Dashboard <span style="font-size:9px">(em breve)</span></span></a>
-            <a style="padding-left:28px;opacity:.5;cursor:default"><span class="ico">🕐</span><span class="sb-txt"> Histórico <span style="font-size:9px">(em breve)</span></span></a>
+            <a id="nav-ben-historico" onclick="navTo('ben-historico')" data-page="ben-historico" title="Histórico de Benefícios" style="padding-left:28px;display:none"><span class="ico">🕐</span><span class="sb-txt"> Histórico</span></a>
           </div>
         </div>
 
@@ -1549,6 +1549,102 @@
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharModal('pagar-modal-pago')">Cancelar</button>
         <button class="btn btn-primary" onclick="pagarBenConfirmar()">💰 Confirmar Pagamento</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ PAGE: HISTÓRICO DE BENEFÍCIOS ══ -->
+  <div class="page" id="page-ben-historico">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <div>
+        <h1 style="font-size:20px;font-weight:800;margin:0">🕐 Histórico de Benefícios</h1>
+        <p style="font-size:12px;color:var(--muted);margin-top:2px">Registro de todos os pagamentos e no shows</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="histBenCarregar()">🔄 Atualizar</button>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <button id="hist-tab-todos"  onclick="histBenSetTab('todos')"  style="padding:7px 16px;font-size:12.5px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);background:var(--accent);color:var(--brand)">Todos</button>
+        <button id="hist-tab-pagos"  onclick="histBenSetTab('pagos')"  style="padding:7px 16px;font-size:12.5px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);background:var(--surface2);color:var(--muted)">✅ Pagos</button>
+        <button id="hist-tab-noshow" onclick="histBenSetTab('noshow')" style="padding:7px 16px;font-size:12.5px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);background:var(--surface2);color:var(--muted)">⊘ No Show</button>
+      </div>
+      <select id="hist-filtro-data" onchange="histBenFiltrar()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none">
+        <option value="">Todas as datas</option>
+      </select>
+      <select id="hist-filtro-cc" onchange="histBenFiltrar()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px;font-size:13px;font-family:var(--font);outline:none">
+        <option value="">Todos os CCs</option>
+      </select>
+      <div style="flex:1;min-width:180px;max-width:280px;position:relative">
+        <input type="text" id="hist-busca" placeholder="Buscar nome…" oninput="histBenFiltrar()"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px 7px 32px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">🔍</span>
+      </div>
+      <span id="hist-contador" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+
+    <!-- Tabela -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm)">
+      <table class="main-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CC / Depto</th>
+            <th>Benefícios</th>
+            <th>Integração</th>
+            <th style="width:100px;text-align:center">Status</th>
+            <th>Detalhes</th>
+          </tr>
+        </thead>
+        <tbody id="hist-tabela-body">
+          <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL: NO SHOW detalhes -->
+  <div class="modal-backdrop" id="integ-modal-noshow" onclick="if(event.target===this)fecharModal('integ-modal-noshow')">
+    <div class="modal" style="width:460px">
+      <div class="modal-head">
+        <h2 style="font-size:15px" id="ns-modal-nome">No Show</h2>
+        <p style="font-size:12px;color:var(--muted);margin-top:3px" id="ns-modal-sub"></p>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ns-modal-id"/>
+        <!-- Participou da Integração -->
+        <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">Participou da Integração?</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Esteve presente no dia da apresentação de benefícios e uniforme</div>
+          </div>
+          <label style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer">
+            <input type="checkbox" id="ns-participou" style="opacity:0;width:0;height:0;position:absolute" onchange="this.parentElement.querySelector('span').style.background=this.checked?'var(--success)':'var(--surface3)';this.parentElement.querySelector('em').style.left=this.checked?'22px':'3px'"/>
+            <span style="position:absolute;inset:0;background:var(--surface3);border-radius:24px;transition:.2s">
+              <em style="position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;display:block"></em>
+            </span>
+          </label>
+        </div>
+        <!-- Data do Desligamento -->
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Data do Desligamento / Ausência</label>
+          <input type="date" id="ns-data-deslig"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px"/>
+        </div>
+        <!-- Motivo -->
+        <div class="form-group">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Motivo</label>
+          <textarea id="ns-motivo" rows="3" placeholder="Descreva o motivo do no show…"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box;margin-top:6px"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="fecharModal('integ-modal-noshow')">Cancelar</button>
+        <button class="btn btn-primary" style="background:var(--danger);border-color:var(--danger)" onclick="integConfirmarNoShow()">⊘ Confirmar No Show</button>
       </div>
     </div>
   </div>
@@ -2540,7 +2636,7 @@ const PERMISSOES_GRUPOS = [
   { grupo: 'Administração de Pessoal — Benefícios', itens: [
     { id:'adp_beneficios',          nome:'Gestão de Benefícios',   descricao:'Confirmação de presença — vê apenas os próprios CCs' },
     { id:'adp_beneficios_pagar',    nome:'Pagar Benefícios',       descricao:'Vê todos os CCs e programa datas de pagamento' },
-    { id:'adp_beneficios_historico',nome:'Benefícios — Histórico', descricao:'Histórico de integrações e confirmações', em_breve:true },
+    { id:'adp_beneficios_historico',nome:'Benefícios — Histórico', descricao:'Acesso ao histórico completo de PAGOS e NO SHOW de todos os CCs' },
   ]},
   { grupo: 'Administração de Pessoal — Tickets Shopee', itens: [
     { id:'adp_tickets_deslig',  nome:'Tickets de Desligamento', descricao:'Abertura e acompanhamento de tickets de desligamento', em_breve:true },
@@ -2768,11 +2864,12 @@ async function iniciarSessao(conta) {
   show('nav-adp-exportar',  temPermissao('adp_voucher_exportar'));
   show('nav-adp-historico', temPermissao('adp_voucher_historico'));
 
-  // Benefícios sub
+
   // Benefícios sub
   showBlock('navgroup-adp-beneficios', _algumBen);
-  show('nav-integracao', temPermissao('adp_beneficios'));
-  show('nav-pagar-ben',  temPermissao('adp_beneficios_pagar'));
+  show('nav-integracao',    temPermissao('adp_beneficios'));
+  show('nav-pagar-ben',     temPermissao('adp_beneficios_pagar'));
+  show('nav-ben-historico', temPermissao('adp_beneficios_historico') || podeVerTudo());
   // Tickets sub
   showBlock('navgroup-adp-tickets', _algumTicket);
 
@@ -5929,7 +6026,7 @@ function integRenderTabela() {
           : `<div style="display:flex;gap:5px;justify-content:center">
                <button onclick="integToggle('${col.id}','PAGAR')"
                  style="padding:4px 10px;border-radius:6px;border:1.5px solid var(--success);font-size:11.5px;cursor:pointer;font-weight:700;background:${bgPagar};color:${txtPagar};font-family:var(--font)">✅ Pagar</button>
-               <button onclick="integToggle('${col.id}','NO SHOW')"
+               <button onclick="integAbrirNoShow('${col.id}')"
                  style="padding:4px 10px;border-radius:6px;border:1.5px solid var(--danger);font-size:11.5px;cursor:pointer;font-weight:700;background:${bgNoShow};color:${txtNoShow};font-family:var(--font)">⊘ No Show</button>
              </div>`
         }
@@ -6249,4 +6346,232 @@ async function pagarBenLote() {
   } catch(e) { showToast(e.message, 'error'); }
 }
 // ═══════════════ FIM PAGAR BENEFÍCIOS ═══════════════
+
+// ════════════════════════════════════════════════════════════
+//  NO SHOW — Modal e confirmação
+// ════════════════════════════════════════════════════════════
+
+function integAbrirNoShow(colabId) {
+  const col = INTEG_TODOS_COLABS.find(c => c.id === colabId);
+  if (!col) return;
+
+  // Se já é NO SHOW → toggle (desmarcar)
+  if (col.presenca === 'NO SHOW') {
+    integToggle(colabId, 'NO SHOW');
+    return;
+  }
+
+  // Abrir modal para preencher detalhes
+  document.getElementById('ns-modal-id').value = colabId;
+  document.getElementById('ns-modal-nome').textContent = col.nome;
+  document.getElementById('ns-modal-sub').textContent =
+    (col.cargo || '') + (col._depto_nome ? ' · ' + col._depto_nome : '') + (col.codigo ? ' · ' + col.codigo : '');
+
+  // Reset fields
+  const chk = document.getElementById('ns-participou');
+  chk.checked = false;
+  chk.parentElement.querySelector('span').style.background = 'var(--surface3)';
+  chk.parentElement.querySelector('em').style.left = '3px';
+  document.getElementById('ns-data-deslig').value = '';
+  document.getElementById('ns-motivo').value = '';
+
+  abrirModal('integ-modal-noshow');
+}
+
+async function integConfirmarNoShow() {
+  const colabId   = document.getElementById('ns-modal-id').value;
+  const participou = document.getElementById('ns-participou').checked;
+  const dataDeslig = document.getElementById('ns-data-deslig').value || null;
+  const motivo     = document.getElementById('ns-motivo').value.trim();
+
+  if (!dataDeslig) { showToast('Informe a data do desligamento ou ausência.', 'error'); return; }
+
+  try {
+    await rpc('wc_integ_salvar_noshow', {
+      p_colab_id:              colabId,
+      p_participou_integracao: participou,
+      p_data_desligamento:     dataDeslig,
+      p_motivo:                motivo || null
+    });
+
+    const col = INTEG_TODOS_COLABS.find(c => c.id === colabId);
+    if (col) {
+      col.presenca          = 'NO SHOW';
+      col.confirmado_por    = session?.nome;
+      col.ns_participou     = participou;
+      col.ns_data_deslig    = dataDeslig;
+      col.ns_motivo         = motivo;
+    }
+
+    fecharModal('integ-modal-noshow');
+    integRenderTabela();
+
+    // Atualizar KPIs
+    const colmeias = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === window._integDataAtiva));
+    colmeias.forEach(c => {
+      const cc = INTEG_TODOS_COLABS.filter(x => x._colmeia_id === c.id);
+      c.pagos    = cc.filter(x => x.presenca === 'PAGAR').length;
+      c.noshow   = cc.filter(x => x.presenca === 'NO SHOW').length;
+      c.pendentes= cc.filter(x => !x.presenca).length;
+    });
+    integRenderKPIs(colmeias);
+    integRenderPills();
+    showToast('No Show registrado.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  HISTÓRICO DE BENEFÍCIOS
+// ════════════════════════════════════════════════════════════
+let HIST_BEN_LISTA = [];
+let HIST_BEN_TAB   = 'todos'; // 'todos' | 'pagos' | 'noshow'
+
+// Navegar
+const _origNavToHist = window.navTo;
+window.navTo = function(id) {
+  if (id === 'ben-historico') {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav a, .nav-suporte-item').forEach(a => a.classList.remove('active'));
+    const pg = document.getElementById('page-ben-historico');
+    if (pg) pg.classList.add('active');
+    document.querySelector('[data-page="ben-historico"]')?.classList.add('active');
+    histBenCarregar();
+    return;
+  }
+  _origNavToHist(id);
+};
+
+async function histBenCarregar() {
+  const tbody = document.getElementById('hist-tabela-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Carregando…</td></tr>';
+  try {
+    const r = await rpc('wc_integ_historico', {});
+    HIST_BEN_LISTA = r.lista || [];
+    histBenPopularFiltros();
+    histBenFiltrar();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function histBenPopularFiltros() {
+  const datas = [...new Set(HIST_BEN_LISTA.map(c => c.data_admissao_fmt))].sort().reverse();
+  const selData = document.getElementById('hist-filtro-data');
+  if (selData) selData.innerHTML = '<option value="">Todas as datas</option>' +
+    datas.map(d => `<option value="${d}">${d}</option>`).join('');
+
+  const ccs = [...new Set(HIST_BEN_LISTA.map(c => c.depto_cod).filter(Boolean))].sort();
+  const selCC = document.getElementById('hist-filtro-cc');
+  if (selCC) selCC.innerHTML = '<option value="">Todos os CCs</option>' +
+    ccs.map(cc => `<option value="${cc}">${cc}</option>`).join('');
+}
+
+function histBenSetTab(tab) {
+  HIST_BEN_TAB = tab;
+  ['todos','pagos','noshow'].forEach(t => {
+    const btn = document.getElementById('hist-tab-' + t);
+    if (!btn) return;
+    const ativo = t === tab;
+    btn.style.background = ativo ? 'var(--accent)' : 'var(--surface2)';
+    btn.style.color      = ativo ? 'var(--brand)'  : 'var(--muted)';
+    btn.style.fontWeight = ativo ? '700' : '600';
+  });
+  histBenFiltrar();
+}
+
+function histBenFiltrar() {
+  const filtData = document.getElementById('hist-filtro-data')?.value || '';
+  const filtCC   = document.getElementById('hist-filtro-cc')?.value   || '';
+  const busca    = (document.getElementById('hist-busca')?.value || '').toLowerCase();
+
+  let lista = [...HIST_BEN_LISTA];
+  if (HIST_BEN_TAB === 'pagos')  lista = lista.filter(c => c.presenca === 'PAGAR');
+  if (HIST_BEN_TAB === 'noshow') lista = lista.filter(c => c.presenca === 'NO SHOW');
+  if (filtData) lista = lista.filter(c => c.data_admissao_fmt === filtData);
+  if (filtCC)   lista = lista.filter(c => c.depto_cod === filtCC);
+  if (busca)    lista = lista.filter(c => (c.nome||'').toLowerCase().includes(busca));
+
+  const cont = document.getElementById('hist-contador');
+  if (cont) cont.textContent = lista.length + ' registro(s)';
+
+  histBenRenderTabela(lista);
+}
+
+function histBenRenderTabela(lista) {
+  const tbody = document.getElementById('hist-tabela-body');
+  if (!tbody) return;
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">' +
+      (HIST_BEN_LISTA.length === 0 ? 'Nenhum registro no histórico.' : 'Nenhum resultado para este filtro.') +
+      '</td></tr>';
+    return;
+  }
+
+  function abrev(s) {
+    if (!s) return '';
+    if (/vale.transporte|\bvt\b/i.test(s)) return 'VT';
+    if (/vale.refei|\bvr\b/i.test(s)) return 'VR';
+    if (/mobilidade|mob/i.test(s)) return 'MOB';
+    if (/vale.aliment|\bva\b/i.test(s)) return 'VA';
+    if (/cesta.basica/i.test(s)) return 'CB';
+    if (/dinheiro|reembolso/i.test(s)) return 'VT$';
+    return s.substring(0,6);
+  }
+
+  function fmtDt(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleDateString('pt-BR'); } catch { return iso; }
+  }
+  function fmtDtHr(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); } catch { return iso; }
+  }
+
+  tbody.innerHTML = lista.map(col => {
+    const ben = [...new Set([col.beneficio_mob,col.beneficio_vr,col.beneficio_vt].filter(Boolean).map(abrev))].join(' · ') || '—';
+    const benTooltip = [col.beneficio_mob,col.beneficio_vr,col.beneficio_vt].filter(Boolean).join(' | ');
+    const isPago   = col.presenca === 'PAGAR';
+    const isNoShow = col.presenca === 'NO SHOW';
+
+    // Detalhes coluna — diferente por tipo
+    const detalhes = isPago ? `
+      <div style="font-size:12px">
+        <div style="font-weight:700;color:var(--success);margin-bottom:4px">💰 Data de pagamento</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">${fmtDt(col.data_pagamento)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Programado por <strong>${col.programado_por||'—'}</strong><br/>
+          em ${fmtDtHr(col.programado_em)}
+        </div>
+      </div>` : `
+      <div style="font-size:12px">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:${col.ns_participou_integracao?'rgba(99,204,176,.15)':'rgba(239,68,68,.12)'};color:${col.ns_participou_integracao?'var(--success)':'var(--danger)'}">
+            ${col.ns_participou_integracao ? '✅ Participou da integração' : '❌ Não participou da integração'}
+          </span>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted)">
+          <div>📅 Desligamento: <strong style="color:var(--text)">${fmtDt(col.ns_data_desligamento)}</strong></div>
+          ${col.ns_motivo ? `<div style="margin-top:3px">💬 ${col.ns_motivo}</div>` : ''}
+          <div style="margin-top:3px">Registrado por <strong>${col.confirmado_por||'—'}</strong> em ${fmtDtHr(col.confirmado_at)}</div>
+        </div>
+      </div>`;
+
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td>
+        <div style="font-weight:700;font-size:13px">${col.nome}</div>
+        ${col.codigo ? `<div style="font-size:11px;color:var(--muted)">${col.codigo}</div>` : ''}
+      </td>
+      <td style="font-size:12px">${col.depto_cod||'—'}</td>
+      <td style="font-size:12px;font-weight:500" title="${benTooltip}">${ben}</td>
+      <td style="font-size:12px;color:var(--muted)">${col.data_admissao_fmt||'—'}</td>
+      <td style="text-align:center">
+        <span class="pill" style="background:${isPago?'rgba(99,204,176,.15)':'rgba(239,68,68,.12)'};color:${isPago?'var(--success)':'var(--danger)'}">
+          ${isPago?'✅ PAGO':'⊘ NO SHOW'}
+        </span>
+      </td>
+      <td>${detalhes}</td>
+    </tr>`;
+  }).join('');
+}
+// ═══════════════ FIM HISTÓRICO BENEFÍCIOS ═══════════════
 </script>
