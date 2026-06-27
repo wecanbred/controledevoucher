@@ -1070,12 +1070,19 @@
           <span class="vt-filter-ico">📋</span>
           <select id="filtro-statusvaga" onchange="renderVagas()">
             <option value="">Todos os status</option>
+            <option value="__pendente__">⏳ Pendentes</option>
+            <option value="__andamento__">🔄 Em Andamento</option>
+            <option value="__concluida__">✅ Concluídas</option>
+            <option value="__cancelada__">❌ Canceladas</option>
+            <optgroup label="─ Detalhado ─────────────">
+            <option>Pendente</option>
             <option>Em Andamento No Prazo</option>
             <option>Em Andamento Atrasada</option>
             <option>Finalizada No Prazo</option>
             <option>Finalizada Antecipada</option>
             <option>Finalizada Atrasada</option>
             <option>Cancelada</option>
+            </optgroup>
           </select>
         </div>
         <div class="vt-filter-group" id="filtro-consultor-wrap">
@@ -3282,11 +3289,37 @@ function suPill(s) {
   if (u.includes('ENVIADO')||u.includes('SAÍDA')||u.includes('SAIDA')) return `<span class="pill uniforme-enviado">${s}</span>`;
   return `<span class="pill uniforme-pendente">${s}</span>`;
 }
+
+// ── Agrupa status real da vaga em grupo lógico ──────────────
+// Pendente   → 'Pendente'
+// Em Andamento (Atrasada / No Prazo) → 'andamento'
+// Finalizada (Antecipada / Atrasada / No Prazo) → 'concluida'
+// Cancelada  → 'cancelada'
+function statusVagaGrupo(s) {
+  if (!s) return 'pendente';
+  const u = s.toLowerCase();
+  if (u === 'pendente') return 'pendente';
+  if (u.startsWith('em andamento')) return 'andamento';
+  if (u.startsWith('finalizada')) return 'concluida';
+  if (u.includes('cancelada') || u.includes('cancelado')) return 'cancelada';
+  return 'pendente'; // status desconhecido → pendente
+}
+
 function svPill(s) {
   if (!s) return '<span class="pill muted">—</span>';
-  if (s.includes('No Prazo'))   return `<span class="pill vaga-noprazo">${s}</span>`;
-  if (s.includes('Antecipada')) return `<span class="pill vaga-antecipada">${s}</span>`;
-  if (s.includes('Atrasada'))   return `<span class="pill vaga-atrasada">${s}</span>`;
+  const g = statusVagaGrupo(s);
+  if (g === 'pendente')  return `<span class="pill vaga-atrasada">${s||'Pendente'}</span>`;
+  if (g === 'andamento') {
+    if (s.includes('No Prazo'))   return `<span class="pill vaga-noprazo">${s}</span>`;
+    if (s.includes('Atrasada'))   return `<span class="pill vaga-atrasada">${s}</span>`;
+    return `<span class="pill vaga-noprazo">${s}</span>`;
+  }
+  if (g === 'concluida') {
+    if (s.includes('Antecipada')) return `<span class="pill vaga-antecipada">${s}</span>`;
+    if (s.includes('Atrasada'))   return `<span class="pill vaga-atrasada">${s}</span>`;
+    return `<span class="pill vaga-noprazo">${s}</span>`;
+  }
+  if (g === 'cancelada') return `<span class="pill noshow">${s}</span>`;
   return `<span class="pill muted">${s}</span>`;
 }
 function trPill(s) {
@@ -3877,9 +3910,10 @@ async function renderHome() {
     // wc_home_resumo falhou (ex: coluna errada no banco) — fallback local
     console.warn('wc_home_resumo erro:', e.message);
     cnt = {
-      vagas_abertas:    VAGAS.filter(v=>v.statusVaga?.includes('Aberta')).length,
-      vagas_andamento:  VAGAS.filter(v=>v.statusVaga?.includes('Andamento')).length,
-      vagas_fechadas:   VAGAS.filter(v=>v.statusVaga?.includes('Fechada')).length,
+      vagas_abertas:    vagasNoEscopo().filter(v=>statusVagaGrupo(v.statusVaga)==='pendente').length,
+      vagas_andamento:  vagasNoEscopo().filter(v=>statusVagaGrupo(v.statusVaga)==='andamento').length,
+      vagas_fechadas:   vagasNoEscopo().filter(v=>statusVagaGrupo(v.statusVaga)==='concluida').length,
+      vagas_canceladas: vagasNoEscopo().filter(v=>statusVagaGrupo(v.statusVaga)==='cancelada').length,
       voucher_pendente: VAGAS.filter(v=>v.filaVoucherStatus==='pendente').length,
       indicacoes_pendentes: INDICACOES.filter(i=>i.status==='pendente').length,
     };
@@ -4223,7 +4257,14 @@ function renderVagas() {
 
   let lista = vagasNoEscopo();
   if (reg)    lista = lista.filter(v=>v.regional===reg);
-  if (status) lista = lista.filter(v=>v.statusVaga===status);
+  if (status) {
+    // Filtros de grupo
+    if (status === '__pendente__')  lista = lista.filter(v => statusVagaGrupo(v.statusVaga) === 'pendente');
+    else if (status === '__andamento__') lista = lista.filter(v => statusVagaGrupo(v.statusVaga) === 'andamento');
+    else if (status === '__concluida__') lista = lista.filter(v => statusVagaGrupo(v.statusVaga) === 'concluida');
+    else if (status === '__cancelada__') lista = lista.filter(v => statusVagaGrupo(v.statusVaga) === 'cancelada');
+    else lista = lista.filter(v => v.statusVaga === status);
+  }
   if (cons)   lista = lista.filter(v=>v.consultor===cons);
   if (cc)     lista = lista.filter(v=>v.codigoHub===cc);
   if (busca)  lista = lista.filter(v =>
