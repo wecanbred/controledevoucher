@@ -2852,7 +2852,7 @@ async function iniciarSessao(conta) {
   showBlock('navgroup-adp-tickets', _algumTicket);
 
   showBlock('navgroup-suporte-cadastros', temPermissao('cad_clientes')||temPermissao('cad_cc')||temPermissao('cad_deptos'));
-  show('nav-suporte-usuarios',       podeAdmin());
+  show('nav-suporte-usuarios', session.perfil === 'master' || temPermissao('sup_gestao_usuarios'));
   // botões de Cadastros (só aparecem depois que o _MAIN_HTML é reinserido, por isso via delegação)
   window._cadPodeCriar = podeVerTudo();
   document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
