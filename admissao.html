@@ -5602,22 +5602,27 @@ function nsAbrirConsultor(r) {
 }
 
 async function nsBuscarVagaAuto(nome, matricula) {
-  // Procura nas vagas carregadas em memória
   if (!window.VAGAS || !VAGAS.length) return;
   const busca = (nome||'').toLowerCase();
-  const mat   = (matricula||'').toLowerCase();
-  const vaga  = VAGAS.find(v =>
-    (v.candidato||'').toLowerCase().includes(busca) ||
-    (v.matricula||'').toLowerCase() === mat ||
-    (v.nome_candidato||'').toLowerCase().includes(busca)
+  // Matricula sem prefixo WE (como vem do benefícios)
+  const mat     = (matricula||'').replace(/^WE/i,'').toLowerCase();
+  const matWE   = 'WE' + mat;
+
+  const vaga = VAGAS.find(v =>
+    // Tenta pela matrícula com e sem prefixo WE
+    (v.matricula||'').replace(/^WE/i,'').toLowerCase() === mat ||
+    (v.matricula||'').toLowerCase() === matWE.toLowerCase() ||
+    // Fallback pelo nome do colaborador
+    (v.colaborador||'').toLowerCase().includes(busca)
   );
+
   const infoEl = document.getElementById('ns-vaga-info');
   const vagaEl = document.getElementById('ns-cons-vaga');
   if (vaga && !vagaEl.value) {
-    vagaEl.value = vaga.id_vaga || vaga.codigo || '';
-    if (infoEl) infoEl.innerHTML = `<span style="color:var(--success)">✅ Vaga encontrada: ${vaga.cargo||''} · ${vaga.local||vaga.regional||''}</span>`;
+    vagaEl.value = vaga.jira || '';
+    if (infoEl) infoEl.innerHTML = `<span style="color:var(--success)">✅ Vaga encontrada: ${vaga.jira} · ${vaga.cargo||''} · ${vaga.local||vaga.regional||''}</span>`;
     document.getElementById('ns-btn-reabrir').style.display = 'flex';
-    document.getElementById('ns-btn-reabrir').dataset.vaga = vagaEl.value;
+    document.getElementById('ns-btn-reabrir').dataset.vaga = vaga.jira || '';
   } else if (!vagaEl.value) {
     if (infoEl) infoEl.innerHTML = `<span style="color:var(--muted)">Nenhuma vaga encontrada — preencha manualmente.</span>`;
   }
@@ -5626,30 +5631,29 @@ async function nsBuscarVagaAuto(nome, matricula) {
 function nsBuscarVaga() {
   const vagaCod = document.getElementById('ns-cons-vaga').value.trim();
   if (!vagaCod || !window.VAGAS) return;
-  const vaga = VAGAS.find(v => (v.id_vaga||v.codigo||'').toLowerCase() === vagaCod.toLowerCase());
+  const vaga = VAGAS.find(v => (v.jira||'').toLowerCase() === vagaCod.toLowerCase());
   const infoEl = document.getElementById('ns-vaga-info');
   if (vaga) {
-    infoEl.innerHTML = `<span style="color:var(--success)">✅ ${vaga.cargo||''} · ${vaga.local||vaga.regional||''} · ${vaga.status||''}</span>`;
+    infoEl.innerHTML = `<span style="color:var(--success)">✅ ${vaga.jira} · ${vaga.cargo||''} · ${vaga.local||vaga.regional||''} · ${vaga.status||''}</span>`;
     document.getElementById('ns-btn-reabrir').style.display = 'flex';
-    document.getElementById('ns-btn-reabrir').dataset.vaga = vagaCod;
+    document.getElementById('ns-btn-reabrir').dataset.vaga = vaga.jira;
   } else {
     infoEl.innerHTML = `<span style="color:var(--muted)">Vaga não encontrada no sistema.</span>`;
   }
 }
 
 async function nsReabrirVaga() {
-  const vagaCod = document.getElementById('ns-btn-reabrir').dataset.vaga;
-  if (!vagaCod) return;
-  const vaga = VAGAS?.find(v => (v.id_vaga||v.codigo||'') === vagaCod);
+  const vagaJira = document.getElementById('ns-btn-reabrir').dataset.vaga;
+  if (!vagaJira) return;
+  const vaga = VAGAS?.find(v => v.jira === vagaJira);
   if (!vaga) { showToast('Vaga não encontrada.', 'error'); return; }
 
-  if (!confirm(`Reabrir a vaga ${vagaCod} para substituição?`)) return;
+  if (!confirm(`Reabrir a vaga ${vagaJira} para substituição?`)) return;
 
   try {
     await rpc('wc_reabrir_vaga_noshow', { p_vaga_id: vaga.id });
-    showToast(`Vaga ${vagaCod} reaberta para substituição!`, 'success');
+    showToast(`Vaga ${vagaJira} reaberta para substituição!`, 'success');
     fecharModal('modal-ns-consultor');
-    // Navegar para vagas
     navTo('vagas');
   } catch(e) {
     showToast('Erro ao reabrir vaga: ' + e.message, 'error');
