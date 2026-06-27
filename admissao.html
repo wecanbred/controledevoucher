@@ -5663,18 +5663,30 @@ function nsBuscarVaga() {
 }
 
 async function nsReabrirVaga() {
-  const vagaJira = document.getElementById('ns-btn-reabrir').dataset.vaga;
+  const vagaJira   = document.getElementById('ns-btn-reabrir').dataset.vaga;
+  const nomeColaborador = document.getElementById('ns-cons-nome')?.textContent || '';
   if (!vagaJira) return;
-  const vaga = VAGAS?.find(v => v.jira === vagaJira);
-  if (!vaga) { showToast('Vaga não encontrada.', 'error'); return; }
 
-  if (!confirm(`Reabrir a vaga ${vagaJira} para substituição?`)) return;
+  // Busca nas vagas em memória ou usa só o jira
+  const vaga = VAGAS?.find(v => v.jira === vagaJira);
+
+  if (!confirm(`Reabrir a vaga ${vagaJira} para substituição?\n\nO candidato "${nomeColaborador}" será registrado como No Show na vaga.`)) return;
 
   try {
-    await rpc('wc_reabrir_vaga_noshow', { p_vaga_id: vaga.id });
-    showToast(`Vaga ${vagaJira} reaberta para substituição!`, 'success');
+    await rpc('wc_reabrir_vaga_noshow', {
+      p_vaga_jira:   vagaJira,
+      p_nome_noshow: nomeColaborador
+    });
+    showToast(`Vaga ${vagaJira} reaberta! Redirecionando…`, 'success');
     fecharModal('modal-ns-consultor');
+    // Recarregar vagas e abrir a vaga diretamente
+    await carregarVagas();
     navTo('vagas');
+    // Abrir modal da vaga após navegar
+    setTimeout(() => {
+      const v = VAGAS?.find(v => v.jira === vagaJira);
+      if (v) abrirModalVaga(vagaJira);
+    }, 500);
   } catch(e) {
     showToast('Erro ao reabrir vaga: ' + e.message, 'error');
   }
