@@ -7998,12 +7998,23 @@ function tktHubCode(hubStr) {
 // ── Filtrar tickets pelo HUB do Onsite logado ─────────────
 function tktFiltrarPorOnsite(lista) {
   if (!session) return lista;
+  // Master e Gestor veem todos
   if (['master','gestor'].includes(session.perfil)) return lista;
-  const ops = session.operacoes || [];
+
+  // Onsite: usa session._operacoes (mesmo padrão dos outros módulos)
+  const ops = session._operacoes || [];
   if (!ops.length) return lista;
+
+  // Monta sets de comparação — nome da op (ex: "HUB-LSP-10") e cc_cod
+  const opsNomes = new Set(ops.map(o => (o.nome||'').toUpperCase().trim()));
+  const opsCods  = new Set(ops.map(o => (o.cc_cod||o.regional||'').toUpperCase().trim()).filter(Boolean));
+
   return lista.filter(r => {
-    const hub = tktHubCode(r['HUB'] || r['Hub'] || '');
-    return ops.some(op => hub.toLowerCase().includes(op.toLowerCase()) || op.toLowerCase().includes(hub.toLowerCase()));
+    // Campo HUB da planilha: "HUB-LSP-10 | SPI" → extrai só o código
+    const hub = tktHubCode(r['HUB'] || r['Hub'] || '').toUpperCase().trim();
+    if (!hub) return false;
+    // Compara com nome da operação ou cc_cod
+    return opsNomes.has(hub) || opsCods.has(hub);
   });
 }
 
@@ -8035,6 +8046,17 @@ async function tktCarregar(pageId) {
   area.innerHTML = '<div class="tkt-loading">🔄 Buscando tickets…</div>';
 
   try {
+    // Garantir que as operações do usuário estão carregadas
+    if (!session._operacoes?.length && !['master','gestor'].includes(session?.perfil)) {
+      try {
+        const ro = await rpc('wc_home_resumo', {});
+        if (ro.operacoes?.length) session._operacoes = ro.operacoes;
+      } catch(e) {}
+    }
+    // Debug temporário — remover após confirmar filtro
+    console.log('TKT operacoes:', JSON.stringify(session._operacoes));
+    console.log('TKT exemplo HUB planilha:', TKT_TODOS?.[0]?.['HUB']);
+
     // Buscar planilha só se ainda não carregou
     if (!TKT_LOADED) {
       TKT_TODOS  = await tktFetchTodos();
