@@ -2818,6 +2818,15 @@ async function iniciarSessao(conta) {
   show('nav-noshow',     temPermissao('rs_noshow'));
   show('nav-epi',        temPermissao('rs_estoque_epi'));
 
+  // Esconder seção inteira de S&A se não tiver nenhuma permissão RS
+  const _algumRS = ['rs_dashboard','rs_vagas','rs_voucher','rs_indicacoes','rs_noshow','rs_estoque_epi'].some(i => temPermissao(i));
+  const _secaoRS = document.getElementById('navgroup-selecao');
+  if (_secaoRS) _secaoRS.style.display = _algumRS ? 'block' : 'none';
+  // Label "Seleção & Admissão"
+  document.querySelectorAll('.sb-section-label').forEach(el => {
+    if (el.textContent.includes('Seleção')) el.style.display = _algumRS ? 'block' : 'none';
+  });
+
   // ── Adm. de Pessoal — grupo pai ──
   const _algumVoucher = ['adp_voucher_dashboard','adp_voucher_controle','adp_voucher_inativar',
     'adp_voucher_exportar','adp_voucher_historico'].some(i => temPermissao(i));
@@ -2825,6 +2834,10 @@ async function iniciarSessao(conta) {
   const _algumTicket = ['adp_tickets_deslig','adp_tickets_movim','adp_tickets_voucher'].some(i=>temPermissao(i));
   const _algumADP = _algumVoucher || _algumBen || _algumTicket;
   showBlock('navgroup-admpessoal', _algumADP);
+  // Label "Adm. de Pessoal"
+  document.querySelectorAll('.sb-section-label').forEach(el => {
+    if (el.textContent.includes('Adm.')) el.style.display = _algumADP ? 'block' : 'none';
+  });
 
   // Voucher Uber sub
   showBlock('navgroup-voucher-uber', _algumVoucher);
