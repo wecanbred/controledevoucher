@@ -873,8 +873,8 @@
 <div id="sidebar" style="display:none">
   <div class="sidebar-logo">
     <div class="mark" id="logo-mark">SA</div>
-    <h2 class="sb-txt">WeSys</h2>
-    <span class="sb-txt">| Consolidado</span>
+    <h2 class="sb-txt">WeSys | Integrado</h2>
+    <span class="sb-txt">WeCan BR · Consolidado</span>
   </div>
   <button id="sb-toggle-btn" onclick="toggleSidebar()" title="Recolher menu">
     <span class="sb-txt" style="flex:1;text-align:left;font-size:11px">Recolher</span>
@@ -3779,7 +3779,9 @@ async function popularFiltroCC() {
   const codsNasVagas = [...new Set(VAGAS.map(v => v.codigoHub).filter(Boolean))];
   const itens = codsNasVagas.map(cod => {
     const cc = CENTROS_CUSTO.find(c => c.cod === cod);
-    return { cod, label: cc?.descricao || cc?.cod || cod };
+    // Prioridade: descricao > cod (nunca mostrar só número)
+    const label = cc?.descricao ? `${cc.descricao}` : cod;
+    return { cod, label };
   }).sort((a,b) => a.label.localeCompare(b.label));
   sel.innerHTML = '<option value="">Todos os CCs</option>' +
     itens.map(c => `<option value="${c.cod}">${c.label}</option>`).join('');
@@ -3788,8 +3790,10 @@ async function popularFiltroCC() {
 function popularFiltroConsultor() {
   const sel = document.getElementById('filtro-consultor');
   if (!sel) return;
+  // Somente perfil equipe (Consultor)
+  const consultores = USUARIOS_SISTEMA.filter(u => u.perfil === 'equipe');
   const lista = podeVerTudo()
-    ? (USUARIOS_SISTEMA.length ? USUARIOS_SISTEMA.map(u=>u.nome) : consultoresConhecidos())
+    ? (consultores.length ? consultores.map(u=>u.nome) : consultoresConhecidos())
     : [session.nome];
   sel.innerHTML = '<option value="">Todos os consultores</option>' + lista.map(c=>`<option>${c}</option>`).join('');
   const wrap = document.getElementById('filtro-consultor-wrap');
