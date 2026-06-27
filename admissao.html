@@ -2636,14 +2636,15 @@ function podeAdmin()    { return ['master','gestor'].includes(session?.perfil); 
 function temPermissao(id) {
   if (!session) return false;
   if (session.perfil === 'master') return true;
-  // Gestor: respeita permissões por sistema
-  // Se não tem nenhuma permissão configurada, vê tudo (gestor antigo)
   const perms = session.permissoes;
   if (session.perfil === 'gestor') {
     if (!perms || !Object.keys(perms).some(k => perms[k] === true)) return true;
     return perms[id] === true;
   }
-  // Consultor (equipe) e Onsite: só permissões explícitas
+  // Onsite: nunca vê permissões RS
+  if (session.perfil === 'onsite' && id.startsWith('rs_')) return false;
+  // Consultor (equipe): nunca vê permissões ADP
+  if (session.perfil === 'equipe' && id.startsWith('adp_')) return false;
   if (perms) return perms[id] === true;
   return false;
 }
