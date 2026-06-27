@@ -8007,23 +8007,15 @@ function tktFiltrarPorOnsite(lista) {
   const ops = session._operacoes || [];
   if (!ops.length) return lista;
 
-  // Nomes e códigos das operações do usuário — uppercase e sem espaços extras
+  // Conjunto de nomes exatos das operações do usuário — uppercase
   const opsNomes = new Set(ops.map(o => (o.nome||'').toUpperCase().trim()));
-  const opsCods  = new Set(ops.map(o => (o.cc_cod||o.codigo||o.regional||'').toUpperCase().trim()).filter(Boolean));
 
   return lista.filter(r => {
     // Remove tudo após | e limpa espaços: "HUB-LSP-10 | SPI" → "HUB-LSP-10"
     const hub = tktHubCode(r['HUB'] || r['Hub'] || '').toUpperCase().trim();
     if (!hub) return false;
-
-    // Compara diretamente
-    if (opsNomes.has(hub) || opsCods.has(hub)) return true;
-
-    // Compara parcialmente — se o hub está contido no nome da op ou vice-versa
-    for (const nome of opsNomes) {
-      if (nome && (hub.includes(nome) || nome.includes(hub))) return true;
-    }
-    return false;
+    // Comparação EXATA apenas — evita HUB-LSP-10 bater com HUB-LSP-105
+    return opsNomes.has(hub);
   });
 }
 
