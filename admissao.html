@@ -7348,6 +7348,10 @@ function histBenRenderTabela(lista) {
     const isPago   = col.presenca === 'PAGAR';
     const isNoShow = col.presenca === 'NO SHOW';
 
+    // Extrair ajuste da obs se houver
+    const ajusteMatch = col.obs ? col.obs.match(/\[([^\]]+)\]/g) : null;
+    const ajusteInfo  = ajusteMatch ? ajusteMatch.join(' ') : null;
+
     // Detalhes coluna — diferente por tipo
     const detalhes = isPago ? `
       <div style="font-size:12px">
@@ -7357,6 +7361,7 @@ function histBenRenderTabela(lista) {
           Programado por <strong>${col.programado_por||'—'}</strong><br/>
           em ${fmtDtHr(col.programado_em)}
         </div>
+        ${ajusteInfo ? `<div style="margin-top:6px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:5px 8px;font-size:10.5px;color:var(--warning)">⚠️ ${ajusteInfo}<br/><span style="color:var(--muted)">Solicitado por <strong>${col.confirmado_por||'—'}</strong></span></div>` : ''}
       </div>` : `
       <div style="font-size:12px">
         <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
