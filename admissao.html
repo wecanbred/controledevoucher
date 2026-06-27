@@ -780,7 +780,7 @@
     <div class="sb-section-label sb-txt">Seleção &amp; Admissão</div>
     <div id="navgroup-selecao">
       <a id="nav-dashboard" onclick="navTo('dashboard')" data-page="dashboard" title="Dashboard"><span class="sb-ico">◆</span><span class="sb-txt">Dashboard</span></a>
-      <a onclick="abrirGaveta('vagas')" title="Vagas / Admissões" class="sb-has-sub" id="sb-btn-vagas"><span class="sb-ico">📂</span><span class="sb-txt">Vagas / Admissões</span><span class="sb-arr sb-txt">›</span></a>
+      <a onclick="abrirGaveta('vagas', event)" title="Vagas / Admissões" class="sb-has-sub" id="sb-btn-vagas"><span class="sb-ico">📂</span><span class="sb-txt">Vagas / Admissões</span><span class="sb-arr sb-txt">›</span></a>
       <a id="nav-voucher" onclick="navTo('voucher')" data-page="voucher" title="Fila de Voucher"><span class="sb-ico">⇄</span><span class="sb-txt">Fila de Voucher</span><span class="count-badge alert" id="nav-voucher-count">0</span></a>
       <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes" title="Indicações"><span class="sb-ico">📋</span><span class="sb-txt">Indicações</span><span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
       <a id="nav-noshow" title="No Show (em breve)" style="opacity:.4;cursor:default;display:none"><span class="sb-ico">🚫</span><span class="sb-txt">No Show <small>(em breve)</small></span></a>
@@ -791,13 +791,13 @@
     <div id="navgroup-admpessoal" style="display:none">
       <div class="sb-section-label sb-txt">Adm. de Pessoal</div>
       <div id="navgroup-voucher-uber" style="display:none">
-        <a onclick="abrirGaveta('voucher-uber')" class="sb-has-sub" id="sb-btn-voucher-uber" title="Voucher Uber"><span class="sb-ico">🚗</span><span class="sb-txt">Voucher Uber</span><span class="sb-arr sb-txt">›</span></a>
+        <a onclick="abrirGaveta('voucher-uber', event)" class="sb-has-sub" id="sb-btn-voucher-uber" title="Voucher Uber"><span class="sb-ico">🚗</span><span class="sb-txt">Voucher Uber</span><span class="sb-arr sb-txt">›</span></a>
       </div>
       <div id="navgroup-adp-beneficios" style="display:none">
-        <a onclick="abrirGaveta('beneficios')" class="sb-has-sub" id="sb-btn-beneficios" title="Benefícios"><span class="sb-ico">🐝</span><span class="sb-txt">Benefícios</span><span class="sb-arr sb-txt">›</span></a>
+        <a onclick="abrirGaveta('beneficios', event)" class="sb-has-sub" id="sb-btn-beneficios" title="Benefícios"><span class="sb-ico">🐝</span><span class="sb-txt">Benefícios</span><span class="sb-arr sb-txt">›</span></a>
       </div>
       <div id="navgroup-adp-tickets" style="display:none">
-        <a onclick="abrirGaveta('tickets')" class="sb-has-sub" title="Tickets Shopee"><span class="sb-ico">🎫</span><span class="sb-txt">Tickets Shopee</span><span class="sb-arr sb-txt">›</span></a>
+        <a onclick="abrirGaveta('tickets', event)" class="sb-has-sub" title="Tickets Shopee"><span class="sb-ico">🎫</span><span class="sb-txt">Tickets Shopee</span><span class="sb-arr sb-txt">›</span></a>
       </div>
       <a style="opacity:.4;cursor:default"><span class="sb-ico">📨</span><span class="sb-txt">Solicitações <small>(em breve)</small></span></a>
     </div>
@@ -812,7 +812,7 @@
 
     <!-- Cadastros -->
     <div id="navgroup-suporte-cadastros" style="display:none">
-      <a onclick="abrirGaveta('cadastros')" class="sb-has-sub nav-suporte-item" title="Cadastros"><span class="sb-ico">🗂️</span><span class="sb-txt">Cadastros</span><span class="sb-arr sb-txt">›</span></a>
+      <a onclick="abrirGaveta('cadastros', event)" class="sb-has-sub nav-suporte-item" title="Cadastros"><span class="sb-ico">🗂️</span><span class="sb-txt">Cadastros</span><span class="sb-arr sb-txt">›</span></a>
     </div>
     <hr class="section-divider" style="margin:6px 14px;"/>
     <div class="sidebar-user">
@@ -2980,7 +2980,7 @@ const GAVETA_MENUS = {
 
 let _gavetaAtual = null;
 
-function abrirGaveta(key) {
+function abrirGaveta(key, evt) {
   const menu = GAVETA_MENUS[key];
   if (!menu) return;
 
@@ -3014,9 +3014,19 @@ function abrirGaveta(key) {
   }).join('');
 
   const gaveta = document.getElementById('gaveta');
-  // Ajusta left se sidebar estiver recolhida
-  gaveta.style.left = document.body.classList.contains('sb-collapsed') ? '48px' : '200px';
+  const sbCollapsed = document.body.classList.contains('sb-collapsed');
+  gaveta.style.left = (sbCollapsed ? 48 : 200) + 'px';
+  // Mostrar invisível para medir altura real
+  gaveta.style.visibility = 'hidden';
   gaveta.style.display = 'flex';
+  if (evt) {
+    const clickedEl = evt.currentTarget || evt.target;
+    const rect = clickedEl.getBoundingClientRect();
+    const gavetaH = gaveta.offsetHeight;
+    const top = Math.min(rect.top, window.innerHeight - gavetaH - 10);
+    gaveta.style.top = Math.max(10, top) + 'px';
+  }
+  gaveta.style.visibility = 'visible';
   document.getElementById('gaveta-overlay').style.display = 'block';
 }
 
