@@ -227,7 +227,7 @@
   .home-header h1 { font-size:28px; font-weight:900; }
   .home-header p  { color:var(--muted); font-size:13.5px; margin-top:6px; }
   .home-time { font-size:13px; color:var(--muted); background:var(--surface2); border:1px solid var(--border); padding:7px 16px; border-radius:24px; white-space:nowrap; align-self:flex-start; }
-  .page { display: none; }
+  .page { display: none; min-width: 0; max-width: 100%; }
   .page.active { display: block; }
   .page-header { margin-bottom: 22px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .page-header h1 { font-size: 21px; font-weight: 800; }
@@ -287,7 +287,7 @@
   .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
   .btn-sm { padding: 5px 13px; font-size: 12px; border-radius: 8px; }
 
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); max-width: 100%; }
   table.main-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   table.main-table thead th {
     background: var(--surface2); color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px;
