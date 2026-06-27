@@ -1035,9 +1035,8 @@
             <th>Data Deslig.</th>
             <th>Participou?</th>
             <th>Onsite</th>
-            <th>Consultor</th>
-            <th>Motivo</th>
-            <th>Ações</th>
+            <th>Vaga</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody id="ns-tbody"></tbody>
@@ -1047,19 +1046,30 @@
 
   <!-- Modal de acompanhamento do Consultor -->
   <div class="modal-backdrop" id="modal-ns-consultor" onclick="if(event.target===this)fecharModal('modal-ns-consultor')">
-    <div class="modal" style="width:520px">
+    <div class="modal" style="width:540px">
       <div class="modal-head">
-        <h2 style="font-size:15px">Acompanhamento — <span id="ns-cons-nome"></span></h2>
-        <p style="font-size:12px;color:var(--muted);margin-top:3px" id="ns-cons-sub"></p>
+        <div>
+          <h2 style="font-size:15px">Acompanhamento — <span id="ns-cons-nome"></span></h2>
+          <p style="font-size:12px;color:var(--muted);margin-top:3px" id="ns-cons-sub"></p>
+        </div>
       </div>
       <div class="modal-body" style="display:grid;gap:14px">
         <input type="hidden" id="ns-cons-id"/>
-        <!-- Código da vaga -->
+
+        <!-- Info resumida do No Show -->
+        <div id="ns-cons-info" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div>
+
+        <!-- Vaga encontrada -->
         <div class="form-group">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Código da Vaga de Reposição</label>
-          <input type="text" id="ns-cons-vaga" placeholder="Ex: VWF-172461"
-            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px"/>
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Código da Vaga</label>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <input type="text" id="ns-cons-vaga" placeholder="Buscando vaga automaticamente…"
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+            <button class="btn btn-ghost btn-sm" onclick="nsBuscarVaga()" title="Buscar vaga">🔍</button>
+          </div>
+          <div id="ns-vaga-info" style="margin-top:6px;font-size:11.5px;color:var(--muted)"></div>
         </div>
+
         <!-- Processo -->
         <div class="form-group">
           <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Processo</label>
@@ -1069,13 +1079,15 @@
             <option value="ONLINE">Online</option>
           </select>
         </div>
+
         <!-- Obs Consultor -->
         <div class="form-group">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Obs. Consultor (data de reposição e substituto)</label>
-          <textarea id="ns-cons-obs" rows="3" placeholder="Ex: Reposição prevista para 05/07 — João Silva"
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Obs. Consultor</label>
+          <textarea id="ns-cons-obs" rows="2" placeholder="Data de reposição e nome do substituto…"
             style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box;margin-top:6px"></textarea>
         </div>
-        <!-- Status -->
+
+        <!-- Marcar resolvido -->
         <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
           <div style="flex:1">
             <div style="font-size:13px;font-weight:700">Marcar como Resolvido</div>
@@ -1089,9 +1101,12 @@
           </label>
         </div>
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="fecharModal('modal-ns-consultor')">Cancelar</button>
-        <button class="btn btn-primary" onclick="nsSalvarConsultor()">💾 Salvar</button>
+      <div class="modal-actions" style="justify-content:space-between">
+        <button class="btn btn-ghost" id="ns-btn-reabrir" onclick="nsReabrirVaga()" style="display:none">↩ Reabrir Vaga</button>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="btn btn-ghost" onclick="fecharModal('modal-ns-consultor')">Cancelar</button>
+          <button class="btn btn-primary" onclick="nsSalvarConsultor()">💾 Salvar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5500,7 +5515,7 @@ function nsRenderTabela() {
     const txt = `${r.nome||''} ${r.matricula||''} ${r.depto_nome||''} ${r.cc_nome||''}`.toLowerCase();
     if (busca && !txt.includes(busca)) return false;
     if (tipo && r.ns_tipo_abs !== tipo) return false;
-    if (status === 'pendente'  && r.ns_resolvido) return false;
+    if (status === 'pendente'  &&  r.ns_resolvido) return false;
     if (status === 'resolvido' && !r.ns_resolvido) return false;
     return true;
   });
@@ -5509,7 +5524,7 @@ function nsRenderTabela() {
   if (!tbody) return;
 
   if (!dados.length) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--muted)">Nenhum registro encontrado</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted)">Nenhum registro encontrado</td></tr>`;
     return;
   }
 
@@ -5519,15 +5534,19 @@ function nsRenderTabela() {
   tbody.innerHTML = dados.map(r => {
     const tipoPill = r.ns_tipo_abs === 'NO SHOW'
       ? `<span style="background:rgba(239,68,68,.15);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">⊘ NO SHOW</span>`
-      : `<span style="background:rgba(245,158,11,.15);color:var(--warning);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">↩ EARLY TURNOVER</span>`;
+      : `<span style="background:rgba(245,158,11,.15);color:var(--warning);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">↩ ETO</span>`;
     const statusPill = r.ns_resolvido
       ? `<span style="background:rgba(99,204,176,.15);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">✅ Resolvido</span>`
       : `<span style="background:rgba(239,68,68,.1);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🔴 Pendente</span>`;
     const participou = r.ns_participou_integracao
       ? `<span style="color:var(--success)">✅ Sim</span>`
       : `<span style="color:var(--danger)">❌ Não</span>`;
+    const vagaCod = r.ns_vaga_codigo
+      ? `<span style="font-family:monospace;font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:4px">${r.ns_vaga_codigo}</span>`
+      : `<span style="color:var(--muted);font-size:11px">—</span>`;
+    const dataR = JSON.stringify(r).replace(/"/g,'&quot;');
 
-    return `<tr>
+    return `<tr style="cursor:pointer" onclick="nsAbrirConsultor(${dataR})">
       <td style="white-space:nowrap">${fmtDt(r.ns_lancamento)}</td>
       <td>${tipoPill}</td>
       <td><strong>${r.nome||'—'}</strong></td>
@@ -5537,32 +5556,98 @@ function nsRenderTabela() {
       <td>${fmt(r.ns_data_desligamento)}</td>
       <td>${participou}</td>
       <td style="font-size:11px">${r.onsite_nome||'—'}</td>
-      <td style="font-size:11px">${r.consultor_nome||'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="max-width:180px;white-space:normal;font-size:11px">${r.ns_motivo||'—'}</td>
-      <td>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${statusPill}
-          <button class="btn btn-ghost btn-sm" onclick="nsAbrirConsultor(${JSON.stringify(r).replace(/"/g,'&quot;')})">✏️ Acompanhar</button>
-        </div>
-      </td>
+      <td>${vagaCod}</td>
+      <td>${statusPill}</td>
     </tr>`;
   }).join('');
 }
 
 function nsAbrirConsultor(r) {
-  document.getElementById('ns-cons-id').value        = r.id;
-  document.getElementById('ns-cons-nome').textContent = r.nome || '—';
-  document.getElementById('ns-cons-sub').textContent  = `${r.ns_tipo_abs||''} · ${r.depto_nome||''} · Matrícula ${r.matricula||'—'}`;
-  document.getElementById('ns-cons-vaga').value       = r.ns_vaga_codigo || '';
-  document.getElementById('ns-cons-processo').value   = r.ns_processo || '';
-  document.getElementById('ns-cons-obs').value        = r.ns_obs_consultor || '';
+  document.getElementById('ns-cons-id').value         = r.id;
+  document.getElementById('ns-cons-nome').textContent  = r.nome || '—';
+  document.getElementById('ns-cons-sub').textContent   = `${r.ns_tipo_abs||''} · ${r.depto_nome||''} · Matrícula ${r.matricula||'—'}`;
+  document.getElementById('ns-cons-vaga').value        = r.ns_vaga_codigo || '';
+  document.getElementById('ns-cons-processo').value    = r.ns_processo || '';
+  document.getElementById('ns-cons-obs').value         = r.ns_obs_consultor || '';
+  document.getElementById('ns-vaga-info').textContent  = '';
+
+  // Info resumida
+  const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+  document.getElementById('ns-cons-info').innerHTML = `
+    <div><span style="color:var(--muted);font-size:10px;text-transform:uppercase">Onsite</span><br><strong>${r.onsite_nome||'—'}</strong></div>
+    <div><span style="color:var(--muted);font-size:10px;text-transform:uppercase">Consultor</span><br><strong>${r.consultor_nome||'—'}</strong></div>
+    <div><span style="color:var(--muted);font-size:10px;text-transform:uppercase">Motivo</span><br>${r.ns_motivo||'—'}</div>
+    <div><span style="color:var(--muted);font-size:10px;text-transform:uppercase">Data Desligamento</span><br>${fmt(r.ns_data_desligamento)}</div>`;
+
   const resolvidoEl = document.getElementById('ns-cons-resolvido');
   resolvidoEl.checked = !!r.ns_resolvido;
-  const slider = resolvidoEl.parentElement.querySelector('span');
-  const knob   = resolvidoEl.parentElement.querySelector('em');
-  if (slider) slider.style.background = resolvidoEl.checked ? 'var(--success)' : 'var(--surface3)';
-  if (knob)   knob.style.left         = resolvidoEl.checked ? '22px' : '3px';
+  resolvidoEl.parentElement.querySelector('span').style.background = resolvidoEl.checked ? 'var(--success)' : 'var(--surface3)';
+  resolvidoEl.parentElement.querySelector('em').style.left = resolvidoEl.checked ? '22px' : '3px';
+
+  // Botão reabrir vaga
+  const btnReabrir = document.getElementById('ns-btn-reabrir');
+  btnReabrir.style.display = r.ns_vaga_codigo ? 'flex' : 'none';
+  btnReabrir.dataset.vaga = r.ns_vaga_codigo || '';
+
+  // Buscar vaga automaticamente pelo nome/matrícula
+  nsBuscarVagaAuto(r.nome, r.matricula);
+
   abrirModal('modal-ns-consultor');
+}
+
+async function nsBuscarVagaAuto(nome, matricula) {
+  // Procura nas vagas carregadas em memória
+  if (!window.VAGAS || !VAGAS.length) return;
+  const busca = (nome||'').toLowerCase();
+  const mat   = (matricula||'').toLowerCase();
+  const vaga  = VAGAS.find(v =>
+    (v.candidato||'').toLowerCase().includes(busca) ||
+    (v.matricula||'').toLowerCase() === mat ||
+    (v.nome_candidato||'').toLowerCase().includes(busca)
+  );
+  const infoEl = document.getElementById('ns-vaga-info');
+  const vagaEl = document.getElementById('ns-cons-vaga');
+  if (vaga && !vagaEl.value) {
+    vagaEl.value = vaga.id_vaga || vaga.codigo || '';
+    if (infoEl) infoEl.innerHTML = `<span style="color:var(--success)">✅ Vaga encontrada: ${vaga.cargo||''} · ${vaga.local||vaga.regional||''}</span>`;
+    document.getElementById('ns-btn-reabrir').style.display = 'flex';
+    document.getElementById('ns-btn-reabrir').dataset.vaga = vagaEl.value;
+  } else if (!vagaEl.value) {
+    if (infoEl) infoEl.innerHTML = `<span style="color:var(--muted)">Nenhuma vaga encontrada — preencha manualmente.</span>`;
+  }
+}
+
+function nsBuscarVaga() {
+  const vagaCod = document.getElementById('ns-cons-vaga').value.trim();
+  if (!vagaCod || !window.VAGAS) return;
+  const vaga = VAGAS.find(v => (v.id_vaga||v.codigo||'').toLowerCase() === vagaCod.toLowerCase());
+  const infoEl = document.getElementById('ns-vaga-info');
+  if (vaga) {
+    infoEl.innerHTML = `<span style="color:var(--success)">✅ ${vaga.cargo||''} · ${vaga.local||vaga.regional||''} · ${vaga.status||''}</span>`;
+    document.getElementById('ns-btn-reabrir').style.display = 'flex';
+    document.getElementById('ns-btn-reabrir').dataset.vaga = vagaCod;
+  } else {
+    infoEl.innerHTML = `<span style="color:var(--muted)">Vaga não encontrada no sistema.</span>`;
+  }
+}
+
+async function nsReabrirVaga() {
+  const vagaCod = document.getElementById('ns-btn-reabrir').dataset.vaga;
+  if (!vagaCod) return;
+  const vaga = VAGAS?.find(v => (v.id_vaga||v.codigo||'') === vagaCod);
+  if (!vaga) { showToast('Vaga não encontrada.', 'error'); return; }
+
+  if (!confirm(`Reabrir a vaga ${vagaCod} para substituição?`)) return;
+
+  try {
+    await rpc('wc_reabrir_vaga_noshow', { p_vaga_id: vaga.id });
+    showToast(`Vaga ${vagaCod} reaberta para substituição!`, 'success');
+    fecharModal('modal-ns-consultor');
+    // Navegar para vagas
+    navTo('vagas');
+  } catch(e) {
+    showToast('Erro ao reabrir vaga: ' + e.message, 'error');
+  }
 }
 
 async function nsSalvarConsultor() {
