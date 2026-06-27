@@ -2635,18 +2635,16 @@ function podeAdmin()    { return ['master','gestor'].includes(session?.perfil); 
 // Fallback: se permissoes não veio na sessão (wc_login antigo), usa perfil como antes.
 function temPermissao(id) {
   if (!session) return false;
-  // Master sempre tem tudo
   if (session.perfil === 'master') return true;
-  // Se tem permissoes salvas e pelo menos uma configurada, usa elas
+  // Gestor: respeita permissões por sistema
+  // Se não tem nenhuma permissão configurada, vê tudo (gestor antigo)
   const perms = session.permissoes;
-  if (perms && Object.keys(perms).some(k => perms[k] === true))
+  if (session.perfil === 'gestor') {
+    if (!perms || !Object.keys(perms).some(k => perms[k] === true)) return true;
     return perms[id] === true;
-  // ── Fallback: sessão antiga sem permissoes configuradas ──
-  // Gestor vê tudo
-  if (session.perfil === 'gestor') return true;
-  // Consultor (equipe) e Onsite veem Seleção & Admissão básica
-  const RS_BASICO = ['rs_dashboard','rs_vagas','rs_voucher','rs_indicacoes','adp_beneficios'];
-  if (['equipe','onsite'].includes(session.perfil)) return RS_BASICO.includes(id);
+  }
+  // Consultor (equipe) e Onsite: só permissões explícitas
+  if (perms) return perms[id] === true;
   return false;
 }
 function podeAutorizarVoucher() { return temPermissao('rs_voucher'); }
@@ -4286,44 +4284,147 @@ async function abrirModalUsuario(u) {
     }
   }
 
-  // Renderizar permissões por grupo hierárquico
+  // Renderizar permissões filtradas por perfil
   const container = document.getElementById('sistemas-permissoes');
   const perms = u?.permissoes || {};
-  const isMasterPerfil = u?.perfil === 'master';
+  const perfilAtual = u?.perfil || 'equipe';
   if (container) {
-    let html = '';
-    PERMISSOES_GRUPOS.forEach(function(g) {
-      html += '<div style="margin-bottom:16px">';
-      html += '<div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--border)">' + g.grupo + '</div>';
-      html += '<div class="sistemas-grid">';
-      g.itens.forEach(function(s) {
-        const disabled = s.em_breve || isMasterPerfil;
-        const checked  = isMasterPerfil ? true : (perms[s.id] === true);
-        const opacity  = s.em_breve ? 'opacity:.4' : '';
-        const emBreve  = s.em_breve ? ' <span style="font-size:9px;color:var(--muted);font-weight:400">(em breve)</span>' : '';
-        html += '<div class="sistema-row" style="' + opacity + '">';
-        html += '<div class="sistema-info"><strong>' + s.nome + emBreve + '</strong><span>' + s.descricao + '</span></div>';
-        html += '<label class="toggle-switch">';
-        html += '<input type="checkbox" id="perm-' + s.id + '"' + (checked ? ' checked' : '') + (disabled ? ' disabled' : '') + '>';
-        html += '<span class="slider"></span></label></div>';
-      });
-      html += '</div></div>';
-    });
-    container.innerHTML = html;
+    renderPermissoesPorPerfil(perfilAtual, perms);
 
-    // Atualiza toggles quando perfil muda
+    // Atualiza permissões quando perfil muda
     document.getElementById('u-perfil').onchange = function() {
-      const isMst = this.value === 'master';
-      PERMISSOES_GRUPOS.flatMap(function(g){return g.itens;}).forEach(function(s) {
-        const inp = document.getElementById('perm-'+s.id);
-        if (!inp) return;
-        inp.disabled = isMst || !!s.em_breve;
-        if (isMst) inp.checked = true;
-      });
+      renderPermissoesPorPerfil(this.value, {});
     };
   }
 
   abrirModal('modal-usuario');
+}
+
+function renderPermissoesPorPerfil(perfil, perms) {
+  const container = document.getElementById('sistemas-permissoes');
+  if (!container) return;
+
+  const GRUPOS_RS  = ['Seleção & Admissão'];
+  const GRUPOS_ADP = ['Administração de Pessoal — Voucher Uber','Administração de Pessoal — Benefícios','Administração de Pessoal — Tickets Shopee'];
+  const GRUPOS_SUP = ['Suporte','Cadastros'];
+
+  // Filtra grupos por perfil
+  let gruposFiltrados;
+  if (perfil === 'master') {
+    gruposFiltrados = PERMISSOES_GRUPOS; // master vê tudo mas desabilitado
+  } else if (perfil === 'equipe') {
+    gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_RS.includes(g.grupo));
+  } else if (perfil === 'onsite') {
+    gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_ADP.includes(g.grupo));
+  } else if (perfil === 'gestor') {
+    // Gestor: checkboxes de sistema no topo + permissões dos sistemas selecionados
+    renderPermissoesGestor(perms);
+    return;
+  } else {
+    gruposFiltrados = PERMISSOES_GRUPOS;
+  }
+
+  const isMaster = perfil === 'master';
+  let html = '';
+  if (isMaster) {
+    html += '<div style="background:rgba(99,204,176,.08);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--accent)">🔑 Master tem acesso total a todos os módulos automaticamente.</div>';
+  }
+  gruposFiltrados.forEach(function(g) {
+    html += '<div style="margin-bottom:16px">';
+    html += '<div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--border)">' + g.grupo + '</div>';
+    html += '<div class="sistemas-grid">';
+    g.itens.forEach(function(s) {
+      const disabled = s.em_breve || isMaster;
+      const checked  = isMaster ? true : (perms[s.id] === true);
+      const opacity  = s.em_breve ? 'opacity:.4' : '';
+      const emBreve  = s.em_breve ? ' <span style="font-size:9px;color:var(--muted)">(em breve)</span>' : '';
+      html += '<div class="sistema-row" style="' + opacity + '">';
+      html += '<div class="sistema-info"><strong>' + s.nome + emBreve + '</strong><span>' + s.descricao + '</span></div>';
+      html += '<label class="toggle-switch"><input type="checkbox" id="perm-' + s.id + '"' + (checked?' checked':'') + (disabled?' disabled':'') + '><span class="slider"></span></label>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function renderPermissoesGestor(perms) {
+  const container = document.getElementById('sistemas-permissoes');
+  const GRUPOS_RS  = ['Seleção & Admissão'];
+  const GRUPOS_ADP = ['Administração de Pessoal — Voucher Uber','Administração de Pessoal — Benefícios','Administração de Pessoal — Tickets Shopee'];
+  const GRUPOS_SUP = ['Suporte','Cadastros'];
+
+  // Detectar sistemas já ativos nas perms salvas
+  const temRS  = PERMISSOES_GRUPOS.filter(g=>GRUPOS_RS.includes(g.grupo)).flatMap(g=>g.itens).some(s=>perms[s.id]);
+  const temADP = PERMISSOES_GRUPOS.filter(g=>GRUPOS_ADP.includes(g.grupo)).flatMap(g=>g.itens).some(s=>perms[s.id]);
+
+  let html = '';
+  // Seleção de sistemas
+  html += '<div style="margin-bottom:18px">';
+  html += '<div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Sistemas com acesso</div>';
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+  html += `<label style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:600">
+    <input type="checkbox" id="gestor-acesso-rs" ${temRS?'checked':''} onchange="renderPermissoesGestor(coletarPermsAtuais())"> 🔍 Seleção &amp; Admissão</label>`;
+  html += `<label style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:600">
+    <input type="checkbox" id="gestor-acesso-adp" ${temADP?'checked':''} onchange="renderPermissoesGestor(coletarPermsAtuais())"> 🐝 Adm. de Pessoal</label>`;
+  html += '</div></div>';
+
+  // Permissões RS
+  const rsCheck = document.getElementById('gestor-acesso-rs');
+  const adpCheck = document.getElementById('gestor-acesso-adp');
+  // Precisamos ler do DOM se já existir, senão usar temRS/temADP
+  const mostraRS  = temRS;
+  const mostraADP = temADP;
+
+  const renderGrupos = (grupos, mostrar) => {
+    if (!mostrar) return '';
+    let g_html = '';
+    PERMISSOES_GRUPOS.filter(g=>grupos.includes(g.grupo)).forEach(function(g) {
+      g_html += '<div style="margin-bottom:16px">';
+      g_html += '<div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;margin-bottom:8px;border-bottom:1px solid var(--border)">' + g.grupo + '</div>';
+      g_html += '<div class="sistemas-grid">';
+      g.itens.forEach(function(s) {
+        const disabled = !!s.em_breve;
+        const checked  = perms[s.id] === true;
+        const opacity  = s.em_breve ? 'opacity:.4' : '';
+        const emBreve  = s.em_breve ? ' <span style="font-size:9px;color:var(--muted)">(em breve)</span>' : '';
+        g_html += '<div class="sistema-row" style="' + opacity + '">';
+        g_html += '<div class="sistema-info"><strong>' + s.nome + emBreve + '</strong><span>' + s.descricao + '</span></div>';
+        g_html += '<label class="toggle-switch"><input type="checkbox" id="perm-' + s.id + '"' + (checked?' checked':'') + (disabled?' disabled':'') + '><span class="slider"></span></label>';
+        g_html += '</div>';
+      });
+      g_html += '</div></div>';
+    });
+    return g_html;
+  };
+
+  html += renderGrupos(GRUPOS_RS, mostraRS);
+  html += renderGrupos(GRUPOS_ADP, mostraADP);
+  html += renderGrupos(GRUPOS_SUP, true); // Suporte/Cadastros sempre visível para Gestor
+
+  container.innerHTML = html;
+
+  // Re-bind checkboxes após rerender
+  const rsEl  = document.getElementById('gestor-acesso-rs');
+  const adpEl = document.getElementById('gestor-acesso-adp');
+  if (rsEl)  rsEl.onchange  = () => renderPermissoesGestor(coletarPermsAtuais());
+  if (adpEl) adpEl.onchange = () => renderPermissoesGestor(coletarPermsAtuais());
+}
+
+function coletarPermsAtuais() {
+  const p = {};
+  PERMISSOES_GRUPOS.flatMap(g=>g.itens).forEach(s => {
+    const inp = document.getElementById('perm-'+s.id);
+    if (inp) p[s.id] = inp.checked;
+  });
+  // Preservar estado dos checkboxes de sistema do gestor
+  const rsEl  = document.getElementById('gestor-acesso-rs');
+  const adpEl = document.getElementById('gestor-acesso-adp');
+  if (rsEl && rsEl.checked) {
+    // Marcar todas RS como true se RS foi ativado
+    ['rs_dashboard','rs_vagas','rs_voucher','rs_indicacoes'].forEach(id => { if (!(id in p)) p[id] = false; });
+  }
+  return p;
 }
 
 async function salvarUsuario() {
