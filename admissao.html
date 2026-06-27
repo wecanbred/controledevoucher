@@ -8054,8 +8054,16 @@ async function tktCarregar(pageId) {
     // 1. Garantir operações carregadas ANTES de buscar/filtrar planilha
     if (!session._operacoes?.length && !['master','gestor'].includes(session?.perfil)) {
       try {
+        // Tenta wc_home_resumo primeiro
         const ro = await rpc('wc_home_resumo', {});
-        if (ro.operacoes?.length) session._operacoes = ro.operacoes;
+        if (ro.operacoes?.length) {
+          session._operacoes = ro.operacoes;
+        } else {
+          // Fallback: buscar o próprio usuário pelo id para pegar suas operações
+          const ru = await rpc('wc_listar_usuarios', {});
+          const me = (ru.usuarios || []).find(u => u.id === session.id);
+          if (me?.operacoes?.length) session._operacoes = me.operacoes;
+        }
       } catch(e) {}
     }
 
