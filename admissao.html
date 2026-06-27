@@ -612,15 +612,28 @@
     --accent:#1a8c78; --accent-dim:#157060;
     --success:#16a34a; --danger:#dc2626; --warning:#b45309;
   }
-  /* Sidebar mantém estilo escuro no tema claro — já tem cores fixas no HTML, apenas reforçar */
+  /* ── SIDEBAR: sempre escura independente do tema ── */
   body.tema-claro #sidebar { background:#1e0b35 !important; border-right-color:#4a1d7a !important; }
-  body.tema-claro #sidebar nav a,
-  body.tema-claro #sidebar .nav-label,
-  body.tema-claro #sidebar .nav-section-title { color:#d4b8ff !important; }
-  body.tema-claro #sidebar nav a:hover,
-  body.tema-claro #sidebar nav a.active { background:rgba(255,255,255,.12) !important; color:#ffffff !important; }
+  body.tema-claro #sidebar nav a { color:#a394bf !important; }
+  body.tema-claro #sidebar nav a:hover { color:#efe9f7 !important; background:rgba(255,255,255,.08) !important; }
+  body.tema-claro #sidebar nav a.active { color:#63ccb0 !important; border-left-color:#63ccb0 !important; background:rgba(99,204,176,.08) !important; }
+  body.tema-claro #sidebar .nav-suporte-item { color:#a394bf !important; }
+  body.tema-claro #sidebar .nav-suporte-item:hover { color:#efe9f7 !important; background:rgba(255,255,255,.08) !important; }
+  body.tema-claro #sidebar .nav-suporte-item.active { color:#63ccb0 !important; border-left-color:#63ccb0 !important; }
+  body.tema-claro #sidebar .sb-section-label,
+  body.tema-claro #sidebar .sidebar-logo h2,
+  body.tema-claro #sidebar .sidebar-logo span,
+  body.tema-claro #sidebar .sidebar-logo { color:#a394bf !important; }
+  body.tema-claro #sidebar #sb-toggle-btn { color:#a394bf !important; }
+  body.tema-claro #sidebar #sb-toggle-btn:hover { color:#efe9f7 !important; }
+  body.tema-claro #sidebar .count-badge { background:rgba(255,255,255,.1) !important; color:#a394bf !important; }
+  body.tema-claro #sidebar .count-badge.alert { background:rgba(245,158,11,.18) !important; color:#f59e0b !important; }
   body.tema-claro #sidebar .nav-user-name { color:#ede8ff !important; }
   body.tema-claro #sidebar .nav-user-role { color:#b8a0d8 !important; }
+  body.tema-claro #sidebar .btn-logout { color:#a394bf !important; border-color:rgba(255,255,255,.15) !important; }
+  body.tema-claro #sidebar .btn-logout:hover { color:#efe9f7 !important; border-color:rgba(255,255,255,.3) !important; }
+  body.tema-claro #sidebar .sidebar-footer { border-top-color:#4a1d7a !important; }
+  body.tema-claro #sidebar .sb-has-sub .sb-arr { color:#a394bf !important; }
   /* Botão primário com texto legível */
   body.tema-claro .btn-primary { background:var(--accent); color:#ffffff !important; }
   body.tema-claro .btn-ghost { background:var(--surface2); color:var(--text); border-color:var(--border); }
@@ -643,8 +656,12 @@
   /* Pills */
   body.tema-claro .vchr-pill-muted { background:#d5dce8; color:#4a5568; }
   /* Gaveta */
-  body.tema-claro .gaveta { background:#1e0b35 !important; border-color:#4a1d7a !important; }
-  body.tema-claro .gaveta a { color:#d4b8ff !important; }
+  body.tema-claro #gaveta { background:#1e0b35 !important; border-color:#4a1d7a !important; }
+  body.tema-claro #gaveta a { color:#a394bf !important; }
+  body.tema-claro #gaveta a:hover { color:#efe9f7 !important; background:rgba(255,255,255,.08) !important; }
+  body.tema-claro #gaveta-header { border-bottom-color:#4a1d7a !important; }
+  body.tema-claro #gaveta-header span,
+  body.tema-claro #gaveta-header button { color:#a394bf !important; }
   body.tema-claro #sidebar nav a:hover { background: rgba(255,255,255,.12); }
   /* Tabela linhas */
   body.tema-claro table.main-table tbody tr { border-bottom:1px solid #c4cad6; }
