@@ -3487,6 +3487,10 @@ async function atualizarDados() {
 // ── SESSÃO ────────────────────────────────────
 async function iniciarSessao(conta) {
   session = conta;
+  // Mapear operacoes (vem do wc_login após fix) para _operacoes usado pelos módulos
+  if (session.operacoes?.length && !session._operacoes?.length) {
+    session._operacoes = session.operacoes;
+  }
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('user-nome').textContent  = session.nome;
   document.getElementById('user-perfil').textContent = PERFIL_LABEL[session.perfil];
@@ -8051,20 +8055,24 @@ async function tktCarregar(pageId) {
   area.innerHTML = '<div class="tkt-loading">🔄 Buscando tickets…</div>';
 
   try {
-    // 1. Garantir operações carregadas ANTES de buscar/filtrar planilha
+    // 1. Garantir operações carregadas ANTES de filtrar
     if (!session._operacoes?.length && !['master','gestor'].includes(session?.perfil)) {
-      try {
-        // Tenta wc_home_resumo primeiro
-        const ro = await rpc('wc_home_resumo', {});
-        if (ro.operacoes?.length) {
-          session._operacoes = ro.operacoes;
-        } else {
-          // Fallback: buscar o próprio usuário pelo id para pegar suas operações
-          const ru = await rpc('wc_listar_usuarios', {});
-          const me = (ru.usuarios || []).find(u => u.id === session.id);
-          if (me?.operacoes?.length) session._operacoes = me.operacoes;
+      // Após o fix do wc_login, session.operacoes já vem no login
+      if (session.operacoes?.length) {
+        session._operacoes = session.operacoes;
+      } else {
+        // Fallback: buscar via RPC dedicada
+        try {
+          const ro = await rpc('wc_minhas_operacoes', {});
+          if (ro.operacoes?.length) session._operacoes = ro.operacoes;
+        } catch(e) {
+          // Último fallback: wc_home_resumo
+          try {
+            const rh = await rpc('wc_home_resumo', {});
+            if (rh.operacoes?.length) session._operacoes = rh.operacoes;
+          } catch(_) {}
         }
-      } catch(e) {}
+      }
     }
 
     // 2. Buscar planilha (força recarregar para aplicar filtro correto)
