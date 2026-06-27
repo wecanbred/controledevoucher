@@ -783,7 +783,7 @@
       <a onclick="abrirGaveta('vagas', event)" title="Vagas / Admissões" class="sb-has-sub" id="sb-btn-vagas" style="display:none"><span class="sb-ico">📂</span><span class="sb-txt">Vagas / Admissões</span><span class="sb-arr sb-txt">›</span></a>
       <a id="nav-voucher" onclick="navTo('voucher')" data-page="voucher" title="Fila de Voucher"><span class="sb-ico">⇄</span><span class="sb-txt">Fila de Voucher</span><span class="count-badge alert" id="nav-voucher-count">0</span></a>
       <a id="nav-indicacoes" onclick="navTo('indicacoes')" data-page="indicacoes" title="Indicações"><span class="sb-ico">📋</span><span class="sb-txt">Indicações</span><span class="count-badge alert" id="nav-ind-count" style="display:none">0</span></a>
-      <a id="nav-noshow" title="No Show (em breve)" style="opacity:.4;cursor:default;display:none"><span class="sb-ico">🚫</span><span class="sb-txt">No Show <small>(em breve)</small></span></a>
+      <a id="nav-noshow" onclick="navTo('noshow')" data-page="noshow" title="No Show" style="display:none"><span class="sb-ico">🚫</span><span class="sb-txt">No Show</span></a>
       <a id="nav-epi" title="Estoque de EPI (em breve)" style="opacity:.4;cursor:default;display:none"><span class="sb-ico">🦺</span><span class="sb-txt">Estoque de EPI <small>(em breve)</small></span></a>
     </div>
 
@@ -991,6 +991,109 @@
       </table>
     </div>
     <p class="text-muted mt-16" id="vagas-count"></p>
+  </div>
+
+  <!-- ══ NO SHOW ══ -->
+  <div class="page" id="page-noshow">
+    <div class="page-header">
+      <div>
+        <h1>No Show / Early Turnover</h1>
+        <p>Colaboradores registrados pelos Onsites — acompanhe e tome ação</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="nsCarregar()">🔄 Atualizar</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="toolbar" style="margin-bottom:16px">
+      <input type="text" id="ns-busca" placeholder="🔍 Buscar por nome, matrícula, CC…" oninput="nsRenderTabela()" style="flex:1;min-width:200px"/>
+      <select id="ns-filtro-tipo" onchange="nsRenderTabela()">
+        <option value="">Todos os tipos</option>
+        <option value="NO SHOW">⊘ No Show</option>
+        <option value="EARLY TURNOVER">↩ Early Turnover</option>
+      </select>
+      <select id="ns-filtro-status" onchange="nsRenderTabela()">
+        <option value="">Todos os status</option>
+        <option value="pendente">🔴 Pendentes</option>
+        <option value="resolvido">✅ Resolvidos</option>
+      </select>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px" id="ns-kpis"></div>
+
+    <!-- Tabela -->
+    <div class="table-wrap">
+      <table class="main-table" id="ns-tabela">
+        <thead>
+          <tr>
+            <th>Lançamento</th>
+            <th>Tipo</th>
+            <th>Colaborador</th>
+            <th>Matrícula</th>
+            <th>Centro de Custo</th>
+            <th>Data Integração</th>
+            <th>Data Deslig.</th>
+            <th>Participou?</th>
+            <th>Onsite</th>
+            <th>Consultor</th>
+            <th>Motivo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="ns-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal de acompanhamento do Consultor -->
+  <div class="modal-backdrop" id="modal-ns-consultor" onclick="if(event.target===this)fecharModal('modal-ns-consultor')">
+    <div class="modal" style="width:520px">
+      <div class="modal-head">
+        <h2 style="font-size:15px">Acompanhamento — <span id="ns-cons-nome"></span></h2>
+        <p style="font-size:12px;color:var(--muted);margin-top:3px" id="ns-cons-sub"></p>
+      </div>
+      <div class="modal-body" style="display:grid;gap:14px">
+        <input type="hidden" id="ns-cons-id"/>
+        <!-- Código da vaga -->
+        <div class="form-group">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Código da Vaga de Reposição</label>
+          <input type="text" id="ns-cons-vaga" placeholder="Ex: VWF-172461"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px"/>
+        </div>
+        <!-- Processo -->
+        <div class="form-group">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Processo</label>
+          <select id="ns-cons-processo" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px">
+            <option value="">Selecione…</option>
+            <option value="PRESENCIAL">Presencial</option>
+            <option value="ONLINE">Online</option>
+          </select>
+        </div>
+        <!-- Obs Consultor -->
+        <div class="form-group">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Obs. Consultor (data de reposição e substituto)</label>
+          <textarea id="ns-cons-obs" rows="3" placeholder="Ex: Reposição prevista para 05/07 — João Silva"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box;margin-top:6px"></textarea>
+        </div>
+        <!-- Status -->
+        <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">Marcar como Resolvido</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Substituto confirmado e processo encerrado</div>
+          </div>
+          <label style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer">
+            <input type="checkbox" id="ns-cons-resolvido" style="opacity:0;width:0;height:0;position:absolute" onchange="this.parentElement.querySelector('span').style.background=this.checked?'var(--success)':'var(--surface3)';this.parentElement.querySelector('em').style.left=this.checked?'22px':'3px'"/>
+            <span style="position:absolute;inset:0;background:var(--surface3);border-radius:24px;transition:.2s">
+              <em style="position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;display:block"></em>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-ns-consultor')">Cancelar</button>
+        <button class="btn btn-primary" onclick="nsSalvarConsultor()">💾 Salvar</button>
+      </div>
+    </div>
   </div>
 
   <!-- ══ FILA DE VOUCHER ══ -->
@@ -1566,6 +1669,15 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="ns-modal-id"/>
+        <!-- Tipo de ABS -->
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Tipo de Ocorrência</label>
+          <select id="ns-tipo-abs" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px">
+            <option value="">Selecione…</option>
+            <option value="NO SHOW">⊘ No Show (1º ao 3º dia)</option>
+            <option value="EARLY TURNOVER">↩ Early Turnover (4º ao 7º dia)</option>
+          </select>
+        </div>
         <!-- Participou da Integração -->
         <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
           <div style="flex:1">
@@ -2917,6 +3029,7 @@ function navTo(id) {
   const link = document.querySelector(`[data-page="${id}"]`);
   if (link) link.classList.add('active');
   if (id==='home')             renderHome();
+  if (id==='noshow')           nsCarregar();
   if (id==='dashboard')        renderDashboard();
   if (id==='vagas')            renderVagas();
   if (id==='voucher') {
@@ -5332,6 +5445,149 @@ async function executarImportacao(prefix) {
 
 // ── SIDEBAR MOBILE ────────────────────────────
 // ── SIDEBAR RECOLHÍVEL ───────────────────────
+// ══════════════════════════════════════════════
+//  NO SHOW — R&S
+// ══════════════════════════════════════════════
+let NS_DADOS = [];
+
+async function nsCarregar() {
+  try {
+    const r = await rpc('wc_noshow_listar', {});
+    NS_DADOS = r.itens || [];
+    nsRenderKpis();
+    nsRenderTabela();
+  } catch(e) {
+    showToast('Erro ao carregar No Show: ' + e.message, 'error');
+  }
+}
+
+function nsRenderKpis() {
+  const total     = NS_DADOS.length;
+  const noshow    = NS_DADOS.filter(r => r.ns_tipo_abs === 'NO SHOW').length;
+  const eto       = NS_DADOS.filter(r => r.ns_tipo_abs === 'EARLY TURNOVER').length;
+  const pendentes = NS_DADOS.filter(r => !r.ns_resolvido).length;
+  const resolvidos= NS_DADOS.filter(r =>  r.ns_resolvido).length;
+
+  document.getElementById('ns-kpis').innerHTML = `
+    <div class="card" style="text-align:center">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Total</div>
+      <div style="font-size:28px;font-weight:900;margin-top:4px">${total}</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">No Show</div>
+      <div style="font-size:28px;font-weight:900;color:var(--danger);margin-top:4px">${noshow}</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Early Turnover</div>
+      <div style="font-size:28px;font-weight:900;color:var(--warning);margin-top:4px">${eto}</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Pendentes</div>
+      <div style="font-size:28px;font-weight:900;color:var(--danger);margin-top:4px">${pendentes}</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Resolvidos</div>
+      <div style="font-size:28px;font-weight:900;color:var(--success);margin-top:4px">${resolvidos}</div>
+    </div>`;
+}
+
+function nsRenderTabela() {
+  const busca  = (document.getElementById('ns-busca')?.value || '').toLowerCase();
+  const tipo   = document.getElementById('ns-filtro-tipo')?.value || '';
+  const status = document.getElementById('ns-filtro-status')?.value || '';
+
+  let dados = NS_DADOS.filter(r => {
+    const txt = `${r.nome||''} ${r.matricula||''} ${r.depto_nome||''} ${r.cc_nome||''}`.toLowerCase();
+    if (busca && !txt.includes(busca)) return false;
+    if (tipo && r.ns_tipo_abs !== tipo) return false;
+    if (status === 'pendente'  && r.ns_resolvido) return false;
+    if (status === 'resolvido' && !r.ns_resolvido) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('ns-tbody');
+  if (!tbody) return;
+
+  if (!dados.length) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--muted)">Nenhum registro encontrado</td></tr>`;
+    return;
+  }
+
+  const fmt = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+  const fmtDt = d => d ? new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+
+  tbody.innerHTML = dados.map(r => {
+    const tipoPill = r.ns_tipo_abs === 'NO SHOW'
+      ? `<span style="background:rgba(239,68,68,.15);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">⊘ NO SHOW</span>`
+      : `<span style="background:rgba(245,158,11,.15);color:var(--warning);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">↩ EARLY TURNOVER</span>`;
+    const statusPill = r.ns_resolvido
+      ? `<span style="background:rgba(99,204,176,.15);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">✅ Resolvido</span>`
+      : `<span style="background:rgba(239,68,68,.1);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🔴 Pendente</span>`;
+    const participou = r.ns_participou_integracao
+      ? `<span style="color:var(--success)">✅ Sim</span>`
+      : `<span style="color:var(--danger)">❌ Não</span>`;
+
+    return `<tr>
+      <td style="white-space:nowrap">${fmtDt(r.ns_lancamento)}</td>
+      <td>${tipoPill}</td>
+      <td><strong>${r.nome||'—'}</strong></td>
+      <td>${r.matricula||'—'}</td>
+      <td style="font-size:11px">${r.depto_nome||'—'}</td>
+      <td>${fmt(r.data_admissao)}</td>
+      <td>${fmt(r.ns_data_desligamento)}</td>
+      <td>${participou}</td>
+      <td style="font-size:11px">${r.onsite_nome||'—'}</td>
+      <td style="font-size:11px">${r.consultor_nome||'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="max-width:180px;white-space:normal;font-size:11px">${r.ns_motivo||'—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${statusPill}
+          <button class="btn btn-ghost btn-sm" onclick="nsAbrirConsultor(${JSON.stringify(r).replace(/"/g,'&quot;')})">✏️ Acompanhar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function nsAbrirConsultor(r) {
+  document.getElementById('ns-cons-id').value        = r.id;
+  document.getElementById('ns-cons-nome').textContent = r.nome || '—';
+  document.getElementById('ns-cons-sub').textContent  = `${r.ns_tipo_abs||''} · ${r.depto_nome||''} · Matrícula ${r.matricula||'—'}`;
+  document.getElementById('ns-cons-vaga').value       = r.ns_vaga_codigo || '';
+  document.getElementById('ns-cons-processo').value   = r.ns_processo || '';
+  document.getElementById('ns-cons-obs').value        = r.ns_obs_consultor || '';
+  const resolvidoEl = document.getElementById('ns-cons-resolvido');
+  resolvidoEl.checked = !!r.ns_resolvido;
+  const slider = resolvidoEl.parentElement.querySelector('span');
+  const knob   = resolvidoEl.parentElement.querySelector('em');
+  if (slider) slider.style.background = resolvidoEl.checked ? 'var(--success)' : 'var(--surface3)';
+  if (knob)   knob.style.left         = resolvidoEl.checked ? '22px' : '3px';
+  abrirModal('modal-ns-consultor');
+}
+
+async function nsSalvarConsultor() {
+  const id        = document.getElementById('ns-cons-id').value;
+  const vaga      = document.getElementById('ns-cons-vaga').value.trim();
+  const processo  = document.getElementById('ns-cons-processo').value;
+  const obs       = document.getElementById('ns-cons-obs').value.trim();
+  const resolvido = document.getElementById('ns-cons-resolvido').checked;
+
+  try {
+    await rpc('wc_noshow_salvar_consultor', {
+      p_colab_id:   id,
+      p_vaga_codigo: vaga || null,
+      p_processo:    processo || null,
+      p_obs:         obs || null,
+      p_resolvido:   resolvido
+    });
+    fecharModal('modal-ns-consultor');
+    await nsCarregar();
+    showToast('Acompanhamento salvo!', 'success');
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   const collapsed = sb.classList.toggle('sb-col');
@@ -6676,6 +6932,7 @@ function integAbrirNoShow(colabId) {
   chk.checked = false;
   chk.parentElement.querySelector('span').style.background = 'var(--surface3)';
   chk.parentElement.querySelector('em').style.left = '3px';
+  document.getElementById('ns-tipo-abs').value   = '';
   document.getElementById('ns-data-deslig').value = '';
   document.getElementById('ns-motivo').value = '';
 
@@ -6683,11 +6940,13 @@ function integAbrirNoShow(colabId) {
 }
 
 async function integConfirmarNoShow() {
-  const colabId   = document.getElementById('ns-modal-id').value;
+  const colabId    = document.getElementById('ns-modal-id').value;
+  const tipoAbs    = document.getElementById('ns-tipo-abs').value;
   const participou = document.getElementById('ns-participou').checked;
   const dataDeslig = document.getElementById('ns-data-deslig').value || null;
   const motivo     = document.getElementById('ns-motivo').value.trim();
 
+  if (!tipoAbs)    { showToast('Selecione o tipo de ocorrência.', 'error'); return; }
   if (!dataDeslig) { showToast('Informe a data do desligamento ou ausência.', 'error'); return; }
 
   try {
@@ -6695,7 +6954,8 @@ async function integConfirmarNoShow() {
       p_colab_id:              colabId,
       p_participou_integracao: participou,
       p_data_desligamento:     dataDeslig,
-      p_motivo:                motivo || null
+      p_motivo:                motivo || null,
+      p_tipo_abs:              tipoAbs
     });
 
     const col = INTEG_TODOS_COLABS.find(c => c.id === colabId);
