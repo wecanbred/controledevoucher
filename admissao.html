@@ -8189,7 +8189,7 @@ function tktRenderTabela(areaId, lista) {
         : `<span class="tkt-pill tkt-pill-default">—</span>`;
 
     const cellMap = {
-      key:    `<td><code style="font-size:11px;font-weight:700;color:var(--accent)">${key}</code></td>`,
+      key:    `<td><a href="https://spxresolve.atlassian.net/browse/${key}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;font-weight:700;color:var(--accent);text-decoration:none;font-family:monospace" title="Abrir no Jira">${key} ↗</a></td>`,
       tipo:   `<td style="font-size:12px">${r['Tipo']||'—'}</td>`,
       status: `<td>${statusJiraPill}</td>`,
       criado: `<td style="font-size:12px;color:var(--muted)">${fmtData(r['Criado'])}</td>`,
@@ -8250,7 +8250,7 @@ function tktAbrirModal(r) {
   const nota = TKT_NOTAS[key] || {};
   _tktStatusAtual = nota.status || '';
 
-  document.getElementById('tkt-modal-key').textContent  = `🎫 ${key}`;
+  document.getElementById('tkt-modal-key').innerHTML = `🎫 <a href="https://spxresolve.atlassian.net/browse/${key}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-weight:800" title="Abrir no Jira">${key} ↗</a>`;
   document.getElementById('tkt-modal-tipo').textContent = `${r['Tipo']||'—'} · ${tktHubCode(r['HUB']||'')}`;
   document.getElementById('tkt-modal-obs').value = nota.obs || '';
 
