@@ -219,8 +219,8 @@
   #sidebar.sb-col nav a { padding:8px 0; justify-content:center; gap:0; }
   #sidebar.sb-col .nav-suporte-item { padding:8px 0; justify-content:center; gap:0; }
   #sidebar.sb-col .sb-ico { width:100%; text-align:center; font-size:15px; }
-  #main { margin-left: var(--sb-w); flex: 1; padding: 28px 36px; min-height: 100vh; transition: margin-left .22s cubic-bezier(.4,0,.2,1); }
-  body.sb-collapsed #main { margin-left: var(--sb-col); }
+  #main { margin-left: var(--sb-w); flex: 1; padding: 28px 36px; min-height: 100vh; transition: margin-left .22s cubic-bezier(.4,0,.2,1); min-width: 0; box-sizing: border-box; width: calc(100vw - var(--sb-w)); }
+  body.sb-collapsed #main { margin-left: var(--sb-col); width: calc(100vw - var(--sb-col)); }
 
   /* ── HOME header ── */
   .home-header { margin-bottom:28px; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; }
