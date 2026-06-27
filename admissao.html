@@ -2641,10 +2641,10 @@ function temPermissao(id) {
     if (!perms || !Object.keys(perms).some(k => perms[k] === true)) return true;
     return perms[id] === true;
   }
-  // Onsite: nunca vê permissões RS
-  if (session.perfil === 'onsite' && id.startsWith('rs_')) return false;
-  // Consultor (equipe): nunca vê permissões ADP
-  if (session.perfil === 'equipe' && id.startsWith('adp_')) return false;
+  // Onsite: nunca vê permissões RS nem gestão de usuários
+  if (session.perfil === 'onsite' && (id.startsWith('rs_') || id === 'sup_gestao_usuarios')) return false;
+  // Consultor (equipe): nunca vê permissões ADP nem gestão de usuários
+  if (session.perfil === 'equipe' && (id.startsWith('adp_') || id === 'sup_gestao_usuarios')) return false;
   if (perms) return perms[id] === true;
   return false;
 }
@@ -2947,13 +2947,13 @@ const GAVETA_MENUS = {
   'voucher-uber': {
     titulo: 'Voucher Uber',
     items: [
-      { id:'nav-adp-dashboard', label:'📊 Dashboard',          page:'vchr-dashboard', perm:'adp_vchr_dashboard' },
+      { id:'nav-adp-dashboard', label:'📊 Dashboard',          page:'vchr-dashboard', perm:'adp_voucher_dashboard' },
       { id:'nav-adp-fila',      label:'⇄ Fila Voucher',        page:null, section:true },
       { label:'🔑 Pré Aprovados', disabled:true, soon:true },
-      { id:'nav-adp-controle',  label:'☰ Controle do Voucher', page:'vchr-controle',  perm:'adp_vchr_controle' },
-      { id:'nav-adp-inativar',  label:'⊘ Inativar',            page:'vchr-inativar',  perm:'adp_vchr_inativar' },
-      { id:'nav-adp-exportar',  label:'↓ Exportar Planilha',   page:'vchr-exportar',  perm:'adp_vchr_exportar' },
-      { id:'nav-adp-historico', label:'🕐 Histórico',          page:'vchr-historico', perm:'adp_vchr_historico' },
+      { id:'nav-adp-controle',  label:'☰ Controle do Voucher', page:'vchr-controle',  perm:'adp_voucher_controle' },
+      { id:'nav-adp-inativar',  label:'⊘ Inativar',            page:'vchr-inativar',  perm:'adp_voucher_inativar' },
+      { id:'nav-adp-exportar',  label:'↓ Exportar Planilha',   page:'vchr-exportar',  perm:'adp_voucher_exportar' },
+      { id:'nav-adp-historico', label:'🕐 Histórico',          page:'vchr-historico', perm:'adp_voucher_historico' },
     ]
   },
   'beneficios': {
@@ -4312,11 +4312,11 @@ function renderPermissoesPorPerfil(perfil, perms) {
   // Filtra grupos por perfil
   let gruposFiltrados;
   if (perfil === 'master') {
-    gruposFiltrados = PERMISSOES_GRUPOS; // master vê tudo mas desabilitado
+    gruposFiltrados = PERMISSOES_GRUPOS;
   } else if (perfil === 'equipe') {
-    gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_RS.includes(g.grupo));
+    gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_RS.includes(g.grupo) || GRUPOS_SUP.includes(g.grupo));
   } else if (perfil === 'onsite') {
-    gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_ADP.includes(g.grupo));
+    gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_ADP.includes(g.grupo) || GRUPOS_SUP.includes(g.grupo));
   } else if (perfil === 'gestor') {
     // Gestor: checkboxes de sistema no topo + permissões dos sistemas selecionados
     renderPermissoesGestor(perms);
