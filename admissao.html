@@ -1728,47 +1728,86 @@
 
 <!-- MODAL COLABORADOR INTEGRAÇÃO -->
 <div class="modal-backdrop" id="integ-modal-colab" onclick="if(event.target===this)fecharModal('integ-modal-colab')">
-  <div class="modal" style="width:560px">
+  <div class="modal" style="width:580px">
     <div class="modal-head">
       <h2 id="integ-mc-nome" style="font-size:16px"></h2>
       <p id="integ-mc-sub" style="font-size:12px;color:var(--muted);margin-top:3px"></p>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="display:grid;gap:16px">
       <input type="hidden" id="integ-mc-id"/>
-      <!-- Observação — visível para todos -->
-      <div class="form-group" style="margin-bottom:14px">
-        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Observação</label>
-        <textarea id="integ-mc-obs" rows="3" placeholder="Ex: VT precisa ser ajustado para R$ 35,00 | Benefício incorreto…"
-          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box"></textarea>
-      </div>
-      <!-- Benefícios — só Gestor/Master edita -->
-      <div id="integ-mc-ben-wrap">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Benefícios registrados</div>
+
+      <!-- Benefícios atuais -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Benefícios Registrados</div>
         <div class="form-row">
-          <div class="form-group">
-            <label>Mobilidade / Outros</label>
-            <input type="text" id="integ-mc-mob" placeholder="ex: 7006-AUXILIO MOBILIDADE"/>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Transporte</label>
+            <select id="integ-mc-vt" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none">
+              <option value="">— nenhum —</option>
+              <option value="VT">VT — Vale Transporte</option>
+              <option value="VC">VC — Vale Combustível</option>
+              <option value="VT+VOUCHER">VT + Voucher</option>
+              <option value="FRETADO">Fretado</option>
+            </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom:0">
             <label>Vale Refeição</label>
-            <input type="text" id="integ-mc-vr" placeholder="ex: 7903-VR SHOPEE"/>
+            <select id="integ-mc-vr" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none">
+              <option value="">— nenhum —</option>
+              <option value="VR">VR — Vale Refeição</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Mobilidade / Outros</label>
+            <select id="integ-mc-mob" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none">
+              <option value="">— nenhum —</option>
+              <option value="MOB">MOB — Auxílio Mobilidade</option>
+              <option value="VA">VA — Vale Alimentação</option>
+              <option value="CB">CB — Cesta Básica</option>
+            </select>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Vale Transporte</label>
-            <input type="text" id="integ-mc-vt" placeholder="ex: 2332-VALE TRANSPORTE"/>
+      </div>
+
+      <!-- Tipo de ajuste -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Solicitação de Ajuste</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Tipo de Ajuste</label>
+            <select id="integ-mc-ajuste-tipo" onchange="integMcAjusteTipo()" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none">
+              <option value="">— nenhum ajuste —</option>
+              <option value="ajuste_vt">Ajuste de valor do VT</option>
+              <option value="troca_beneficio">Troca de benefício</option>
+              <option value="inclusao">Inclusão de benefício</option>
+              <option value="exclusao">Exclusão de benefício</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label>Cargo</label>
-            <input type="text" id="integ-mc-cargo"/>
+          <div class="form-group" style="margin-bottom:0" id="integ-mc-ajuste-valor-wrap">
+            <label id="integ-mc-ajuste-label">Valor / Detalhe</label>
+            <input type="text" id="integ-mc-ajuste-valor" placeholder="Ex: R$ 35,00"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
           </div>
         </div>
+      </div>
+
+      <!-- Cargo -->
+      <div class="form-group" style="margin-bottom:0">
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Cargo</label>
+        <input type="text" id="integ-mc-cargo"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+      </div>
+
+      <!-- Observação livre -->
+      <div class="form-group" style="margin-bottom:0">
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Observação</label>
+        <textarea id="integ-mc-obs" rows="2" placeholder="Observações adicionais…"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box"></textarea>
       </div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModal('integ-modal-colab')">Fechar</button>
-      <button class="btn btn-primary" id="integ-mc-btn-salvar" onclick="integSalvarColab()">Salvar</button>
+      <button class="btn btn-primary" id="integ-mc-btn-salvar" onclick="integSalvarColab()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -6744,27 +6783,58 @@ async function integToggle(colabId, novaPresenca) {
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-// Abrir modal do colaborador (obs para todos; benefícios só gestor/master)
+// Abrir modal do colaborador — Onsite edita tudo
 function integAbrirColab(colabId) {
   const col = INTEG_TODOS_COLABS.find(c => c.id === colabId);
   if (!col) return;
-  document.getElementById('integ-mc-id').value   = colabId;
+  document.getElementById('integ-mc-id').value         = colabId;
   document.getElementById('integ-mc-nome').textContent = col.nome;
   document.getElementById('integ-mc-sub').textContent  =
     (col.cargo || '') + (col._depto_nome ? ' · ' + col._depto_nome : '') + (col.codigo ? ' · ' + col.codigo : '');
-  document.getElementById('integ-mc-obs').value   = col.obs || '';
-  document.getElementById('integ-mc-mob').value   = col.beneficio_mob || '';
-  document.getElementById('integ-mc-vr').value    = col.beneficio_vr  || '';
-  document.getElementById('integ-mc-vt').value    = col.beneficio_vt  || '';
-  document.getElementById('integ-mc-cargo').value = col.cargo || '';
+  document.getElementById('integ-mc-obs').value        = col.obs || '';
+  document.getElementById('integ-mc-cargo').value      = col.cargo || '';
+  document.getElementById('integ-mc-ajuste-tipo').value  = '';
+  document.getElementById('integ-mc-ajuste-valor').value = '';
+  document.getElementById('integ-mc-ajuste-valor-wrap').style.opacity = '.4';
 
-  // Benefícios: só gestor/master pode editar
-  const benWrap = document.getElementById('integ-mc-ben-wrap');
-  const isAdmin = podeAdmin();
-  benWrap.querySelectorAll('input').forEach(inp => { inp.disabled = !isAdmin; inp.style.opacity = isAdmin ? '1' : '.55'; });
-  document.getElementById('integ-mc-btn-salvar').style.display = 'inline-flex';
+  // Popular selects de benefício com valor atual
+  const vtEl  = document.getElementById('integ-mc-vt');
+  const vrEl  = document.getElementById('integ-mc-vr');
+  const mobEl = document.getElementById('integ-mc-mob');
+
+  // Detectar valor atual e selecionar opção correspondente
+  const vtVal  = (col.beneficio_vt  || '').toUpperCase();
+  const vrVal  = (col.beneficio_vr  || '').toUpperCase();
+  const mobVal = (col.beneficio_mob || '').toUpperCase();
+
+  vtEl.value  = ['VT','VC','VT+VOUCHER','FRETADO'].find(v => vtVal.includes(v))  || '';
+  vrEl.value  = vrVal.includes('VR') ? 'VR' : '';
+  mobEl.value = ['MOB','VA','CB'].find(v => mobVal.includes(v)) || '';
 
   abrirModal('integ-modal-colab');
+}
+
+function integMcAjusteTipo() {
+  const tipo  = document.getElementById('integ-mc-ajuste-tipo').value;
+  const wrap  = document.getElementById('integ-mc-ajuste-valor-wrap');
+  const label = document.getElementById('integ-mc-ajuste-label');
+  const input = document.getElementById('integ-mc-ajuste-valor');
+
+  if (!tipo) {
+    wrap.style.opacity = '.4';
+    input.value = '';
+    return;
+  }
+  wrap.style.opacity = '1';
+  input.focus();
+
+  const labels = {
+    ajuste_vt:       'Novo valor do VT (ex: R$ 35,00)',
+    troca_beneficio: 'De → Para (ex: VT → VC)',
+    inclusao:        'Benefício a incluir',
+    exclusao:        'Benefício a excluir',
+  };
+  label.textContent = labels[tipo] || 'Valor / Detalhe';
 }
 
 async function integSalvarColab() {
@@ -6772,23 +6842,32 @@ async function integSalvarColab() {
   const col     = INTEG_TODOS_COLABS.find(c => c.id === colabId);
   if (!col) return;
 
-  const obs   = document.getElementById('integ-mc-obs').value.trim();
-  const mob   = document.getElementById('integ-mc-mob').value.trim();
-  const vr    = document.getElementById('integ-mc-vr').value.trim();
-  const vt    = document.getElementById('integ-mc-vt').value.trim();
-  const cargo = document.getElementById('integ-mc-cargo').value.trim();
+  const obs        = document.getElementById('integ-mc-obs').value.trim();
+  const mob        = document.getElementById('integ-mc-mob').value;
+  const vr         = document.getElementById('integ-mc-vr').value;
+  const vt         = document.getElementById('integ-mc-vt').value;
+  const cargo      = document.getElementById('integ-mc-cargo').value.trim();
+  const ajusteTipo = document.getElementById('integ-mc-ajuste-tipo').value;
+  const ajusteVal  = document.getElementById('integ-mc-ajuste-valor').value.trim();
+
+  // Montar observação completa incluindo ajuste se houver
+  const tiposLabel = { ajuste_vt:'Ajuste VT', troca_beneficio:'Troca de benefício', inclusao:'Inclusão', exclusao:'Exclusão' };
+  let obsCompleta = obs;
+  if (ajusteTipo && ajusteVal) {
+    const prefixo = `[${tiposLabel[ajusteTipo]||ajusteTipo}: ${ajusteVal}]`;
+    obsCompleta = obsCompleta ? `${prefixo} ${obsCompleta}` : prefixo;
+  } else if (ajusteTipo && !ajusteVal) {
+    const prefixo = `[${tiposLabel[ajusteTipo]||ajusteTipo}]`;
+    obsCompleta = obsCompleta ? `${prefixo} ${obsCompleta}` : prefixo;
+  }
 
   try {
-    // Salvar obs (e presença atual) via RPC existente
-    await rpc('wc_integ_confirmar_presenca', { p_colab_id: colabId, p_presenca: col.presenca || '', p_obs: obs });
-    // Atualizar local
-    col.obs = obs;
-    if (podeAdmin()) {
-      col.beneficio_mob = mob;
-      col.beneficio_vr  = vr;
-      col.beneficio_vt  = vt;
-      col.cargo         = cargo;
-    }
+    await rpc('wc_integ_confirmar_presenca', { p_colab_id: colabId, p_presenca: col.presenca || '', p_obs: obsCompleta });
+    col.obs          = obsCompleta;
+    col.beneficio_mob = mob;
+    col.beneficio_vr  = vr;
+    col.beneficio_vt  = vt;
+    col.cargo         = cargo;
     fecharModal('integ-modal-colab');
     integRenderTabela();
     showToast('Salvo!', 'success');
