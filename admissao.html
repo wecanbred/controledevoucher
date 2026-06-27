@@ -1762,7 +1762,7 @@
             <input type="text" id="integ-mc-ajuste-valor" placeholder="Ex: R$ 35,00"
               style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;display:none"/>
             <!-- Select transporte (troca/inclusão/exclusão) -->
-            <select id="integ-mc-ajuste-select" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;display:none">
+            <select id="integ-mc-ajuste-select" onchange="integMcAjusteSelectChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;display:none">
               <option value="">Selecione…</option>
               <option value="VT">VT — Vale Transporte</option>
               <option value="VC">VC — Vale Combustível</option>
@@ -1772,6 +1772,14 @@
               <option value="VA">VA — Vale Alimentação</option>
               <option value="CB">CB — Cesta Básica</option>
             </select>
+          </div>
+        </div>
+        <!-- Campo de valor do VT (aparece quando VT é selecionado) -->
+        <div id="integ-mc-vt-valor-wrap" style="margin-top:10px;display:none">
+          <div class="form-group" style="margin-bottom:0">
+            <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Valor do VT (R$)</label>
+            <input type="text" id="integ-mc-vt-valor" placeholder="Ex: 35,00"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
           </div>
         </div>
       </div>
@@ -6783,6 +6791,8 @@ function integAbrirColab(colabId) {
   document.getElementById('integ-mc-ajuste-select').value = '';
   document.getElementById('integ-mc-ajuste-valor').style.display  = 'none';
   document.getElementById('integ-mc-ajuste-select').style.display = 'none';
+  if (document.getElementById('integ-mc-vt-valor')) document.getElementById('integ-mc-vt-valor').value = '';
+  if (document.getElementById('integ-mc-vt-valor-wrap')) document.getElementById('integ-mc-vt-valor-wrap').style.display = 'none';
 
   // Pills de benefícios originais (somente leitura)
   const pills = document.getElementById('integ-mc-ben-pills');
@@ -6803,11 +6813,14 @@ function integMcAjusteTipo() {
   const valEl   = document.getElementById('integ-mc-ajuste-valor');
   const selEl   = document.getElementById('integ-mc-ajuste-select');
   const labelEl = document.getElementById('integ-mc-ajuste-label');
+  const vtWrap  = document.getElementById('integ-mc-vt-valor-wrap');
 
   valEl.style.display = 'none';
   selEl.style.display = 'none';
+  vtWrap.style.display = 'none';
   valEl.value = '';
   selEl.value = '';
+  document.getElementById('integ-mc-vt-valor').value = '';
 
   if (!tipo) return;
 
@@ -6827,6 +6840,16 @@ function integMcAjusteTipo() {
   }
 }
 
+function integMcAjusteSelectChange() {
+  const sel    = document.getElementById('integ-mc-ajuste-select').value;
+  const vtWrap = document.getElementById('integ-mc-vt-valor-wrap');
+  // Mostrar campo de valor só quando VT ou VT+VOUCHER for selecionado
+  vtWrap.style.display = (sel === 'VT' || sel === 'VT+VOUCHER') ? '' : 'none';
+  if (vtWrap.style.display !== 'none') {
+    document.getElementById('integ-mc-vt-valor').focus();
+  }
+}
+
 async function integSalvarColab() {
   const colabId = document.getElementById('integ-mc-id').value;
   const col     = INTEG_TODOS_COLABS.find(c => c.id === colabId);
@@ -6837,7 +6860,9 @@ async function integSalvarColab() {
   const ajusteTipo = document.getElementById('integ-mc-ajuste-tipo').value;
   const ajusteVal  = document.getElementById('integ-mc-ajuste-valor').value.trim();
   const ajusteSel  = document.getElementById('integ-mc-ajuste-select').value;
-  const ajusteDetalhe = ajusteVal || ajusteSel;
+  const vtValor    = document.getElementById('integ-mc-vt-valor')?.value.trim() || '';
+  // Detalhe completo: benefício selecionado + valor do VT se aplicável
+  const ajusteDetalhe = ajusteVal || (ajusteSel + (vtValor ? ` R$ ${vtValor}` : ''));
 
   // Montar observação incluindo ajuste
   const tiposLabel = {
