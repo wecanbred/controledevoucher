@@ -5473,6 +5473,8 @@ let NS_DADOS = [];
 
 async function nsCarregar() {
   try {
+    // Garantir que vagas estão carregadas para o PROCV automático
+    if (!window.VAGAS || !VAGAS.length) await carregarVagas();
     const r = await rpc('wc_noshow_listar', {});
     NS_DADOS = r.itens || [];
     nsRenderKpis();
@@ -5557,7 +5559,7 @@ function nsRenderTabela() {
       <td>${tipoPill}</td>
       <td><strong>${r.nome||'—'}</strong></td>
       <td>${r.matricula||'—'}</td>
-      <td style="font-size:11px">${r.depto_nome||'—'}</td>
+      <td style="font-size:11px">${r.depto_cod||r.depto_nome||'—'}</td>
       <td>${fmt(r.data_admissao)}</td>
       <td>${fmt(r.ns_data_desligamento)}</td>
       <td>${participou}</td>
@@ -5571,7 +5573,7 @@ function nsRenderTabela() {
 function nsAbrirConsultor(r) {
   document.getElementById('ns-cons-id').value         = r.id;
   document.getElementById('ns-cons-nome').textContent  = r.nome || '—';
-  document.getElementById('ns-cons-sub').textContent   = `${r.ns_tipo_abs||''} · ${r.depto_nome||''} · Matrícula ${r.matricula||'—'}`;
+  document.getElementById('ns-cons-sub').textContent   = `${r.ns_tipo_abs||''} · ${r.depto_cod||r.depto_nome||''} · Matrícula ${r.matricula||'—'}`;
   document.getElementById('ns-cons-vaga').value        = r.ns_vaga_codigo || '';
   document.getElementById('ns-cons-processo').value    = r.ns_processo || '';
   document.getElementById('ns-cons-obs').value         = r.ns_obs_consultor || '';
