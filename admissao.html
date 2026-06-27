@@ -5601,6 +5601,8 @@ async function nsAbrirConsultor(r) {
   if (!window.VAGAS || !VAGAS.length) {
     await carregarVagas();
   }
+  console.log('NS abrir modal:', {nome: r.nome, matricula: r.matricula, totalVagas: VAGAS.length});
+  console.log('Primeiras vagas:', VAGAS.slice(0,5).map(v=>({jira:v.jira, mat:v.matricula, col:v.colaborador})));
   nsBuscarVagaAuto(r.nome, r.matricula);
 
   abrirModal('modal-ns-consultor');
