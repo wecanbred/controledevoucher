@@ -9013,8 +9013,8 @@ function colabsRenderTabela(tipo, lista) {
     return `<span class="pill muted">${s}</span>`;
   };
 
-  const thead = `<tr style="position:sticky;top:0;z-index:2">
-    ${cols.map(c=>`<th style="white-space:nowrap">${COLABS_LABELS[c]||c}</th>`).join('')}
+  const thead = `<tr>
+    ${cols.map(c=>`<th>${COLABS_LABELS[c]||c}</th>`).join('')}
     <th style="width:36px"></th>
   </tr>`;
 
@@ -9040,13 +9040,13 @@ function colabsRenderTabela(tipo, lista) {
   }).join('');
 
   areaEl.innerHTML = `
-    <div class="table-wrap" style="overflow-x:auto">
-      <table style="min-width:700px">
+    <div class="table-wrap">
+      <table class="main-table">
         <thead>${thead}</thead>
         <tbody>${tbody}</tbody>
       </table>
     </div>
-    ${lista.length>500?`<div style="padding:8px 0;color:var(--muted);font-size:11px;text-align:center">Mostrando 500 de ${lista.length} — refine o filtro para ver mais</div>`:''}`;
+    ${lista.length>500?`<p class="text-muted" style="margin-top:8px;font-size:11px;text-align:center">Mostrando 500 de ${lista.length} — refine o filtro para ver mais</p>`:''}`;
 }
 
 // ── Modal de detalhes / edição ─────────────────────────────────────────
