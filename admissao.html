@@ -4230,6 +4230,13 @@ async function renderHome() {
       </div>`;
   } else if (session.perfil === 'onsite') {
     // ── PAINEL ONSITE ──
+    // Contar ativos/inativos/afastados do Template (filtrando pelo escopo do onsite)
+    const colabsEscopo = colabsFiltrarEscopo(COLABS_ATIVOS);
+    const cntAtivos    = colabsEscopo.filter(r => (r.status_colaborador||'').toLowerCase() === 'ativo').length;
+    const cntAfastados = colabsEscopo.filter(r => (r.status_colaborador||'').toLowerCase().includes('afastado')).length;
+    const colabsInEscopo = colabsFiltrarEscopo(COLABS_INATIVOS);
+    const cntInativos  = colabsInEscopo.length;
+    const temTemplate  = COLABS_ATIVOS.length > 0;
     el.innerHTML = `
       <div style="margin-bottom:24px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
@@ -4238,7 +4245,17 @@ async function renderHome() {
           ${homePainelCard('⊘','Inativar Colaborador','→','Registrar desligamento','#ef4444','vchr-inativar')}
           ${homePainelCard('🎟️','Meus Vouchers',cnt.voucher_ativos??0,'Ativos no meu depto','#63ccb0','vchr-controle')}
         </div>
-      </div>`;
+      </div>
+      ${temPermissao('adp_colabs_ver') ? `
+      <div style="margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">👥 Template — Meu HUB</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          ${homePainelCard('✅','Ativos', temTemplate ? cntAtivos : '—', 'Colaboradores ativos','#22c55e','colabs-ativos')}
+          ${homePainelCard('🟡','Afastados', temTemplate ? cntAfastados : '—', 'Em afastamento','#f59e0b','colabs-ativos')}
+          ${homePainelCard('⛔','Inativos', temTemplate ? cntInativos : '—', 'Desligados','#ef4444','colabs-inativos')}
+        </div>
+        ${!temTemplate ? `<p style="font-size:11px;color:var(--muted);margin-top:8px">💡 Abra <b>Template → Ativos</b> para carregar os dados.</p>` : ''}
+      </div>` : ''}`;
   } else {
     // ── PAINEL CONSULTOR (equipe) ──
     el.innerHTML = `
@@ -8896,6 +8913,10 @@ async function colabsCarregar(tipo) {
     COLABS_LOADED = true;
     colabsPopularFiltros(tipo, dados);
     colabsFiltrar(tipo);
+    // Se onsite está na home, atualizar os cards do Template
+    if (session?.perfil === 'onsite' && document.getElementById('page-home')?.classList.contains('active')) {
+      renderHomePanel();
+    }
     const agora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     if (syncEl) syncEl.textContent = `Atualizado às ${agora} · ${dados.length} registros`;
   } catch(e) {
