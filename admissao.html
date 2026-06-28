@@ -2474,37 +2474,34 @@
         <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">
           Valores padrão — aplicados a todas as linhas sem valor na planilha
         </div>
+        <div style="background:rgba(99,204,176,.07);border:1px solid rgba(99,204,176,.2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11.5px;color:var(--muted)">
+          💡 <b style="color:var(--accent)">Consultor resolvido automaticamente</b> — o sistema identifica o consultor responsável pelo <b>Código Hub/Soc</b> cadastrado em cada linha da planilha. Não é necessário informar o consultor manualmente.
+        </div>
         <div class="form-row three">
           <div class="form-group" style="margin-bottom:0">
-            <label>Consultor Responsável</label>
-            <select id="imp-default-consultor">
-              <option value="">— nenhum padrão —</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label>Centro de Custo (Hub/Soc)</label>
+            <label>Centro de Custo padrão (Hub/Soc)</label>
             <select id="imp-default-cc" onchange="impPreencherLocalDefault()">
               <option value="">— nenhum padrão —</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label>Departamento GI</label>
+            <label>Departamento GI padrão</label>
             <select id="imp-default-depto">
               <option value="">— nenhum padrão —</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Regional padrão</label>
+            <select id="imp-default-regional">
+              <option value="">— nenhum padrão —</option>
+              <option>SPI</option><option>CO/N</option><option>SPM</option><option>RIO/ES</option>
             </select>
           </div>
         </div>
         <div class="form-row" style="margin-top:10px">
           <div class="form-group" style="margin-bottom:0">
-            <label>Local de Trabalho (padrão)</label>
+            <label>Local de Trabalho padrão</label>
             <input type="text" id="imp-default-local" placeholder="Preenchido ao selecionar o CC acima"/>
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label>Regional (padrão)</label>
-            <select id="imp-default-regional">
-              <option value="">— nenhum padrão —</option>
-              <option>SPI</option><option>CO/N</option><option>SPM</option><option>RIO/ES</option>
-            </select>
           </div>
         </div>
       </div>
@@ -4538,29 +4535,24 @@ async function salvarVaga() {
 // ── IMPORTAÇÃO DE VAGAS ──────────────────────
 // Colunas do modelo ENXUTO (as principais)
 const IMPORT_COLS_ENXUTO = [
-  { campo:'jira',                label:'Jira *',                obrig:true  },
-  { campo:'consultor',           label:'Consultor',             obrig:false },
-  { campo:'codigo_hub',          label:'Cód Hub/Soc',           obrig:false },
-  { campo:'regional',            label:'Regional',              obrig:false },
-  { campo:'local_trabalho',      label:'Local de Trabalho',     obrig:false },
-  { campo:'mes',                 label:'Mês (dd/mm/aaaa)',      obrig:false },
-  { campo:'modalidade',          label:'Modalidade',            obrig:false },
-  { campo:'cargo',               label:'Cargo',                 obrig:false },
-  { campo:'turno',               label:'Turno',                 obrig:false },
-  { campo:'horario',             label:'Horário',               obrig:false },
-  { campo:'escala',              label:'Escala',                obrig:false },
-  { campo:'colaborador',         label:'Colaborador',           obrig:false },
-  { campo:'cpf',                 label:'CPF',                   obrig:false },
-  { campo:'matricula',           label:'Matrícula',             obrig:false },
-  { campo:'recebimento',         label:'Recebimento (dd/mm/aaaa)', obrig:false },
-  { campo:'data_adm_solicitada', label:'Data Adm Solicitada',   obrig:false },
-  { campo:'status_vaga',         label:'Status da Vaga',        obrig:false },
-  { campo:'transporte',          label:'Transporte',            obrig:false },
-  { campo:'salario',             label:'Salário',               obrig:false },
-  { campo:'departamento_gi',     label:'Departamento GI',       obrig:false },
-  { campo:'cnpj',                label:'CNPJ',                  obrig:false },
-  { campo:'tipo_vaga',           label:'Tipo de Vaga',          obrig:false },
-  { campo:'observacao',          label:'Observação',            obrig:false },
+  { campo:'jira',                label:'Código do Jira *',           obrig:true  },
+  { campo:'codigo_hub',          label:'Código Hub / Soc',           obrig:false },
+  { campo:'regional',            label:'Regional',                   obrig:false },
+  { campo:'recebimento',         label:'Recebimento (dd/mm/aaaa)',    obrig:false },
+  { campo:'mes',                 label:'Mês (dd/mm/aaaa)',           obrig:false },
+  { campo:'local_trabalho',      label:'Local de Trabalho',          obrig:false },
+  { campo:'modalidade',          label:'Modalidade',                 obrig:false },
+  { campo:'tempo',               label:'Tempo',                      obrig:false },
+  { campo:'cargo',               label:'Cargo',                      obrig:false },
+  { campo:'turno',               label:'Turno',                      obrig:false },
+  { campo:'horario',             label:'Horário',                    obrig:false },
+  { campo:'escala',              label:'Escala',                     obrig:false },
+  { campo:'ops_id',              label:'OPS ID',                     obrig:false },
+  { campo:'data_adm_solicitada', label:'Data de Admissão Solicitada', obrig:false },
+  { campo:'tipo_vaga',           label:'Tipo de Vaga',               obrig:false },
+  { campo:'salario',             label:'Salário',                    obrig:false },
+  { campo:'cnpj',                label:'CNPJ',                       obrig:false },
+  { campo:'departamento_gi',     label:'Departamento GI',            obrig:false },
 ];
 
 const IMPORT_CAMPOS_DATA = new Set(['mes','recebimento','data_adm_solicitada','data_reprog','nova_data_eto','data_adm_realizada']);
@@ -4577,23 +4569,12 @@ async function abrirImportacaoLote() {
   // Garantir que CC e Deptos estão carregados
   await garantirCadastrosCarregados();
 
-  // Popular select de consultor
-  const selC = document.getElementById('imp-default-consultor');
-  selC.innerHTML = '<option value="">— nenhum padrão —</option>' +
-    USUARIOS_SISTEMA.map(u => `<option value="${u.nome}">${u.nome}</option>`).join('');
-  if (!podeVerTudo()) { selC.value = session.nome; selC.disabled = true; }
-  else selC.disabled = false;
-  selC.onchange = () => impFiltrarCCsPorConsultor();
-
   // Popular select de CC (todos inicialmente)
   impPopularSelectCC(null);
   document.getElementById('imp-default-cc').onchange = () => {
     impPreencherLocalDefault();
     impFiltrarDeptosPorCC();
   };
-
-  // Se equipe/consultor logado, filtrar já de início
-  if (!podeVerTudo()) impFiltrarCCsPorConsultor();
 
   // Popular select de depto
   const selD = document.getElementById('imp-default-depto');
@@ -4641,32 +4622,6 @@ function impFiltrarDeptosPorCC() {
   if (valorAtual && lista.find(d => d.descricao === valorAtual)) selDep.value = valorAtual;
 }
 
-function impFiltrarCCsPorConsultor() {
-  const nomeConsultor = document.getElementById('imp-default-consultor')?.value;
-  if (!nomeConsultor) { impPopularSelectCC(null); return; }
-
-  const usuario = USUARIOS_SISTEMA.find(u => u.nome === nomeConsultor);
-  // Master/Gestor ou sem operações cadastradas → mostrar todos
-  if (!usuario || !usuario.operacoes?.length ||
-      ['master','gestor'].includes(usuario.perfil)) {
-    impPopularSelectCC(null);
-    return;
-  }
-
-  // Filtrar CCs cujo cod está entre as operações do usuário
-  // Operações vinculadas via cc_cod ou regional (fallback enquanto banco não tem cc_cod)
-  const opsNomes = new Set(usuario.operacoes.map(o => (o.nome||'').toUpperCase()));
-  const opsCods  = new Set(usuario.operacoes.map(o => (o.cc_cod||o.regional||'').toUpperCase()).filter(Boolean));
-
-  const ccsPermitidos = new Set(
-    CENTROS_CUSTO
-      .filter(c => opsCods.has(c.cod) || opsNomes.has((c.descricao||'').toUpperCase()))
-      .map(c => c.cod)
-  );
-
-  impPopularSelectCC(ccsPermitidos.size ? ccsPermitidos : null);
-}
-
 function impPreencherLocalDefault() {
   const sel = document.getElementById('imp-default-cc');
   const opt = sel?.selectedOptions[0];
@@ -4677,24 +4632,56 @@ function impPreencherLocalDefault() {
   if (uf && regMap[uf]) document.getElementById('imp-default-regional').value = regMap[uf];
 }
 
+// ── Resolve o nome do consultor pelo código do HUB/CC ───────
+// Percorre USUARIOS_SISTEMA procurando um usuário do perfil equipe/consultor
+// cujas operações contenham o cc_cod ou nome que bate com o codigo_hub informado.
+// Retorna o nome do consultor ou '' se não encontrado.
+function resolverConsultorPorHub(codHub) {
+  if (!codHub || !USUARIOS_SISTEMA?.length) return '';
+  const hub = codHub.toString().toUpperCase().trim();
+
+  // 1ª tentativa: match exato por cc_cod nas operações
+  for (const u of USUARIOS_SISTEMA) {
+    if (!['equipe','consultor_rs'].includes(u.perfil)) continue;
+    const ops = u.operacoes || [];
+    if (ops.some(o => (o.cc_cod||'').toUpperCase() === hub)) return u.nome;
+  }
+
+  // 2ª tentativa: match pelo nome/descrição da operação vs descrição do CC
+  const cc = CENTROS_CUSTO?.find(c => c.cod?.toUpperCase() === hub);
+  if (cc) {
+    const descCC = (cc.descricao||'').toUpperCase();
+    for (const u of USUARIOS_SISTEMA) {
+      if (!['equipe','consultor_rs'].includes(u.perfil)) continue;
+      const ops = u.operacoes || [];
+      if (ops.some(o => (o.nome||'').toUpperCase() === descCC)) return u.nome;
+    }
+  }
+
+  return '';
+}
+
 function baixarTemplateImportacao() {
   const cabecalho = IMPORT_COLS_ENXUTO.map(c => c.label);
   const exemplo = [
-    '', // jira — deixar em branco para o usuário preencher
-    document.getElementById('imp-default-consultor')?.value || 'NOME DO CONSULTOR',
-    document.getElementById('imp-default-cc')?.value || 'CC-0001',
-    document.getElementById('imp-default-regional')?.value || 'SPI',
-    document.getElementById('imp-default-local')?.value || 'Endereço completo',
-    '', // mês
-    'Temporário',
-    'Auxiliar de logística',
-    'F1', '08:00-16:20', 'SEG-SAB',
-    '', '', '', '', '', // colaborador, cpf, matrícula, recebimento, data adm
-    'Em Andamento No Prazo',
-    'VALE TRANSPORTE',
-    '', // salário
-    document.getElementById('imp-default-depto')?.value || '',
-    '', '', '',
+    '',          // Código do Jira — preencher para cada vaga
+    document.getElementById('imp-default-cc')?.value || 'CC-0001',      // Código Hub / Soc
+    document.getElementById('imp-default-regional')?.value || 'SPI',    // Regional
+    '',          // Recebimento (dd/mm/aaaa)
+    '',          // Mês (dd/mm/aaaa)
+    document.getElementById('imp-default-local')?.value || 'Endereço completo', // Local de Trabalho
+    'Temporário',                                                         // Modalidade
+    'Horista',                                                            // Tempo
+    'Auxiliar de logística',                                              // Cargo
+    'F1',        // Turno
+    '08:00-16:20', // Horário
+    'SEG-SAB',   // Escala
+    '',          // OPS ID
+    '',          // Data de Admissão Solicitada
+    '1 - Vaga Oficial',                                                   // Tipo de Vaga
+    '',          // Salário
+    '',          // CNPJ
+    document.getElementById('imp-default-depto')?.value || '',           // Departamento GI
   ];
 
   const gerarXLSX = () => {
@@ -4705,13 +4692,12 @@ function baixarTemplateImportacao() {
     XLSX.utils.book_append_sheet(wb, ws, 'Vagas');
     // Aba de referência com as listas de valores aceitos
     const wsRef = XLSX.utils.aoa_to_sheet([
-      ['Modalidade', 'Cargo', 'Regional', 'Status da Vaga', 'Tipo de Vaga'],
-      ['CLT', 'Auxiliar de logística', 'SPI', 'Em Andamento No Prazo', '1 - Vaga Oficial'],
-      ['Temporário', 'Líder de logística', 'CO/N', 'Em Andamento Atrasada', '2 - Reposição - NO SHOW'],
-      ['', 'Auxiliar de almoxarifado', 'SPM', 'Finalizada No Prazo', '3 - Reposição - ETO'],
-      ['', '', 'RIO/ES', 'Finalizada Antecipada', ''],
-      ['', '', '', 'Finalizada Atrasada', ''],
-      ['', '', '', 'Cancelada', ''],
+      ['Modalidade', 'Tempo',    'Cargo',                    'Regional', 'Tipo de Vaga',             'Turno'],
+      ['CLT',        'Horista',  'Auxiliar de logística',    'SPI',      '1 - Vaga Oficial',         'F1'],
+      ['Temporário', 'Mensalista','Líder de logística',      'CO/N',     '2 - Reposição - NO SHOW',  'F2'],
+      ['',           '',         'Auxiliar de almoxarifado', 'SPM',      '3 - Reposição - ETO',      'F3'],
+      ['',           '',         'Auxiliar administrativo',  'RIO/ES',   '',                         'FIXO'],
+      ['',           '',         '',                         '',         '',                         ''],
     ]);
     XLSX.utils.book_append_sheet(wb, wsRef, 'Valores aceitos');
     XLSX.writeFile(wb, 'modelo_vagas.xlsx');
@@ -4769,7 +4755,6 @@ function carregarPreviewImportacao(input) {
   _importRows = [];
 
   // Defaults do painel
-  const defConsultor = document.getElementById('imp-default-consultor')?.value || '';
   const defCC        = document.getElementById('imp-default-cc')?.value || '';
   const defLocal     = document.getElementById('imp-default-local')?.value || '';
   const defRegional  = document.getElementById('imp-default-regional')?.value || '';
@@ -4819,11 +4804,15 @@ function carregarPreviewImportacao(input) {
 
         // Aplicar defaults
         const ap = (campo, valor) => { if (!obj[campo] && valor) { obj[campo] = valor; obj._defaults[campo] = true; } };
-        ap('consultor',       defConsultor);
         ap('codigo_hub',      defCC);
         ap('local_trabalho',  defLocal);
         ap('regional',        defRegional);
         ap('departamento_gi', defDepto);
+        // Status padrão sempre Pendente na importação
+        if (!obj.status_vaga) { obj.status_vaga = 'Pendente'; obj._defaults.status_vaga = true; }
+        // Resolver consultor pelo código do HUB automaticamente
+        const consultorAuto = resolverConsultorPorHub(obj.codigo_hub);
+        if (consultorAuto) { obj.consultor = consultorAuto; obj._defaults.consultor = true; }
 
         _importRows.push(obj);
       }
@@ -4835,8 +4824,14 @@ function carregarPreviewImportacao(input) {
       wrap.style.display = 'block';
       countEl.textContent = `${_importRows.length} vaga(s) prontas${erros.length ? ` · ${erros.length} ignoradas` : ''}`;
 
-      const previewCols = ['jira','consultor','codigo_hub','regional','colaborador','cargo','status_vaga','transporte'];
-      const previewLabels = { jira:'Jira', consultor:'Consultor', codigo_hub:'Hub/Soc', regional:'Regional', colaborador:'Colaborador', cargo:'Cargo', status_vaga:'Status', transporte:'Transporte' };
+      const previewCols = ['jira','codigo_hub','regional','cargo','modalidade','tempo','tipo_vaga','consultor_resolvido'];
+      const previewLabels = { jira:'Jira', codigo_hub:'Hub/Soc', regional:'Regional', cargo:'Cargo', modalidade:'Modalidade', tempo:'Tempo', tipo_vaga:'Tipo', consultor_resolvido:'Consultor (auto)' };
+      // Resolver consultor pelo codigo_hub para exibir no preview
+      _importRows.forEach(r => {
+        if (!r.consultor_resolvido) {
+          r.consultor_resolvido = resolverConsultorPorHub(r.codigo_hub) || '—';
+        }
+      });
       tableEl.innerHTML = `<table>
         <thead><tr>${previewCols.map(c=>`<th>${previewLabels[c]||c}</th>`).join('')}</tr></thead>
         <tbody>${_importRows.slice(0,50).map(r =>
