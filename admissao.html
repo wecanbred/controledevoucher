@@ -908,6 +908,9 @@
       <div id="navgroup-adp-tickets" style="display:none">
         <a onclick="abrirGaveta('tickets', event)" class="sb-has-sub" title="Tickets Shopee"><span class="sb-ico">🎫</span><span class="sb-txt">Tickets Shopee</span><span class="sb-arr sb-txt">›</span></a>
       </div>
+      <div id="navgroup-adp-colabs" style="display:none">
+        <a onclick="abrirGaveta('colaboradores', event)" class="sb-has-sub" id="sb-btn-colaboradores" title="Template Base"><span class="sb-ico">👥</span><span class="sb-txt">Colaboradores</span><span class="sb-arr sb-txt">›</span></a>
+      </div>
       <a style="opacity:.4;cursor:default"><span class="sb-ico">📨</span><span class="sb-txt">Solicitações <small>(em breve)</small></span></a>
     </div>
 
@@ -1236,7 +1239,7 @@
       </div>
     </div>
     <div class="access-note">
-      Quando o campo <b>Transporte</b> de uma vaga é cadastrado ou editado contendo <b>Voucher</b>, o colaborador cai aqui automaticamente. Aprovar marca como <b>pré-aprovado</b> — a ativação real no sistema de Voucher só acontece quando esse colaborador aparecer de fato na planilha Template.
+      Quando o campo <b>Transporte</b> de uma vaga é cadastrado ou editado contendo <b>Voucher</b>, o colaborador cai aqui automaticamente. Aprovar marca como <b>pré-aprovado</b> — a ativação real no sistema de Voucher só acontece quando esse colaborador aparecer de fato na Template Base.
     </div>
     <div class="queue-tabs">
       <button class="qtab active" data-qf="pendente" onclick="setQueueFilter('pendente')">Pendentes</button>
@@ -1349,6 +1352,81 @@
         </div>
       </div>
       <button class="btn btn-primary" onclick="salvarLogo()">Salvar logo</button>
+    </div>
+
+    <!-- URL Apps Script — Template -->
+    <div class="suporte-card" id="cfg-colabs-card">
+      <h3>🔗 Template Base — Apps Script</h3>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:12px">URL do Web App publicado no Google Apps Script que permite ao sistema <b>escrever</b> na planilha de colaboradores. Sem isso, o sistema só consegue <b>ler</b>.</p>
+      <div class="form-group">
+        <label>URL do Web App (Apps Script)</label>
+        <input type="text" id="cfg-colabs-webapp-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:12px"/>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <button class="btn btn-primary btn-sm" onclick="salvarColabsWebAppUrl()">💾 Salvar URL</button>
+        <button class="btn btn-ghost btn-sm" onclick="testarColabsWebApp()">🧪 Testar conexão</button>
+        <span id="cfg-colabs-status" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <details style="margin-top:14px">
+        <summary style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:700">📋 Ver código do Apps Script para publicar</summary>
+        <pre id="cfg-colabs-script-code" style="margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:10.5px;color:var(--muted);overflow-x:auto;white-space:pre-wrap;line-height:1.5">// Cole este código no Apps Script da planilha
+// Extensões → Apps Script → colar → Publicar → Implantar como app da Web
+// Executar como: Você · Acesso: Qualquer pessoa
+
+const SHEET_ID    = '1WBYOF9AkoS7NpzhqFyqm5PzQRP13yUF2p5ZY8FfZp_c';
+const GID_ATIVOS  = '690743947';
+const GID_INATIVOS = '1320206835';
+
+// Mapeamento de campos → coluna na planilha (índice base 1)
+const COL_ATIVOS = {
+  bpo:1, cc:2, nickname:3, operacao:4, matricula:5, nome:6, data_admissao:7,
+  tipo_contrato:8, cargo:9, salario:10, vencimento_contrato:11, renovacao:12,
+  horario:13, escala:14, cpf:15, data_nascimento:16, nome_mae:17, celular:18,
+  email:19, beneficio_mobilidade:20, logradouro:21, numero:22, complemento:23,
+  bairro:24, cidade:25, uf:26, cep:27, tam_calca:28, tam_blusa:29,
+  tam_calcado:30, tam_luva:31, status_colaborador:32, sexo:33,
+  status_operacao:34, trintidio:35, categoria:36
+};
+const COL_INATIVOS = {
+  bpo:1, cc:2, nickname:3, matricula:4, nome:5, cpf:6, tipo_contrato:7,
+  cargo:8, data_admissao:9, vencimento_demissao:10, motivo_desligamento:11,
+  tipo_desligamento:12, num_ticket:13, status_colaborador:14,
+  beneficio_mobilidade:15, genero:16, idade:17, categoria:18
+};
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ ok:true, msg:'WeSys Colaboradores OK' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const body    = JSON.parse(e.postData.contents);
+    const tipo    = body.tipo;   // 'ativos' ou 'inativos'
+    const rowNum  = Number(body.row);  // linha da planilha (inclui cabeçalho)
+    const dados   = body.dados;
+
+    if (!tipo || !rowNum || !dados) throw new Error('Dados incompletos');
+    const gid     = tipo === 'ativos' ? GID_ATIVOS : GID_INATIVOS;
+    const colMap  = tipo === 'ativos' ? COL_ATIVOS : COL_INATIVOS;
+    const ss      = SpreadsheetApp.openById(SHEET_ID);
+    const sheets  = ss.getSheets();
+    const sheet   = sheets.find(s => s.getSheetId().toString() === gid);
+    if (!sheet) throw new Error('Aba não encontrada: ' + gid);
+
+    Object.entries(dados).forEach(([campo, valor]) => {
+      const col = colMap[campo];
+      if (col) sheet.getRange(rowNum, col).setValue(valor);
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({ ok:true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok:false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+      </details>
     </div>
   </div>
 
@@ -2127,8 +2205,115 @@
     <div id="tkt-voucher-area"><div class="tkt-loading">Carregando…</div></div>
   </div>
 
+
+  <!-- ══ PLANILHA CENTRAL — ATIVOS ══ -->
+  <div class="page" id="page-colabs-ativos">
+    <div class="page-header">
+      <div>
+        <h1>✅ Colaboradores Ativos</h1>
+        <p>Sincronizado com o Template Base (Google Sheets)</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="colabs-ativos-sync" style="font-size:11px;color:var(--muted)"></span>
+        <button class="btn btn-ghost btn-sm" onclick="COLABS_LOADED=false;colabsCarregar('ativos')">🔄 Atualizar</button>
+      </div>
+    </div>
+    <!-- Toolbar filtros -->
+    <div class="vt-filter-bar" style="margin-bottom:14px">
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">🔍</span>
+        <input type="text" id="colabs-ativos-busca" class="vt-filter-input" placeholder="Nome, matrícula, CPF…" oninput="colabsFiltrar('ativos')"/>
+      </div>
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">🏢</span>
+        <select id="colabs-ativos-filtro-cc" class="vt-filter-select" onchange="colabsFiltrar('ativos')">
+          <option value="">Todos os C.Custo</option>
+        </select>
+      </div>
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">📋</span>
+        <select id="colabs-ativos-filtro-cargo" class="vt-filter-select" onchange="colabsFiltrar('ativos')">
+          <option value="">Todos os cargos</option>
+        </select>
+      </div>
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">📝</span>
+        <select id="colabs-ativos-filtro-contrato" class="vt-filter-select" onchange="colabsFiltrar('ativos')">
+          <option value="">Todos os contratos</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="colabsLimparFiltros('ativos')">✕ Limpar</button>
+    </div>
+    <div id="colabs-ativos-count" style="font-size:11px;color:var(--muted);margin-bottom:8px"></div>
+    <div id="colabs-ativos-area"><div class="tkt-loading">Carregando…</div></div>
+  </div>
+
+  <!-- ══ PLANILHA CENTRAL — INATIVOS ══ -->
+  <div class="page" id="page-colabs-inativos">
+    <div class="page-header">
+      <div>
+        <h1>⛔ Colaboradores Inativos</h1>
+        <p>Sincronizado com o Template Base (Google Sheets)</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="colabs-inativos-sync" style="font-size:11px;color:var(--muted)"></span>
+        <button class="btn btn-ghost btn-sm" onclick="COLABS_LOADED=false;colabsCarregar('inativos')">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div class="vt-filter-bar" style="margin-bottom:14px">
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">🔍</span>
+        <input type="text" id="colabs-inativos-busca" class="vt-filter-input" placeholder="Nome, matrícula, CPF…" oninput="colabsFiltrar('inativos')"/>
+      </div>
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">🏢</span>
+        <select id="colabs-inativos-filtro-cc" class="vt-filter-select" onchange="colabsFiltrar('inativos')">
+          <option value="">Todos os C.Custo</option>
+        </select>
+      </div>
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">📋</span>
+        <select id="colabs-inativos-filtro-cargo" class="vt-filter-select" onchange="colabsFiltrar('inativos')">
+          <option value="">Todos os cargos</option>
+        </select>
+      </div>
+      <div class="vt-filter-group">
+        <span class="vt-filter-ico">🔴</span>
+        <select id="colabs-inativos-filtro-motivo" class="vt-filter-select" onchange="colabsFiltrar('inativos')">
+          <option value="">Todos os motivos</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="colabsLimparFiltros('inativos')">✕ Limpar</button>
+    </div>
+    <div id="colabs-inativos-count" style="font-size:11px;color:var(--muted);margin-bottom:8px"></div>
+    <div id="colabs-inativos-area"><div class="tkt-loading">Carregando…</div></div>
+  </div>
+
 </div><!-- /main -->
 
+
+<!-- ══ MODAL COLABORADOR ══ -->
+<div class="modal-backdrop" id="modal-colab" onclick="if(event.target===this)fecharModal('modal-colab')">
+  <div class="modal" style="width:640px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-head" style="flex-shrink:0">
+      <div>
+        <h2 style="font-size:15px" id="colab-modal-title">—</h2>
+        <p style="font-size:11px;color:var(--muted);margin-top:2px" id="colab-modal-sub">—</p>
+      </div>
+      <button onclick="fecharModal('modal-colab')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1">✕</button>
+    </div>
+    <div class="modal-body" id="colab-modal-body" style="overflow-y:auto;flex:1;padding:16px 20px">
+      <!-- preenchido por colabsAbrirModal() -->
+    </div>
+    <div class="modal-footer" id="colab-modal-footer-edit" style="display:none;justify-content:space-between;align-items:center;flex-shrink:0">
+      <small style="color:var(--muted);font-size:11px">💾 As alterações são salvas diretamente na planilha Google Sheets</small>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-colab')">Cancelar</button>
+        <button class="btn btn-primary" id="colab-btn-salvar" onclick="colabsSalvar()">💾 Salvar na Planilha</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODAL TICKET SHOPEE ══ -->
 <div class="modal-backdrop" id="modal-ticket" onclick="if(event.target===this)fecharModal('modal-ticket')">
@@ -3358,6 +3543,10 @@ const PERMISSOES_GRUPOS = [
     { id:'adp_tickets_movim',   nome:'Tickets de Movimentação', descricao:'Abertura e acompanhamento de tickets de movimentação' },
     { id:'adp_tickets_voucher', nome:'Tickets de Voucher Uber', descricao:'Abertura e acompanhamento de tickets de voucher' },
   ]},
+  { grupo: 'Template — Colaboradores', itens: [
+    { id:'adp_colabs_ver',   nome:'Ver Colaboradores',   descricao:'Consulta o Template Base de ativos e inativos' },
+    { id:'adp_colabs_editar',nome:'Editar Colaboradores',descricao:'Pode editar dados diretamente na planilha via sistema' },
+  ]},
   { grupo: 'Suporte', itens: [
     { id:'sup_configuracoes',   nome:'Configurações',      descricao:'Tema, foto de perfil e preferências' },
     { id:'sup_gestao_usuarios', nome:'Gestão de Usuários', descricao:'Criar e gerenciar acessos' },
@@ -3576,8 +3765,10 @@ async function iniciarSessao(conta) {
     'adp_voucher_exportar','adp_voucher_historico'].some(i => temPermissao(i));
   const _algumBen = temPermissao('adp_beneficios') || temPermissao('adp_beneficios_pagar');
   const _algumTicket = ['adp_tickets_deslig','adp_tickets_movim','adp_tickets_voucher'].some(i=>temPermissao(i));
-  const _algumADP = _algumVoucher || _algumBen || _algumTicket;
+  const _algumColabs = temPermissao('adp_colabs_ver');
+  const _algumADP = _algumVoucher || _algumBen || _algumTicket || _algumColabs;
   showBlock('navgroup-admpessoal', _algumADP);
+  showBlock('navgroup-adp-colabs', _algumColabs);
 
   // Voucher Uber sub
   showBlock('navgroup-voucher-uber', _algumVoucher);
@@ -3680,7 +3871,7 @@ function navTo(id) {
   if (id==='indicacoes')       renderIndicacoes();
   if (id==='usuarios')         renderUsuarios('tbody-usuarios');
   if (id==='suporte-usuarios') renderUsuarios('tbody-suporte-usuarios');
-  if (id==='configuracoes')    renderConfiguracoes();
+  if (id==='configuracoes')    { renderConfiguracoes(); colabsCarregarCfg(); }
   if (id==='cad-clientes')     carregarClientes();
   if (id==='cad-cc')           carregarCentrosCusto();
   if (id==='cad-deptos')       carregarDeptos();
@@ -3688,6 +3879,8 @@ function navTo(id) {
   if (id==='tickets-deslig')   tktCarregar('tickets-deslig');
   if (id==='tickets-movim')    tktCarregar('tickets-movim');
   if (id==='tickets-voucher')  tktCarregar('tickets-voucher');
+  if (id==='colabs-ativos')    colabsCarregar('ativos');
+  if (id==='colabs-inativos')  colabsCarregar('inativos');
   atualizarBadgeFila();
 }
 function toggleNavGroup(nome) { /* legado — mantido para compatibilidade */ try { document.getElementById('navgroup-'+nome).classList.toggle('collapsed'); } catch(e){} }
@@ -3729,6 +3922,13 @@ const GAVETA_MENUS = {
       { label:'🔴 Desligamento',   page:'tickets-deslig',   perm:'adp_tickets_deslig' },
       { label:'🔄 Movimentação',   page:'tickets-movim',    perm:'adp_tickets_movim'  },
       { label:'🚗 Voucher BPO',    page:'tickets-voucher',  perm:'adp_tickets_voucher'},
+    ]
+  },
+  'colaboradores': {
+    titulo: '👥 Colaboradores',
+    items: [
+      { label:'✅ Ativos',   page:'colabs-ativos',   perm:'adp_colabs_ver' },
+      { label:'⛔ Inativos', page:'colabs-inativos',  perm:'adp_colabs_ver' },
     ]
   },
   'cadastros': {
@@ -8505,4 +8705,381 @@ async function tktSalvar() {
   finally { btn.disabled=false; btn.textContent='💾 Salvar'; }
 }
 // ════════════════ FIM TICKETS SHOPEE ════════════════
+</script>
+
+<script>
+// ════════════════ MÓDULO PLANILHA CENTRAL — COLABORADORES ════════════════
+// Lê Google Sheets via CSV público (gviz/tq) — mesmo padrão do módulo Tickets
+// Escreve via Apps Script Web App publicado pelo usuário
+
+const COLABS_SHEET_ID  = '1WBYOF9AkoS7NpzhqFyqm5PzQRP13yUF2p5ZY8FfZp_c';
+const COLABS_GID_ATIVOS   = '690743947';
+const COLABS_GID_INATIVOS = '1320206835';
+
+// URL do Apps Script Web App para ESCRITA — configurável em Configurações
+function colabsWebAppUrl() {
+  try { return localStorage.getItem('wecan_colabs_webapp_url') || ''; } catch(e) { return ''; }
+}
+
+let COLABS_ATIVOS   = [];
+let COLABS_INATIVOS = [];
+let COLABS_LOADED   = false;
+let COLABS_LOADING  = false;
+
+// ── Mapeamento de colunas da planilha ──────────────────────────────────
+// ATIVOS:  BPO | C.custo | NickName | Operação | Matricula | Nome | Data Admissão |
+//          Tipo Contrato | Cargo | Salário | Vencimento | Renovação | Horário | Escala |
+//          CPF | Dt Nascimento | Nome Mãe | Celular | E-mail | Beneficio Mobilidade |
+//          Logradouro | Numero | Complemento | Bairro | Cidade | UF | CEP |
+//          Tam Calça | Tam Blusa | Tam Calçado | Tam Luva | Status Colaborador |
+//          Sexo | Status Operação | Trintídio | Categoria
+// INATIVOS: BPO | C.custo | NickName | Matricula | Nome | CPF | Tipo Contrato |
+//           Cargo | Data Admissão | Vencimento Demissão | Motivo Desligamento |
+//           Tipo Desligamento | Nº Ticket | Status Colaborador | Beneficio Mobilidade |
+//           Gênero | Idade | Categoria
+
+const COLABS_COLS_ATIVOS = [
+  'bpo','cc','nickname','operacao','matricula','nome','data_admissao',
+  'tipo_contrato','cargo','salario','vencimento_contrato','renovacao','horario','escala',
+  'cpf','data_nascimento','nome_mae','celular','email','beneficio_mobilidade',
+  'logradouro','numero','complemento','bairro','cidade','uf','cep',
+  'tam_calca','tam_blusa','tam_calcado','tam_luva','status_colaborador',
+  'sexo','status_operacao','trintidio','categoria'
+];
+
+const COLABS_COLS_INATIVOS = [
+  'bpo','cc','nickname','matricula','nome','cpf','tipo_contrato',
+  'cargo','data_admissao','vencimento_demissao','motivo_desligamento',
+  'tipo_desligamento','num_ticket','status_colaborador','beneficio_mobilidade',
+  'genero','idade','categoria'
+];
+
+// ── Labels amigáveis para exibição ─────────────────────────────────────
+const COLABS_LABELS = {
+  bpo:'BPO', cc:'C.Custo', nickname:'NickName', operacao:'Operação',
+  matricula:'Matrícula', nome:'Nome', data_admissao:'Admissão',
+  tipo_contrato:'Contrato', cargo:'Cargo', salario:'Salário',
+  vencimento_contrato:'Vencimento', renovacao:'Renovação',
+  horario:'Horário', escala:'Escala', cpf:'CPF',
+  data_nascimento:'Nascimento', nome_mae:'Nome da Mãe',
+  celular:'Celular', email:'E-mail', beneficio_mobilidade:'Mobilidade',
+  logradouro:'Logradouro', numero:'Número', complemento:'Complemento',
+  bairro:'Bairro', cidade:'Cidade', uf:'UF', cep:'CEP',
+  tam_calca:'Calça', tam_blusa:'Blusa', tam_calcado:'Calçado', tam_luva:'Luva',
+  status_colaborador:'Status', sexo:'Sexo', genero:'Gênero',
+  status_operacao:'Status Op.', trintidio:'Trintídio', categoria:'Categoria',
+  vencimento_demissao:'Dt Demissão', motivo_desligamento:'Motivo',
+  tipo_desligamento:'Tipo Deslig.', num_ticket:'Nº Ticket', idade:'Idade',
+};
+
+// ── Buscar e parsear CSV do Google Sheets ──────────────────────────────
+async function colabsFetch(tipo) {
+  const gid = tipo === 'ativos' ? COLABS_GID_ATIVOS : COLABS_GID_INATIVOS;
+  const url = `https://docs.google.com/spreadsheets/d/${COLABS_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Erro ao acessar planilha (HTTP ${resp.status})`);
+  const text = await resp.text();
+  // Parsear CSV respeitando campos entre aspas
+  const linhas = text.trim().split(/\r?\n/);
+  const parseRow = row => {
+    const cols = []; let cur = ''; let inQ = false;
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i];
+      if (c === '"') { if (inQ && row[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur=''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  };
+  // Pular cabeçalho (linha 0) — usar mapeamento fixo de colunas
+  const cols = tipo === 'ativos' ? COLABS_COLS_ATIVOS : COLABS_COLS_INATIVOS;
+  const registros = [];
+  for (let i = 1; i < linhas.length; i++) {
+    const row = parseRow(linhas[i]);
+    if (row.every(c => !c)) continue; // linha vazia
+    const obj = { _row: i + 1 }; // _row = número da linha na planilha (base 1, +1 pelo cabeçalho)
+    cols.forEach((c, idx) => { obj[c] = (row[idx] || '').trim(); });
+    if (!obj.matricula && !obj.nome) continue;
+    registros.push(obj);
+  }
+  return registros;
+}
+
+// ── Carregar e renderizar ──────────────────────────────────────────────
+async function colabsCarregar(tipo) {
+  if (COLABS_LOADING) return;
+  COLABS_LOADING = true;
+  const areaId  = `colabs-${tipo}-area`;
+  const syncId  = `colabs-${tipo}-sync`;
+  const countId = `colabs-${tipo}-count`;
+  const areaEl  = document.getElementById(areaId);
+  const syncEl  = document.getElementById(syncId);
+  if (areaEl) areaEl.innerHTML = '<div class="tkt-loading">Carregando planilha…</div>';
+  if (syncEl) syncEl.textContent = '';
+  try {
+    const dados = await colabsFetch(tipo);
+    if (tipo === 'ativos')   { COLABS_ATIVOS   = dados; }
+    else                     { COLABS_INATIVOS  = dados; }
+    COLABS_LOADED = true;
+    colabsPopularFiltros(tipo, dados);
+    colabsFiltrar(tipo);
+    const agora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    if (syncEl) syncEl.textContent = `Atualizado às ${agora} · ${dados.length} registros`;
+  } catch(e) {
+    if (areaEl) areaEl.innerHTML = `<div style="padding:24px;color:var(--danger);font-size:13px">❌ ${e.message}<br><small style="color:var(--muted)">Verifique se a planilha está compartilhada como "Qualquer pessoa com o link — Leitor".</small></div>`;
+  } finally { COLABS_LOADING = false; }
+}
+
+// ── Popular selects de filtro ──────────────────────────────────────────
+function colabsPopularFiltros(tipo, dados) {
+  const uniq = (arr) => [...new Set(arr.filter(Boolean).sort())];
+
+  const ccs     = uniq(dados.map(r => r.cc));
+  const cargos  = uniq(dados.map(r => r.cargo));
+
+  const setOpts = (id, vals) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const atual = el.value;
+    el.innerHTML = `<option value="">Todos</option>` + vals.map(v=>`<option value="${v}">${v}</option>`).join('');
+    if (atual && vals.includes(atual)) el.value = atual;
+  };
+
+  setOpts(`colabs-${tipo}-filtro-cc`,    ccs);
+  setOpts(`colabs-${tipo}-filtro-cargo`, cargos);
+
+  if (tipo === 'inativos') {
+    const motivos = uniq(dados.map(r => r.motivo_desligamento));
+    setOpts(`colabs-inativos-filtro-motivo`, motivos);
+  }
+  if (tipo === 'ativos') {
+    const contratos = uniq(dados.map(r => r.tipo_contrato));
+    setOpts(`colabs-ativos-filtro-contrato`, contratos);
+  }
+}
+
+// ── Filtrar ────────────────────────────────────────────────────────────
+function colabsFiltrar(tipo) {
+  const dados  = tipo === 'ativos' ? COLABS_ATIVOS : COLABS_INATIVOS;
+  const busca  = (document.getElementById(`colabs-${tipo}-busca`)?.value||'').toLowerCase();
+  const filtCC = document.getElementById(`colabs-${tipo}-filtro-cc`)?.value||'';
+  const filtCG = document.getElementById(`colabs-${tipo}-filtro-cargo`)?.value||'';
+  const filtCT = document.getElementById(`colabs-${tipo}-filtro-contrato`)?.value||'';
+  const filtMT = document.getElementById(`colabs-inativos-filtro-motivo`)?.value||'';
+
+  // Filtro de escopo para Onsite — só vê o próprio CC
+  let lista = colabsFiltrarEscopo(dados);
+
+  if (busca) lista = lista.filter(r =>
+    [r.nome,r.matricula,r.cpf,r.nickname,r.email,r.celular]
+      .some(f=>(f||'').toLowerCase().includes(busca)));
+  if (filtCC) lista = lista.filter(r => r.cc === filtCC);
+  if (filtCG) lista = lista.filter(r => r.cargo === filtCG);
+  if (filtCT) lista = lista.filter(r => r.tipo_contrato === filtCT);
+  if (filtMT) lista = lista.filter(r => r.motivo_desligamento === filtMT);
+
+  const countEl = document.getElementById(`colabs-${tipo}-count`);
+  if (countEl) countEl.textContent = `${lista.length} colaborador(es)${lista.length < dados.length ? ` · filtro ativo` : ''}`;
+
+  colabsRenderTabela(tipo, lista);
+}
+
+// Onsite vê só o próprio CC; gestor/master vê tudo
+function colabsFiltrarEscopo(dados) {
+  if (!session || ['master','gestor','gestor_adm'].includes(session.perfil)) return dados;
+  if (session._operacoes?.length) {
+    const ccsCods = new Set(session._operacoes.map(o=>(o.cc_cod||o.nome||'').toUpperCase()).filter(Boolean));
+    if (ccsCods.size) return dados.filter(r => ccsCods.has((r.cc||'').toUpperCase()));
+  }
+  return dados;
+}
+
+function colabsLimparFiltros(tipo) {
+  [`colabs-${tipo}-busca`,`colabs-${tipo}-filtro-cc`,`colabs-${tipo}-filtro-cargo`,
+   `colabs-${tipo}-filtro-contrato`,`colabs-inativos-filtro-motivo`].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  colabsFiltrar(tipo);
+}
+
+// ── Renderizar tabela ──────────────────────────────────────────────────
+function colabsRenderTabela(tipo, lista) {
+  const areaEl = document.getElementById(`colabs-${tipo}-area`);
+  if (!areaEl) return;
+  if (!lista.length) {
+    areaEl.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Nenhum colaborador encontrado.</div>';
+    return;
+  }
+  const podEditar = temPermissao('adp_colabs_editar');
+  const colsAtivos   = ['matricula','nome','cc','cargo','tipo_contrato','data_admissao','status_colaborador','celular'];
+  const colsInativos = ['matricula','nome','cc','cargo','data_admissao','vencimento_demissao','motivo_desligamento','tipo_desligamento'];
+  const cols = tipo === 'ativos' ? colsAtivos : colsInativos;
+
+  const statusPill = (s) => {
+    if (!s) return '—';
+    const sl = s.toLowerCase();
+    if (sl.includes('ativo'))   return `<span class="pill vaga-noprazo">${s}</span>`;
+    if (sl.includes('inativo')) return `<span class="pill vaga-atrasada">${s}</span>`;
+    if (sl.includes('afastado'))return `<span class="pill vaga-pendente">${s}</span>`;
+    return `<span class="pill muted">${s}</span>`;
+  };
+
+  const thead = `<tr>${cols.map(c=>`<th>${COLABS_LABELS[c]||c}</th>`).join('')}${podEditar?'<th></th>':''}</tr>`;
+  const tbody = lista.slice(0,500).map(r => {
+    const cells = cols.map(c => {
+      const v = r[c]||'—';
+      if (c === 'status_colaborador') return `<td>${statusPill(r[c])}</td>`;
+      if (c === 'nome') return `<td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v}</td>`;
+      if (c === 'matricula') return `<td style="font-family:monospace;font-weight:700;color:var(--accent)">${v}</td>`;
+      return `<td style="font-size:12px">${v}</td>`;
+    }).join('');
+    const editBtn = podEditar ? `<td><button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11px" onclick='colabsAbrirModal(${JSON.stringify(r).replace(/'/g,"&#39;")},"${tipo}")'>✏️ Editar</button></td>` : '';
+    return `<tr onclick='colabsAbrirModal(${JSON.stringify(r).replace(/'/g,"&#39;")},"${tipo}")' style="cursor:pointer">${cells}${editBtn}</tr>`;
+  }).join('');
+
+  areaEl.innerHTML = `<div class="table-wrap"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+    ${lista.length>500?`<div style="padding:8px 0;color:var(--muted);font-size:11px;text-align:center">Mostrando 500 de ${lista.length} — refine o filtro para ver mais</div>`:''}`;
+}
+
+// ── Modal de detalhes / edição ─────────────────────────────────────────
+let _colabAtual = null;
+let _colabTipo  = null;
+
+function colabsAbrirModal(r, tipo) {
+  _colabAtual = r;
+  _colabTipo  = tipo;
+  const podEditar = temPermissao('adp_colabs_editar');
+  const cols = tipo === 'ativos' ? COLABS_COLS_ATIVOS : COLABS_COLS_INATIVOS;
+
+  // Grupos de campos para exibição organizada
+  const grupos = tipo === 'ativos' ? [
+    { titulo:'👤 Identificação',  campos:['bpo','cc','nickname','operacao','matricula','nome','sexo','data_nascimento','cpf','nome_mae','categoria'] },
+    { titulo:'💼 Contrato',       campos:['tipo_contrato','cargo','data_admissao','vencimento_contrato','renovacao','salario','horario','escala','status_colaborador','status_operacao','trintidio'] },
+    { titulo:'📞 Contato',        campos:['celular','email','beneficio_mobilidade'] },
+    { titulo:'🏠 Endereço',       campos:['logradouro','numero','complemento','bairro','cidade','uf','cep'] },
+    { titulo:'👔 Uniformes',      campos:['tam_calca','tam_blusa','tam_calcado','tam_luva'] },
+  ] : [
+    { titulo:'👤 Identificação',  campos:['bpo','cc','nickname','matricula','nome','cpf','genero','idade','categoria'] },
+    { titulo:'💼 Histórico',      campos:['tipo_contrato','cargo','data_admissao','vencimento_demissao','motivo_desligamento','tipo_desligamento','num_ticket','status_colaborador','beneficio_mobilidade'] },
+  ];
+
+  const campo = (c) => {
+    const label = COLABS_LABELS[c] || c;
+    const val   = r[c] || '';
+    if (podEditar) {
+      return `<div class="form-group" style="margin-bottom:0">
+        <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">${label}</label>
+        <input type="text" id="colab-field-${c}" value="${val.replace(/"/g,'&quot;')}" style="font-size:12.5px;padding:6px 10px"/>
+      </div>`;
+    } else {
+      return `<div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-bottom:2px">${label}</div>
+        <div style="font-size:12.5px;font-weight:600">${val||'—'}</div>
+      </div>`;
+    }
+  };
+
+  const bodyHtml = grupos.map(g => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)">${g.titulo}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${g.campos.map(campo).join('')}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('colab-modal-title').textContent = r.nome || '—';
+  document.getElementById('colab-modal-sub').textContent   = `${r.matricula||''} · ${r.cc||''} · ${tipo === 'ativos' ? '✅ Ativo' : '⛔ Inativo'}`;
+  document.getElementById('colab-modal-body').innerHTML    = bodyHtml;
+  document.getElementById('colab-modal-footer-edit').style.display = podEditar ? 'flex' : 'none';
+
+  abrirModal('modal-colab');
+}
+
+// ── Salvar edição via Apps Script ──────────────────────────────────────
+async function colabsSalvar() {
+  const webAppUrl = colabsWebAppUrl();
+  if (!webAppUrl) {
+    toast('Configure a URL do Apps Script em Configurações > Template Base.', 'error');
+    return;
+  }
+  const btn = document.getElementById('colab-btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const tipo = _colabTipo;
+  const cols = tipo === 'ativos' ? COLABS_COLS_ATIVOS : COLABS_COLS_INATIVOS;
+  const payload = { tipo, row: _colabAtual._row, dados: {} };
+  cols.forEach(c => {
+    const el = document.getElementById(`colab-field-${c}`);
+    if (el) payload.dados[c] = el.value;
+  });
+
+  try {
+    const resp = await fetch(webAppUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await resp.json();
+    if (json.ok) {
+      // Atualizar cache local
+      const idx = (tipo==='ativos'?COLABS_ATIVOS:COLABS_INATIVOS).findIndex(r=>r._row===_colabAtual._row);
+      if (idx>=0) {
+        cols.forEach(c => { const el=document.getElementById(`colab-field-${c}`); if(el)(tipo==='ativos'?COLABS_ATIVOS:COLABS_INATIVOS)[idx][c]=el.value; });
+      }
+      fecharModal('modal-colab');
+      colabsFiltrar(tipo);
+      toast('Colaborador atualizado na planilha!', 'success');
+    } else {
+      throw new Error(json.error || 'Erro ao salvar');
+    }
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Salvar na Planilha';
+  }
+}
+// ════════════════ FIM COLABORADORES ════════════════
+</script>
+
+<script>
+// ════════════════ CONFIGURAÇÕES — PLANILHA CENTRAL ════════════════
+function salvarColabsWebAppUrl() {
+  const url = document.getElementById('cfg-colabs-webapp-url')?.value.trim() || '';
+  try { localStorage.setItem('wecan_colabs_webapp_url', url); } catch(e) {}
+  const st = document.getElementById('cfg-colabs-status');
+  if (st) { st.textContent = url ? '✅ URL salva!' : '⚠️ URL removida'; st.style.color = url ? 'var(--success)' : 'var(--warning)'; }
+  toast('URL do Apps Script salva!', 'success');
+}
+
+async function testarColabsWebApp() {
+  const url = document.getElementById('cfg-colabs-webapp-url')?.value.trim() || colabsWebAppUrl();
+  const st  = document.getElementById('cfg-colabs-status');
+  if (!url) { if(st) st.textContent = '⚠️ Nenhuma URL configurada'; return; }
+  if(st) { st.textContent = '⏳ Testando…'; st.style.color='var(--muted)'; }
+  try {
+    const resp = await fetch(url);
+    const json = await resp.json();
+    if (json.ok) {
+      if(st) { st.textContent = '✅ Conexão OK — ' + (json.msg||''); st.style.color='var(--success)'; }
+      toast('Apps Script conectado!', 'success');
+    } else {
+      throw new Error(json.error || 'Resposta inesperada');
+    }
+  } catch(e) {
+    if(st) { st.textContent = '❌ Falha: ' + e.message; st.style.color='var(--danger)'; }
+    toast('Falha na conexão: ' + e.message, 'error');
+  }
+}
+
+// Carregar URL salva ao abrir configurações
+function colabsCarregarCfg() {
+  const url = colabsWebAppUrl();
+  const el = document.getElementById('cfg-colabs-webapp-url');
+  if (el) el.value = url || '';
+  // Mostrar card só para master/gestor_adm
+  const card = document.getElementById('cfg-colabs-card');
+  if (card) card.style.display = (session && ['master','gestor_adm','gestor'].includes(session.perfil)) ? 'block' : 'none';
+}
+// ════════════════ FIM CONFIGURAÇÕES PLANILHA CENTRAL ════════════════
 </script>
