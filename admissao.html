@@ -8956,6 +8956,25 @@ function colabsLimparFiltros(tipo) {
   colabsFiltrar(tipo);
 }
 
+// ── Formatar data vinda do Apps Script ou planilha ─────────────────────
+// Suporta: "Mon Oct 28 2024 00:00:00 GMT-0300 (...)" | "dd/mm/aaaa" | "aaaa-mm-dd" | Date serial
+function fmtDataColab(v) {
+  if (!v || v === '—') return '—';
+  const s = String(v).trim();
+  if (!s) return '—';
+  // dd/mm/aaaa já no formato certo
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return s;
+  // aaaa-mm-dd
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  // Formato longo do Apps Script: "Mon Oct 28 2024 00:00:00 GMT..."
+  try {
+    const d = new Date(s);
+    if (!isNaN(d)) return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  } catch(e) {}
+  return s; // fallback: retornar como veio
+}
+
 // ── Renderizar tabela ──────────────────────────────────────────────────
 function colabsRenderTabela(tipo, lista) {
   const areaEl = document.getElementById(`colabs-${tipo}-area`);
@@ -8965,33 +8984,57 @@ function colabsRenderTabela(tipo, lista) {
     return;
   }
   const podEditar = temPermissao('adp_colabs_editar');
+
+  // Colunas da tabela resumida
   const colsAtivos   = ['matricula','nome','cc','cargo','tipo_contrato','data_admissao','status_colaborador','celular'];
   const colsInativos = ['matricula','nome','cc','cargo','data_admissao','vencimento_demissao','motivo_desligamento','tipo_desligamento'];
   const cols = tipo === 'ativos' ? colsAtivos : colsInativos;
 
+  // Campos de data — recebem formatação especial
+  const DATAS = new Set(['data_admissao','vencimento_demissao','vencimento_contrato','data_nascimento','renovacao']);
+
   const statusPill = (s) => {
     if (!s) return '—';
     const sl = s.toLowerCase();
-    if (sl.includes('ativo'))   return `<span class="pill vaga-noprazo">${s}</span>`;
-    if (sl.includes('inativo')) return `<span class="pill vaga-atrasada">${s}</span>`;
-    if (sl.includes('afastado'))return `<span class="pill vaga-pendente">${s}</span>`;
+    if (sl === 'ativo')    return `<span class="pill vaga-noprazo">Ativo</span>`;
+    if (sl === 'inativo')  return `<span class="pill vaga-atrasada">Inativo</span>`;
+    if (sl.includes('afastado')) return `<span class="pill vaga-pendente">${s}</span>`;
     return `<span class="pill muted">${s}</span>`;
   };
 
-  const thead = `<tr>${cols.map(c=>`<th>${COLABS_LABELS[c]||c}</th>`).join('')}${podEditar?'<th></th>':''}</tr>`;
+  const thead = `<tr style="position:sticky;top:0;z-index:2">
+    ${cols.map(c=>`<th style="white-space:nowrap">${COLABS_LABELS[c]||c}</th>`).join('')}
+    <th style="width:36px"></th>
+  </tr>`;
+
   const tbody = lista.slice(0,500).map(r => {
+    const rJson = JSON.stringify(r).replace(/'/g,"&#39;").replace(/"/g,'&quot;');
     const cells = cols.map(c => {
-      const v = r[c]||'—';
-      if (c === 'status_colaborador') return `<td>${statusPill(r[c])}</td>`;
-      if (c === 'nome') return `<td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v}</td>`;
-      if (c === 'matricula') return `<td style="font-family:monospace;font-weight:700;color:var(--accent)">${v}</td>`;
-      return `<td style="font-size:12px">${v}</td>`;
+      const v = r[c] || '';
+      if (c === 'status_colaborador') return `<td>${statusPill(v)}</td>`;
+      if (c === 'matricula')  return `<td style="font-family:monospace;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap">${v||'—'}</td>`;
+      if (c === 'nome')       return `<td style="font-weight:600;font-size:12.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v||'—'}</td>`;
+      if (c === 'cc')         return `<td style="font-size:11px;font-weight:600;white-space:nowrap;color:var(--muted)">${v||'—'}</td>`;
+      if (c === 'cargo')      return `<td style="font-size:11.5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v||'—'}</td>`;
+      if (c === 'celular')    return `<td style="font-size:11.5px;white-space:nowrap;color:var(--muted)">${v||'—'}</td>`;
+      if (DATAS.has(c))       return `<td style="font-size:11.5px;white-space:nowrap">${fmtDataColab(v)}</td>`;
+      if (c === 'tipo_contrato') return `<td style="font-size:11px"><span style="background:var(--surface2);padding:2px 7px;border-radius:4px">${v||'—'}</span></td>`;
+      if (c === 'motivo_desligamento') return `<td style="font-size:11.5px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v||'—'}</td>`;
+      return `<td style="font-size:11.5px">${v||'—'}</td>`;
     }).join('');
-    const editBtn = podEditar ? `<td><button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11px" onclick='colabsAbrirModal(${JSON.stringify(r).replace(/'/g,"&#39;")},"${tipo}")'>✏️ Editar</button></td>` : '';
-    return `<tr onclick='colabsAbrirModal(${JSON.stringify(r).replace(/'/g,"&#39;")},"${tipo}")' style="cursor:pointer">${cells}${editBtn}</tr>`;
+    const editBtn = podEditar
+      ? `<td style="text-align:center"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;opacity:.7" onclick='event.stopPropagation();colabsAbrirModal(JSON.parse(this.dataset.r),"${tipo}")' data-r="${rJson}">✏️</button></td>`
+      : `<td></td>`;
+    return `<tr onclick='colabsAbrirModal(JSON.parse(this.querySelector("[data-r]").dataset.r),"${tipo}")' style="cursor:pointer">${cells}${editBtn}</tr>`;
   }).join('');
 
-  areaEl.innerHTML = `<div class="table-wrap"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+  areaEl.innerHTML = `
+    <div class="table-wrap" style="overflow-x:auto">
+      <table style="min-width:700px">
+        <thead>${thead}</thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>
     ${lista.length>500?`<div style="padding:8px 0;color:var(--muted);font-size:11px;text-align:center">Mostrando 500 de ${lista.length} — refine o filtro para ver mais</div>`:''}`;
 }
 
@@ -9017,18 +9060,23 @@ function colabsAbrirModal(r, tipo) {
     { titulo:'💼 Histórico',      campos:['tipo_contrato','cargo','data_admissao','vencimento_demissao','motivo_desligamento','tipo_desligamento','num_ticket','status_colaborador','beneficio_mobilidade'] },
   ];
 
+  const DATAS_MODAL = new Set(['data_admissao','vencimento_demissao','vencimento_contrato',
+    'data_nascimento','renovacao']);
+
   const campo = (c) => {
-    const label = COLABS_LABELS[c] || c;
-    const val   = r[c] || '';
+    const label    = COLABS_LABELS[c] || c;
+    const rawVal   = r[c] || '';
+    // Para exibição e edição, datas ficam no formato dd/mm/aaaa
+    const dispVal  = DATAS_MODAL.has(c) ? fmtDataColab(rawVal) : rawVal;
     if (podEditar) {
       return `<div class="form-group" style="margin-bottom:0">
         <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">${label}</label>
-        <input type="text" id="colab-field-${c}" value="${val.replace(/"/g,'&quot;')}" style="font-size:12.5px;padding:6px 10px"/>
+        <input type="text" id="colab-field-${c}" value="${dispVal.replace(/"/g,'&quot;')}" style="font-size:12.5px;padding:6px 10px"/>
       </div>`;
     } else {
       return `<div>
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-bottom:2px">${label}</div>
-        <div style="font-size:12.5px;font-weight:600">${val||'—'}</div>
+        <div style="font-size:12.5px;font-weight:600">${dispVal||'—'}</div>
       </div>`;
     }
   };
