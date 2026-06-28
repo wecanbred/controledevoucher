@@ -1372,12 +1372,13 @@
         <pre id="cfg-colabs-script-code" style="margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:10.5px;color:var(--muted);overflow-x:auto;white-space:pre-wrap;line-height:1.5">// Cole este código no Apps Script da planilha
 // Extensões → Apps Script → colar → Publicar → Implantar como app da Web
 // Executar como: Você · Acesso: Qualquer pessoa
+//
+// ⚠️ Apps Script não suporta CORS em doPost — toda comunicação é via doGet
 
-const SHEET_ID    = '1WBYOF9AkoS7NpzhqFyqm5PzQRP13yUF2p5ZY8FfZp_c';
-const GID_ATIVOS  = '690743947';
+const SHEET_ID     = '1WBYOF9AkoS7NpzhqFyqm5PzQRP13yUF2p5ZY8FfZp_c';
+const GID_ATIVOS   = '690743947';
 const GID_INATIVOS = '1320206835';
 
-// Mapeamento de campos → coluna na planilha (índice base 1)
 const COL_ATIVOS = {
   bpo:1, cc:2, nickname:3, operacao:4, matricula:5, nome:6, data_admissao:7,
   tipo_contrato:8, cargo:9, salario:10, vencimento_contrato:11, renovacao:12,
@@ -1394,68 +1395,68 @@ const COL_INATIVOS = {
   beneficio_mobilidade:15, genero:16, idade:17, categoria:18
 };
 
-function doGet(e) {
-  // Sem parâmetros = teste de conexão
-  const action = e?.parameter?.action || '';
-  if (action === 'ler') {
-    return lerColaboradores(e.parameter.tipo || 'ativos');
-  }
-  return ContentService.createTextOutput(JSON.stringify({ ok:true, msg:'WeSys Colaboradores OK' }))
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function lerColaboradores(tipo) {
-  try {
-    const gid    = tipo === 'ativos' ? GID_ATIVOS : GID_INATIVOS;
-    const ss     = SpreadsheetApp.openById(SHEET_ID);
-    const sheets = ss.getSheets();
-    const sheet  = sheets.find(s => s.getSheetId().toString() === gid);
-    if (!sheet) throw new Error('Aba não encontrada: ' + gid);
+function doGet(e) {
+  const p      = e?.parameter || {};
+  const action = p.action || '';
 
-    const data   = sheet.getDataRange().getValues();
-    // Converter para CSV simples
-    const csv = data.map(row =>
-      row.map(cell => {
-        const s = String(cell ?? '').replace(/"/g, '""');
-        return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
-      }).join(',')
-    ).join('\n');
+  if (action === 'ler')   return lerColaboradores(p.tipo || 'ativos');
+  if (action === 'salvar') return salvarColaborador(p);
 
-    return ContentService.createTextOutput(JSON.stringify({ ok:true, csv }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ ok:false, error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
+  return json({ ok:true, msg:'WeSys Template OK' });
 }
 
-function doPost(e) {
+// ── Leitura — retorna CSV da aba ──────────────────────────────
+function lerColaboradores(tipo) {
   try {
-    const body    = JSON.parse(e.postData.contents);
-    const tipo    = body.tipo;   // 'ativos' ou 'inativos'
-    const rowNum  = Number(body.row);  // linha da planilha (inclui cabeçalho)
-    const dados   = body.dados;
+    const sheet = getSheet(tipo);
+    const data  = sheet.getDataRange().getValues();
+    const csv   = data.map(row =>
+      row.map(cell => {
+        const s = String(cell ?? '').replace(/"/g, '""');
+        return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s + '"' : s;
+      }).join(',')
+    ).join('\n');
+    return json({ ok:true, csv });
+  } catch(err) { return json({ ok:false, error: err.message }); }
+}
 
-    if (!tipo || !rowNum || !dados) throw new Error('Dados incompletos');
-    const gid     = tipo === 'ativos' ? GID_ATIVOS : GID_INATIVOS;
-    const colMap  = tipo === 'ativos' ? COL_ATIVOS : COL_INATIVOS;
-    const ss      = SpreadsheetApp.openById(SHEET_ID);
-    const sheets  = ss.getSheets();
-    const sheet   = sheets.find(s => s.getSheetId().toString() === gid);
-    if (!sheet) throw new Error('Aba não encontrada: ' + gid);
+// ── Escrita — parâmetros via URL ──────────────────────────────
+// ?action=salvar&tipo=ativos&row=5&dados={"nome":"João","cargo":"AUX"}
+function salvarColaborador(p) {
+  try {
+    const tipo   = p.tipo;
+    const rowNum = Number(p.row);
+    const dados  = JSON.parse(p.dados || '{}');
+
+    if (!tipo || !rowNum) throw new Error('Parâmetros incompletos');
+
+    const colMap = tipo === 'ativos' ? COL_ATIVOS : COL_INATIVOS;
+    const sheet  = getSheet(tipo);
 
     Object.entries(dados).forEach(([campo, valor]) => {
       const col = colMap[campo];
       if (col) sheet.getRange(rowNum, col).setValue(valor);
     });
 
-    return ContentService.createTextOutput(JSON.stringify({ ok:true }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ ok:false, error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}</pre>
+    return json({ ok:true });
+  } catch(err) { return json({ ok:false, error: err.message }); }
+}
+
+function getSheet(tipo) {
+  const gid    = tipo === 'ativos' ? GID_ATIVOS : GID_INATIVOS;
+  const ss     = SpreadsheetApp.openById(SHEET_ID);
+  const sheet  = ss.getSheets().find(s => s.getSheetId().toString() === gid);
+  if (!sheet) throw new Error('Aba não encontrada: ' + gid);
+  return sheet;
+}
+
+// doPost mantido como fallback (não funciona cross-origin, mas não quebra)
+function doPost(e) { return doGet(e); }</pre>
       </details>
     </div>
   </div>
@@ -9127,11 +9128,10 @@ async function colabsSalvar() {
   });
 
   try {
-    const resp = await fetch(webAppUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    // Apps Script não suporta CORS em doPost — enviamos via GET com params URL
+    const dadosJson = encodeURIComponent(JSON.stringify(payload.dados));
+    const url = `${webAppUrl}?action=salvar&tipo=${payload.tipo}&row=${payload.row}&dados=${dadosJson}`;
+    const resp = await fetch(url);
     const json = await resp.json();
     if (json.ok) {
       // Atualizar cache local
