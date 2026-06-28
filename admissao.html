@@ -1425,25 +1425,32 @@ function lerColaboradores(tipo) {
   } catch(err) { return json({ ok:false, error: err.message }); }
 }
 
-// ── Escrita — parâmetros via URL ──────────────────────────────
-// ?action=salvar&tipo=ativos&row=5&dados={"nome":"João","cargo":"AUX"}
+// ── Escrita — busca linha pela matrícula, não pelo número da linha ──
+// ?action=salvar&tipo=ativos&matricula=WE123456&dados={"nome":"João"}
 function salvarColaborador(p) {
   try {
-    const tipo   = p.tipo;
-    const rowNum = Number(p.row);
-    const dados  = JSON.parse(p.dados || '{}');
+    const tipo       = p.tipo;
+    const matricula  = p.matricula || '';
+    const dados      = JSON.parse(p.dados || '{}');
 
-    if (!tipo || !rowNum) throw new Error('Parâmetros incompletos');
+    if (!tipo || !matricula) throw new Error('Parâmetros incompletos');
 
-    const colMap = tipo === 'ativos' ? COL_ATIVOS : COL_INATIVOS;
-    const sheet  = getSheet(tipo);
+    const colMap    = tipo === 'ativos' ? COL_ATIVOS : COL_INATIVOS;
+    const colMatric = tipo === 'ativos' ? COL_ATIVOS.matricula : COL_INATIVOS.matricula; // col 5 ou 4
+    const sheet     = getSheet(tipo);
+    const data      = sheet.getDataRange().getValues();
+
+    // Encontrar a linha pela matrícula (coluna correta, base 0)
+    const rowIdx = data.findIndex((row, i) => i > 0 && String(row[colMatric - 1]).trim() === matricula.trim());
+    if (rowIdx < 0) throw new Error('Matrícula não encontrada: ' + matricula);
+    const rowNum = rowIdx + 1; // base 1 para o Sheets
 
     Object.entries(dados).forEach(([campo, valor]) => {
       const col = colMap[campo];
       if (col) sheet.getRange(rowNum, col).setValue(valor);
     });
 
-    return json({ ok:true });
+    return json({ ok:true, row: rowNum });
   } catch(err) { return json({ ok:false, error: err.message }); }
 }
 
@@ -9129,8 +9136,10 @@ async function colabsSalvar() {
 
   try {
     // Apps Script não suporta CORS em doPost — enviamos via GET com params URL
+    // Usa matrícula como chave para encontrar a linha correta (row pode deslocar)
+    const matricula = _colabAtual?.matricula || '';
     const dadosJson = encodeURIComponent(JSON.stringify(payload.dados));
-    const url = `${webAppUrl}?action=salvar&tipo=${payload.tipo}&row=${payload.row}&dados=${dadosJson}`;
+    const url = `${webAppUrl}?action=salvar&tipo=${payload.tipo}&matricula=${encodeURIComponent(matricula)}&dados=${dadosJson}`;
     const resp = await fetch(url);
     const json = await resp.json();
     if (json.ok) {
