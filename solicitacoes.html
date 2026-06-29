@@ -208,6 +208,7 @@
         <option value="TROCA DE LOCAL DE TRABALHO">Troca de Local de Trabalho</option>
       </select>
       <button class="btn-enviar" style="font-size:12px;padding:8px 16px" onclick="painelCarregar()">🔄 Atualizar</button>
+      <button class="btn-enviar" style="font-size:12px;padding:8px 16px;background:var(--brand)" onclick="abrirFormNovo()">+ Nova Solicitação</button>
     </div>
 
     <div class="painel-tabs">
@@ -590,6 +591,15 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function solFechar() { if (window.opener) window.close(); else window.history.back(); }
+
+function abrirFormNovo() {
+  const params = new URLSearchParams(location.search);
+  const tok    = params.get('tok') || session?.token || '';
+  const perfil = params.get('perfil') || session?.perfil || '';
+  const nome   = encodeURIComponent(params.get('nome') || session?.nome || '');
+  const url    = `solicitacoes.html?modo=form&tok=${tok}&perfil=${perfil}&nome=${nome}`;
+  window.open(url, 'sol_form_novo', 'width=920,height=860,scrollbars=yes,resizable=yes,toolbar=no,menubar=no');
+}
 function ehOnsite()  { return session?.perfil === 'onsite'; }
 function ehFolha()   { return session?.perfil === 'folha'; }
 function podeGerir() { return ['master','gestor','gestor_adm','folha'].includes(session?.perfil); }

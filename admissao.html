@@ -2382,6 +2382,10 @@ function doPost(e) { return doGet(e); }</pre>
           style="background:rgba(239,68,68,.13);border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;display:none">
           ⚠️ Iniciar Desligamento
         </button>
+        <button class="btn btn-sm" id="colab-btn-sol" onclick="solIniciar()"
+          style="background:rgba(99,204,176,.13);border:1px solid rgba(99,204,176,.3);color:var(--accent);font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;display:none">
+          📨 Nova Solicitação
+        </button>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="fecharModal('modal-colab')">Cancelar</button>
@@ -9251,6 +9255,8 @@ function colabsAbrirModal(r, tipo) {
   // Botão demitir: só para Ativos e quem tem permissão de desligamento
   const btnDemitir = document.getElementById('colab-btn-demitir');
   if (btnDemitir) btnDemitir.style.display = podDemitir ? 'inline-flex' : 'none';
+  const btnSol = document.getElementById('colab-btn-sol');
+  if (btnSol) btnSol.style.display = (tipo === 'ativos' && temPermissao('adp_sol_ver')) ? 'inline-flex' : 'none';
 
   abrirModal('modal-colab');
 }
@@ -9431,6 +9437,11 @@ window.addEventListener('message', ev => {
     if (_solResumoLoaded) solResumoCarregar();
   }
 });
+function solIniciar() {
+  if (!_colabAtual) return;
+  solAbrirForm(_colabAtual);
+  fecharModal('modal-colab');
+}
 // ════════════════ FIM SOLICITAÇÕES ════════════════
 
 // ════════════════ INTEGRAÇÃO RESCISÃO ════════════════
