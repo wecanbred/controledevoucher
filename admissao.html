@@ -2660,6 +2660,7 @@ function doPost(e) { return doGet(e); }</pre>
           <option value="equipe">Consultor — acesso às próprias vagas e operações</option>
           <option value="gestor">Gestor — acesso definido pelas permissões abaixo</option>
           <option value="onsite">Onsite — acesso definido pelas permissões abaixo</option>
+          <option value="folha">Analista de Folha — acesso total ao ADP</option>
           <option value="master">Master — acesso total ao sistema</option>
         </select>
         <p style="font-size:11px;color:var(--muted);margin-top:5px">Master não aparece aqui — é configurado diretamente no banco.</p>
@@ -3632,6 +3633,9 @@ function temPermissao(id) {
     if (!perms || !Object.keys(perms).some(k => perms[k] === true)) return true;
     return perms[id] === true;
   }
+  // Folha: acesso total a ADP, nunca vê RS nem gestão de usuários
+  if (session.perfil === 'folha' && (id.startsWith('rs_') || id === 'sup_gestao_usuarios')) return false;
+  if (session.perfil === 'folha' && id.startsWith('adp_')) return true;
   // Onsite: nunca vê permissões RS nem gestão de usuários
   if (session.perfil === 'onsite' && (id.startsWith('rs_') || id === 'sup_gestao_usuarios')) return false;
   // Consultor (equipe): nunca vê permissões ADP nem gestão de usuários
@@ -3827,6 +3831,8 @@ async function iniciarSessao(conta) {
   const _algumColabs  = temPermissao('adp_colabs_ver');
   const _algumRescisao = temPermissao('adp_rescisao');
   const _algumADP = _algumVoucher || _algumBen || _algumTicket || _algumColabs || _algumRescisao;
+  // Folha sempre vê o grupo ADP
+  if (session?.perfil === 'folha') showBlock('navgroup-admpessoal', true);
   showBlock('navgroup-admpessoal', _algumADP);
   showBlock('navgroup-adp-colabs', _algumColabs);
   showBlock('navgroup-adp-rescisao', _algumRescisao);
@@ -4240,7 +4246,7 @@ async function renderHome() {
           <div id="home-ind-recentes"><div style="color:var(--muted);font-size:12.5px;padding:8px 0">Carregando…</div></div>
         </div>
       </div>`;
-  } else if (session.perfil === 'onsite') {
+  } else if (session.perfil === 'onsite' || session.perfil === 'folha') {
     // ── PAINEL ONSITE ──
     // Contar ativos/inativos/afastados do Template (filtrando pelo escopo do onsite)
     const colabsEscopo = colabsFiltrarEscopo(COLABS_ATIVOS);
@@ -5431,7 +5437,7 @@ function renderPermissoesPorPerfil(perfil, perms) {
     gruposFiltrados = PERMISSOES_GRUPOS;
   } else if (perfil === 'equipe') {
     gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_RS.includes(g.grupo) || GRUPOS_SUP.includes(g.grupo));
-  } else if (perfil === 'onsite') {
+  } else if (perfil === 'onsite' || perfil === 'folha') {
     gruposFiltrados = PERMISSOES_GRUPOS.filter(g => GRUPOS_ADP.includes(g.grupo) || GRUPOS_SUP.includes(g.grupo));
   } else if (perfil === 'gestor') {
     // Gestor: checkboxes de sistema no topo + permissões dos sistemas selecionados
