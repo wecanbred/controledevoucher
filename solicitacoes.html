@@ -117,6 +117,7 @@
   .badge-andamento{background:rgba(79,124,255,.14);color:#4f7cff;}
   .badge-concluido{background:rgba(34,197,94,.14);color:var(--success);}
   .badge-cancelado{background:rgba(239,68,68,.14);color:var(--danger);}
+  .badge-devolvida{background:rgba(168,85,247,.14);color:#a855f7;}
 
   /* Tipo badge colorido */
   .badge-ac{background:rgba(99,204,176,.14);color:var(--accent);}
@@ -214,11 +215,13 @@
     <div class="painel-tabs">
       <button class="painel-tab active" onclick="painelAba('pendente',this)">🕐 Pendentes <span class="tab-count" id="cnt-pendente">0</span></button>
       <button class="painel-tab" onclick="painelAba('andamento',this)">⚙️ Em Andamento <span class="tab-count" id="cnt-andamento">0</span></button>
+      <button class="painel-tab" onclick="painelAba('devolvida',this)">↩️ Devolvidas <span class="tab-count" id="cnt-devolvida">0</span></button>
       <button class="painel-tab" onclick="painelAba('concluido',this)">✅ Concluídas <span class="tab-count" id="cnt-concluido">0</span></button>
     </div>
 
     <div class="painel-section active" id="sec-pendente"><div id="lista-pendente"></div></div>
     <div class="painel-section" id="sec-andamento"><div id="lista-andamento"></div></div>
+    <div class="painel-section" id="sec-devolvida"><div id="lista-devolvida"></div></div>
     <div class="painel-section" id="sec-concluido"><div id="lista-concluido"></div></div>
   </div>
 </div>
@@ -577,13 +580,36 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (modo === 'form') {
     document.getElementById('modo-form').style.display = 'block';
-    // Receber dados do colaborador via sessionStorage (só se veio do Template)
-    const viaTemplate = new URLSearchParams(location.search).get('via') === 'template';
-    try {
-      const raw = sessionStorage.getItem('sol_colab_data');
-      if (raw && viaTemplate) { _colabData = JSON.parse(raw); solPreencherColab(); }
-      else if (!viaTemplate) sessionStorage.removeItem('sol_colab_data'); // limpar se veio direto
-    } catch(e) {}
+    const via = new URLSearchParams(location.search).get('via') || 'painel';
+    const solId = new URLSearchParams(location.search).get('id') || '';
+
+    if (via === 'edicao' && solId) {
+      // Modo edição: carregar solicitação devolvida para corrigir
+      try {
+        const raw = sessionStorage.getItem('sol_edicao_data');
+        if (raw) {
+          const sol = JSON.parse(raw);
+          _colabData = { matricula: sol.matricula, nome: sol.nome, operacao: sol.operacao, cc: sol.cc };
+          solPreencherColab();
+          // Pré-selecionar tipo e preencher campos
+          setTimeout(() => {
+            solSelecionarTipoAuto(sol.tipo, sol.dados);
+          }, 100);
+          // Mudar header para indicar que é edição
+          document.querySelector('.sol-header h1').textContent = 'Corrigir Solicitação';
+          document.querySelector('.sol-header p').textContent  = `Devolvida — corrija e reenvie`;
+          // Guardar ID para reenvio
+          window._solEdicaoId = solId;
+        }
+      } catch(e) {}
+    } else {
+      // Receber dados do colaborador via sessionStorage (só se veio do Template)
+      try {
+        const raw = sessionStorage.getItem('sol_colab_data');
+        if (raw && via === 'template') { _colabData = JSON.parse(raw); solPreencherColab(); }
+        else if (via === 'painel') sessionStorage.removeItem('sol_colab_data');
+      } catch(e) {}
+    }
     window.addEventListener('message', ev => {
       if (ev.data?.tipo === 'sol_colab') { _colabData = ev.data.colab; session = ev.data.session; solPreencherColab(); }
     });
@@ -695,6 +721,33 @@ function solLimparColab() {
 // ── Tipo de solicitação ────────────────────────
 const TIPOS_LABEL = { AC:'Ajuste Cadastral', TB:'Troca de Benefício', TH:'Troca de Horário', RB:'Reembolso de Benefícios', TLT:'Troca de Local de Trabalho' };
 const TIPOS_BADGE = { AC:'badge-ac', TB:'badge-tb', TH:'badge-th', RB:'badge-rb', TLT:'badge-tlt' };
+
+function solSelecionarTipoAuto(tipo, dados) {
+  // Selecionar o card do tipo
+  document.querySelectorAll('.tipo-card').forEach(c => {
+    if (c.getAttribute('onclick')?.includes(`'${tipo}'`)) {
+      c.classList.add('selected');
+      solSelecionarTipoComDados(tipo, dados);
+    }
+  });
+}
+
+function solSelecionarTipoComDados(tipo, dados) {
+  _tipoSelecionado = tipo;
+  document.querySelectorAll('.form-section[id^="sec-"]').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec-' + tipo);
+  if (sec) sec.classList.add('active');
+  document.getElementById('form-sub').textContent = TIPOS_LABEL[tipo] || tipo;
+  // Preencher campos com dados existentes
+  if (!dados) return;
+  const set = (id, v) => { const el=document.getElementById(id); if(el&&v) el.value=v; };
+  const radio = (name, val) => { const el=document.querySelector(`input[name="${name}"][value="${val}"]`); if(el) el.checked=true; };
+  if (tipo==='AC') { set('ac-alterar-para',dados.alterar_para); set('ac-pix',dados.chave_pix); }
+  if (tipo==='TB') { set('tb-beneficio',dados.beneficio); set('tb-novo-vt',dados.novo_vt); set('tb-a-partir',dados.a_partir); radio('tb-dif',dados.dif); }
+  if (tipo==='TH') { set('th-jira',dados.jira); set('th-novo-horario',dados.novo_horario); set('th-matricula-voucher',dados.matricula_voucher); radio('th-voucher',dados.usuario_voucher); radio('th-ponto',dados.ponto_alterado); radio('th-escala',dados.escala); radio('th-dif',dados.dif); }
+  if (tipo==='RB') { set('rb-motivo',dados.motivo); set('rb-jira',dados.jira); set('rb-competencia',dados.competencia); set('rb-solicitado-em',dados.solicitado_em); radio('rb-troca-horario',dados.troca_horario); }
+  if (tipo==='TLT') { set('tlt-jira',dados.jira); set('tlt-novo-local',dados.novo_local); set('tlt-novo-horario',dados.novo_horario); set('tlt-a-partir',dados.a_partir); radio('tlt-tipo',dados.tipo_operacao); }
+}
 
 function solSelecionarTipo(tipo) {
   _tipoSelecionado = tipo;
@@ -903,14 +956,16 @@ function painelFiltrar() {
   if (busca) lista = lista.filter(r => [r.nome,r.matricula,r.cc].some(f=>(f||'').toLowerCase().includes(busca)));
   if (tipo)  lista = lista.filter(r => r.tipo_label === tipo);
 
-  const grupos = { pendente:[], andamento:[], concluido:[] };
+  const grupos = { pendente:[], andamento:[], devolvida:[], concluido:[] };
   lista.forEach(r => {
     const s = r.status === 'em_andamento' ? 'andamento' : (r.status||'pendente');
     if (grupos[s]) grupos[s].push(r);
+    else grupos.pendente.push(r);
   });
   Object.entries(grupos).forEach(([k,v]) => { const el=document.getElementById('cnt-'+k); if(el) el.textContent=v.length; });
   painelRenderLista('pendente',  grupos.pendente);
   painelRenderLista('andamento', grupos.andamento);
+  painelRenderLista('devolvida', grupos.devolvida);
   painelRenderLista('concluido', grupos.concluido);
 }
 
@@ -921,15 +976,17 @@ function painelRenderLista(tipo, lista) {
   const el = document.getElementById('lista-'+tipo);
   if (!el) return;
   if (!lista.length) {
-    const m={pendente:'Nenhuma pendente',andamento:'Nenhuma em andamento',concluido:'Nenhuma concluída'};
-    const i={pendente:'🕐',andamento:'⚙️',concluido:'✅'};
+    const m={pendente:'Nenhuma pendente',andamento:'Nenhuma em andamento',devolvida:'Nenhuma devolvida',concluido:'Nenhuma concluída'};
+    const i={pendente:'🕐',andamento:'⚙️',devolvida:'↩️',concluido:'✅'};
     el.innerHTML=`<div class="empty-state"><div class="empty-ico">${i[tipo]}</div><p>${m[tipo]}</p></div>`;
     return;
   }
-  const cor={pendente:'var(--warning)',andamento:'#4f7cff',concluido:'var(--success)'};
+  const cor={pendente:'var(--warning)',andamento:'#4f7cff',devolvida:'#a855f7',concluido:'var(--success)'};
+  const badgeLabel = {pendente:'Pendente',andamento:'Em Andamento',devolvida:'Devolvida',concluido:'Concluído'};
   el.innerHTML = lista.map(r => {
     const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
-    const badge = `<span class="badge badge-${tipo}">${tipo==='pendente'?'Pendente':tipo==='andamento'?'Em Andamento':'Concluído'}</span>`;
+    const badge = `<span class="badge badge-${tipo}">${badgeLabel[tipo]||tipo}</span>`;
+    const motDevol = tipo==='devolvida' && r.motivo_devolucao ? `<span title="${r.motivo_devolucao}">↩️ ${r.motivo_devolucao.slice(0,40)}${r.motivo_devolucao.length>40?'…':''}</span>` : '';
     const tipoBadge = `<span class="badge ${TIPO_BADGE[r.tipo]||''}">${TIPO_ICO[r.tipo]||''} ${r.tipo_label||r.tipo||'—'}</span>`;
     const responsavel = podeGerir() && r.onsite ? `<span>📤 ${r.onsite}</span>` : '';
     return `<div class="sol-card" onclick='painelAbrirDetalhe(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
@@ -940,6 +997,7 @@ function painelRenderLista(tipo, lista) {
           <span>🪪 ${r.matricula||'—'}</span>
           <span>🏢 ${r.cc||'—'}</span>
           ${responsavel}
+          ${motDevol}
         </div>
       </div>
       <div class="sol-card-right">
@@ -995,13 +1053,26 @@ function painelAbrirDetalhe(r) {
   const formConcl = r.status === 'em_andamento' ? `
     <div class="concl-form">
       <h4>✅ Registrar Conclusão</h4>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group" style="grid-column:span 2">
-          <label>Observações / Resolução</label>
-          <textarea id="concl-obs" placeholder="Descreva como foi resolvida a solicitação…"></textarea>
-        </div>
+      <div class="form-group">
+        <label>Observações / Resolução</label>
+        <textarea id="concl-obs" placeholder="Descreva como foi resolvida a solicitação…"></textarea>
+      </div>
+    </div>
+    <div class="concl-form" style="border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.05);margin-top:10px">
+      <h4 style="color:#a855f7">↩️ Devolver para o Onsite</h4>
+      <div class="form-group">
+        <label>Motivo da Devolução <span class="req">*</span></label>
+        <textarea id="devol-motivo" placeholder="Explique o que precisa ser corrigido ou complementado…"></textarea>
       </div>
     </div>` : '';
+
+  // Mostrar motivo de devolução se já foi devolvida antes
+  const historicoDevol = (r.historico||[]).filter(h=>h.acao==='Devolvida').map(h=>
+    `<div class="resc-hist-item" style="border-color:rgba(168,85,247,.2)">
+      <div class="resc-hist-dot" style="background:#a855f7"></div>
+      <div><b>↩️ Devolvida</b> por ${h.usuario}<div style="font-size:10px;color:var(--muted)">${h.data}</div>
+      ${h.obs?`<div style="font-size:11.5px;color:#a855f7;margin-top:2px">${h.obs}</div>`:''}</div>
+    </div>`).join('');
 
   document.getElementById('det-body').innerHTML = `
     <div class="sec-title">👤 Colaborador</div>
@@ -1018,11 +1089,19 @@ function painelAbrirDetalhe(r) {
   // Botões por status e perfil
   let acoes = `<button onclick="fecharDetalhe()" class="btn-cancel">Fechar</button>`;
   if (!podeGerir()) {
-    const statusTxt = {pendente:'🕐 Aguardando atendimento',em_andamento:'⚙️ Em atendimento',concluido:'✅ Concluído'}[r.status]||'';
-    acoes = `<span style="font-size:12px;color:var(--muted)">${statusTxt}</span><button onclick="fecharDetalhe()" class="btn-cancel">Fechar</button>`;
+    // Onsite: se devolvida, pode editar e reenviar
+    if (r.status === 'devolvida') {
+      acoes += `<button class="btn-enviar" style="background:#a855f7;font-size:12px;padding:8px 18px" onclick="solAbrirEdicao()">✏️ Corrigir e Reenviar</button>`;
+    } else {
+      const statusTxt = {pendente:'🕐 Aguardando atendimento',em_andamento:'⚙️ Em atendimento',concluido:'✅ Concluído'}[r.status]||'';
+      acoes = `<span style="font-size:12px;color:var(--muted)">${statusTxt}</span><button onclick="fecharDetalhe()" class="btn-cancel">Fechar</button>`;
+    }
   } else {
     if (r.status === 'pendente') acoes += `<button class="btn-enviar" style="background:#4f7cff;font-size:12px;padding:8px 18px" onclick="solMudarStatus('em_andamento')">⚙️ Iniciar Atendimento</button>`;
-    else if (r.status === 'em_andamento') acoes += `<button class="btn-enviar" style="font-size:12px;padding:8px 18px" onclick="solConcluir()">✅ Concluir</button>`;
+    else if (r.status === 'em_andamento') {
+      acoes += `<button class="btn-enviar" style="background:#a855f7;font-size:12px;padding:8px 18px" onclick="solDevolver()">↩️ Devolver</button>`;
+      acoes += `<button class="btn-enviar" style="font-size:12px;padding:8px 18px" onclick="solConcluir()">✅ Concluir</button>`;
+    }
   }
   document.getElementById('det-acoes').innerHTML = acoes;
   document.getElementById('modal-sol').style.display = 'block';
@@ -1074,3 +1153,39 @@ function toast(msg, tipo) {
 </script>
 </body>
 </html>
+
+<script>
+// ════════════════ DEVOLUÇÃO DE SOLICITAÇÕES ════════════════
+
+async function solDevolver() {
+  const motivo = document.getElementById('devol-motivo')?.value?.trim();
+  if (!motivo) { toast('Informe o motivo da devolução', 'error'); document.getElementById('devol-motivo')?.focus(); return; }
+  const btn = [...document.querySelectorAll('#det-acoes .btn-enviar')].find(b => b.textContent.includes('Devolver'));
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Devolvendo…'; }
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_devolver_solicitacao`, {
+      method:'POST', headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`},
+      body: JSON.stringify({ p_token: session?.token||'', p_id: _solAtual.id, p_motivo: motivo })
+    });
+    const data = await resp.json();
+    if (data?.ok===false) throw new Error(data.erro||'Erro');
+    fecharDetalhe(); await painelCarregar();
+    painelAba('devolvida', document.querySelectorAll('.painel-tab')[2]);
+    toast('Solicitação devolvida ao Onsite!', 'success');
+  } catch(e) { toast(e.message,'error'); if(btn){btn.disabled=false;btn.innerHTML='↩️ Devolver';} }
+}
+
+function solAbrirEdicao() {
+  if (!_solAtual) return;
+  // Passar dados para o formulário de edição
+  try { sessionStorage.setItem('sol_edicao_data', JSON.stringify(_solAtual)); } catch(e) {}
+  const tok    = session?.token || '';
+  const perfil = session?.perfil || '';
+  const nome   = encodeURIComponent(session?.nome || '');
+  const webapp = encodeURIComponent(sessionStorage.getItem('wecan_colabs_webapp_url')||localStorage.getItem('wecan_colabs_webapp_url')||'');
+  const url    = `solicitacoes.html?modo=form&via=edicao&id=${_solAtual.id}&tok=${tok}&perfil=${perfil}&nome=${nome}`;
+  fecharDetalhe();
+  window.open(url, 'sol_edicao', 'width=920,height=860,scrollbars=yes,resizable=yes,toolbar=no,menubar=no');
+}
+// ════════════════ FIM DEVOLUÇÃO ════════════════
+</script>
