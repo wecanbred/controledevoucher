@@ -9311,8 +9311,11 @@ function colabsCarregarCfg() {
 <script>
 // ════════════════ INTEGRAÇÃO RESCISÃO ════════════════
 function rescAbrirPainel() {
-  const url  = 'rescisao.html'; // sem ?modo → abre painel
-  const opts = 'width=1100,height=820,scrollbars=yes,resizable=yes,toolbar=no,menubar=no';
+  const tok    = session?.token  || '';
+  const perfil = session?.perfil || '';
+  const nome   = encodeURIComponent(session?.nome || '');
+  const url    = `rescisao.html?tok=${tok}&perfil=${perfil}&nome=${nome}`;
+  const opts   = 'width=1100,height=820,scrollbars=yes,resizable=yes,toolbar=no,menubar=no';
   window.open(url, 'rescisao_painel', opts);
 }
 
