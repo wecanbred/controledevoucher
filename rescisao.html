@@ -337,6 +337,10 @@
           <label>Departamento</label>
           <input type="text" id="r-departamento" readonly class="auto-filled"/>
         </div>
+        <div class="form-group">
+          <label>Mobilidade (do Template)</label>
+          <input type="text" id="r-mobilidade-ref" readonly class="auto-filled" placeholder="—"/>
+        </div>
       </div>
     </div>
   </div>
@@ -615,6 +619,29 @@ function rescPreencherAuto() {
   set('r-hub',         c.nickname || c.operacao || c.cc);
   set('r-cc',          c.cc);
   set('r-departamento',c.categoria);
+  // Mostrar valor original do Template como referência
+  set('r-mobilidade-ref', c.beneficio_mobilidade);
+  // Pré-preencher Tipo de Condução a partir do campo Mobilidade do Template
+  if (c.beneficio_mobilidade) {
+    const sel = document.getElementById('r-conducao');
+    if (sel) {
+      // Tentar match exato primeiro, depois parcial
+      const mob = c.beneficio_mobilidade.toUpperCase().trim();
+      let matched = false;
+      for (const opt of sel.options) {
+        if (opt.value.toUpperCase() === mob) { sel.value = opt.value; matched = true; break; }
+      }
+      // Fallback: match parcial (ex: "VT" bate com "VALE TRANSPORTE")
+      if (!matched) {
+        const mapa = { 'VT':'VALE TRANSPORTE', 'UBER':'VOUCHER UBER', 'FRETE':'FRETADO', 'COMBUSTIVEL':'AUXILIO COMBUSTIVEL' };
+        for (const [k, v] of Object.entries(mapa)) {
+          if (mob.includes(k)) { sel.value = v; break; }
+        }
+      }
+      // Marcar como auto-preenchido visualmente
+      if (sel.value) sel.style.borderColor = 'rgba(99,204,176,.4)';
+    }
+  }
 
   document.getElementById('footer-colab-nome').textContent = c.nome || '—';
   document.getElementById('footer-colab-info').textContent =
@@ -729,19 +756,25 @@ function rescArquivoSelecionado(input, areaId, nomeId) {
 // ── Upload de arquivo para Supabase Storage ────────────────────────────
 async function rescUploadArquivo(file, path) {
   if (!file) return null;
+
+  // Usar FormData com método POST — padrão correto do Supabase Storage
+  const formData = new FormData();
+  formData.append('', file, file.name);
+
   const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/rescisoes/${path}`, {
     method: 'POST',
     headers: {
       'apikey':        SUPABASE_ANON,
       'Authorization': `Bearer ${SUPABASE_ANON}`,
-      'Content-Type':  file.type,
       'x-upsert':      'true',
+      'cache-control': '3600',
     },
-    body: file
+    body: formData,
   });
+
   if (!resp.ok) {
-    const err = await resp.json().catch(()=>({}));
-    throw new Error('Erro no upload: ' + (err.message || resp.status));
+    const err = await resp.json().catch(() => ({}));
+    throw new Error('Erro no upload: ' + (err.error || err.message || resp.status));
   }
   return `${SUPABASE_URL}/storage/v1/object/public/rescisoes/${path}`;
 }
