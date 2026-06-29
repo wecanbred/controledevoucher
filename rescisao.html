@@ -933,8 +933,20 @@ function ehOnsite() {
 async function painelInit() {
   // Pegar sessão
   try {
-    session = window.opener?.session ||
-      JSON.parse(localStorage.getItem('wecan_session_v1') || '{}')?.session || null;
+    // Tentar pegar sessão da janela pai primeiro, depois do localStorage
+    try {
+      session = window.opener?.session
+             || window.opener?.carregarSessaoSalva?.()
+             || null;
+      if (!session) {
+        const raw = localStorage.getItem('wecan_session_v1');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Formato: { session: {...}, savedAt: timestamp }
+          session = parsed?.session || parsed || null;
+        }
+      }
+    } catch(e) { session = null; }
   } catch(e) {}
 
   // Adaptar header e abas conforme perfil
@@ -955,9 +967,10 @@ async function painelCarregar() {
       '<div class="empty-state"><div class="empty-ico">⏳</div><p>Carregando…</p></div>');
   try {
     const tok  = session?.token || '';
-    // Onsite só vê as próprias solicitações
+    // Onsite só vê as próprias solicitações — demais perfis veem tudo
     const bodyParams = { p_token: tok };
     if (ehOnsite()) bodyParams.p_onsite_nome = session?.nome || '';
+    // Master/Gestor/Analista: não filtra por onsite_nome (vê tudo)
 
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_listar_rescisoes`, {
       method: 'POST',
