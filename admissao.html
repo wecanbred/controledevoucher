@@ -9733,22 +9733,18 @@ async function exibirBoasVindas() {
 
     const ehOnsite = session?.perfil === 'onsite';
 
-    const html = devolvidas.length || pendentes.length || andamento.length
-      ? `${secao('Devolvidas para correção','#a855f7','↩️', devolvidas)}
-         ${ehOnsite ? '' : secao('Pendentes','var(--warning)','🕐', pendentes)}
-         ${ehOnsite ? '' : secao('Em Andamento','#4f7cff','⚙️', andamento)}`
-      : `<div style="text-align:center;padding:32px;color:var(--muted)">
-          <div style="font-size:32px;margin-bottom:8px">✅</div>
-          <div style="font-size:13px">Tudo em dia! Nenhuma pendência.</div>
-        </div>`;
+    // Para Onsite: só alerta devolvidas. Para outros: devolvidas + pendentes + andamento
+    const totalAlerta = devolvidas.length + (ehOnsite ? 0 : pendentes.length + andamento.length);
 
-    body.innerHTML = html;
+    // Nada para alertar — fechar silenciosamente
+    if (totalAlerta === 0) { fecharBoasVindas(); return; }
 
-    // Atualizar sub-título
-    const total = devolvidas.length + (ehOnsite ? 0 : pendentes.length);
-    document.getElementById('bv-sub').textContent = total > 0
-      ? `Você tem ${total} pendência(s) aguardando atenção`
-      : 'Nenhuma pendência no momento';
+    body.innerHTML = secao('Devolvidas para correção','#a855f7','↩️', devolvidas)
+      + (ehOnsite ? '' : secao('Pendentes','var(--warning)','🕐', pendentes))
+      + (ehOnsite ? '' : secao('Em Andamento','#4f7cff','⚙️', andamento));
+
+    document.getElementById('bv-sub').textContent =
+      `Você tem ${totalAlerta} pendência(s) aguardando atenção`;
 
   } catch(e) {
     body.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted)">Não foi possível carregar as pendências</div>`;
