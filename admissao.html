@@ -3975,6 +3975,17 @@ async function initApp() {
   await iniciarSessao(s);
   // Carregar configurações globais do banco (URL do Apps Script etc.)
   await configCarregarGlobal();
+  // Carregar Template automaticamente em segundo plano para Onsite/Folha
+  if (temPermissao('adp_colabs_ver') && !COLABS_LOADED) {
+    setTimeout(async () => {
+      await colabsCarregar('ativos');
+      await colabsCarregar('inativos');
+      // Atualizar home se o Onsite estiver nela
+      if (document.getElementById('page-home')?.classList.contains('active')) {
+        renderHomePanel();
+      }
+    }, 1500);
+  }
   // Iniciar verificação de notificações após login
   setTimeout(solIniciarPolling, 3000);
   // Exibir modal de boas-vindas com pendências
