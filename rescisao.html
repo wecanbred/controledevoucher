@@ -966,7 +966,10 @@ async function painelCarregar() {
     document.getElementById('lista-' + s).innerHTML =
       '<div class="empty-state"><div class="empty-ico">⏳</div><p>Carregando…</p></div>');
   try {
-    const tok  = session?.token || '';
+    // Token: sessão em memória → URL param → localStorage
+    const urlToken = new URLSearchParams(location.search).get('tok') || '';
+    const tok  = session?.token || urlToken || '';
+    if (!session && tok) session = { token: tok, perfil: new URLSearchParams(location.search).get('perfil') || '', nome: new URLSearchParams(location.search).get('nome') || '' };
     // Onsite só vê as próprias solicitações — demais perfis veem tudo
     const bodyParams = { p_token: tok };
     if (ehOnsite()) bodyParams.p_onsite_nome = session?.nome || '';
@@ -1198,6 +1201,9 @@ function painelAbrirDetalhe(r) {
       acoes += `<button class="btn-enviar" style="background:#4f7cff;font-size:12px;padding:8px 18px" onclick="rescMudarStatus('em_andamento')">⚙️ Iniciar Cálculo</button>`;
     } else if (r.status === 'em_andamento') {
       acoes += `<button class="btn-enviar" style="font-size:12px;padding:8px 18px" onclick="rescConcluir()">✅ Cálculo Realizado</button>`;
+    } else if (r.status === 'concluido') {
+      acoes = `<button onclick="rescExcluir()" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer">🗑️ Excluir</button>
+               <button onclick="fecharDetalhe()" class="btn-cancel-footer">Fechar</button>`;
     }
   }
   document.getElementById('det-acoes').innerHTML = acoes;
@@ -1256,5 +1262,29 @@ async function rescConcluir() {
     toast('Rescisão concluída!', 'success');
   } catch(e) { toast(e.message, 'error'); if(btn){btn.disabled=false;btn.textContent='✅ Cálculo Realizado';} }
 }
+// ── Excluir rescisão concluída ────────────────────────────────
+async function rescExcluir() {
+  if (!_rescAtual) return;
+  if (!confirm(`Excluir a rescisão de ${_rescAtual.nome}? Esta ação não pode ser desfeita.`)) return;
+  const btn = document.querySelector('#det-acoes button');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Excluindo…'; }
+  try {
+    const tok = session?.token || '';
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_excluir_rescisao`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ p_token: tok, p_id: _rescAtual.id })
+    });
+    const data = await resp.json();
+    if (data?.ok === false) throw new Error(data.erro || 'Erro ao excluir');
+    fecharDetalhe();
+    await painelCarregar();
+    toast('Rescisão excluída.', 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Excluir'; }
+  }
+}
+
 // ════════════════ FIM PAINEL ════════════════
 </script>
