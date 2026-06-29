@@ -926,12 +926,25 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 }, { once: true });
 
+function ehOnsite() {
+  return session?.perfil === 'onsite';
+}
+
 async function painelInit() {
   // Pegar sessão
   try {
     session = window.opener?.session ||
       JSON.parse(localStorage.getItem('wecan_session_v1') || '{}')?.session || null;
   } catch(e) {}
+
+  // Adaptar header e abas conforme perfil
+  if (ehOnsite()) {
+    document.querySelector('.painel-wrap h1') && null; // sem h1 aqui
+    // Trocar título da página
+    const sub = document.querySelector('.resc-header p');
+    if (sub) sub.textContent = 'Minhas solicitações de desligamento';
+  }
+
   await painelCarregar();
 }
 
@@ -942,10 +955,14 @@ async function painelCarregar() {
       '<div class="empty-state"><div class="empty-ico">⏳</div><p>Carregando…</p></div>');
   try {
     const tok  = session?.token || '';
+    // Onsite só vê as próprias solicitações
+    const bodyParams = { p_token: tok };
+    if (ehOnsite()) bodyParams.p_onsite_nome = session?.nome || '';
+
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_listar_rescisoes`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
-      body: JSON.stringify({ p_token: tok })
+      body: JSON.stringify(bodyParams)
     });
     const data = await resp.json();
     if (data?.ok === false) throw new Error(data.erro || 'Erro ao carregar');
@@ -1012,6 +1029,7 @@ function painelRenderLista(tipo, lista) {
           ${r.jira ? `<span>🔗 ${r.jira}</span>` : ''}
           <span>📅 ${r.competencia||'—'}</span>
           ${analista ? `<span>👤 ${analista}</span>` : ''}
+          ${!ehOnsite() && r.onsite_nome ? `<span>📤 ${r.onsite_nome}</span>` : ''}
         </div>
       </div>
       <div class="resc-card-right">
@@ -1147,12 +1165,27 @@ function painelAbrirDetalhe(r) {
       <div id="det-historico">${hist}</div>
     </div>`;
 
-  // Botões de ação por status
+  // Botões de ação por status e perfil
   let acoes = `<button onclick="fecharDetalhe()" class="btn-cancel-footer">Fechar</button>`;
-  if (r.status === 'pendente') {
-    acoes += `<button class="btn-enviar" style="background:#4f7cff;font-size:12px;padding:8px 18px" onclick="rescMudarStatus('em_andamento')">⚙️ Iniciar Cálculo</button>`;
-  } else if (r.status === 'em_andamento') {
-    acoes += `<button class="btn-enviar" style="font-size:12px;padding:8px 18px" onclick="rescConcluir()">✅ Cálculo Realizado</button>`;
+
+  if (ehOnsite()) {
+    // Onsite só acompanha — mostra status informativo
+    const statusTxt = {
+      pendente:     '🕐 Aguardando cálculo pelo analista',
+      em_andamento: '⚙️ Cálculo em andamento',
+      concluido:    '✅ Rescisão concluída',
+    }[r.status] || '';
+    if (statusTxt) {
+      acoes = `<span style="font-size:12px;color:var(--muted)">${statusTxt}</span>
+               <button onclick="fecharDetalhe()" class="btn-cancel-footer">Fechar</button>`;
+    }
+  } else {
+    // Analista/Gestor/Master — botões de ação completos
+    if (r.status === 'pendente') {
+      acoes += `<button class="btn-enviar" style="background:#4f7cff;font-size:12px;padding:8px 18px" onclick="rescMudarStatus('em_andamento')">⚙️ Iniciar Cálculo</button>`;
+    } else if (r.status === 'em_andamento') {
+      acoes += `<button class="btn-enviar" style="font-size:12px;padding:8px 18px" onclick="rescConcluir()">✅ Cálculo Realizado</button>`;
+    }
   }
   document.getElementById('det-acoes').innerHTML = acoes;
 
