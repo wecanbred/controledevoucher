@@ -630,14 +630,39 @@ function solBuscarColab() {
   clearTimeout(_buscarTimer);
   const mat = document.getElementById('s-matricula').value.trim();
   if (!mat) { solLimparColab(); return; }
-  _buscarTimer = setTimeout(() => {
+  _buscarTimer = setTimeout(async () => {
     try {
-      const lista = window.opener?.COLABS_ATIVOS || [];
       const matNorm = mat.toUpperCase().replace(/^WE/i,'');
-      const found = lista.find(r => {
-        const rMat = (r.matricula||'').replace(/^WE/i,'');
-        return rMat === matNorm;
-      });
+      // 1ª tentativa: Template já carregado na janela pai
+      let lista = [];
+      try { lista = window.opener?.COLABS_ATIVOS || []; } catch(e) {}
+
+      let found = lista.find(r => (r.matricula||'').replace(/^WE/i,'') === matNorm);
+
+      // 2ª tentativa: buscar via Apps Script se template não carregado
+      if (!found) {
+        const ico = document.getElementById('s-mat-ico'); if(ico) ico.textContent = '⏳';
+        const webAppUrl = localStorage.getItem('wecan_colabs_webapp_url') || 
+          window.opener?.localStorage?.getItem?.('wecan_colabs_webapp_url') || '';
+        if (webAppUrl) {
+          const resp = await fetch(`${webAppUrl}?action=ler&tipo=ativos`);
+          const data = await resp.json();
+          if (data.ok && data.csv) {
+            // Parsear CSV e encontrar colaborador
+            const linhas = data.csv.split(/
+?
+/);
+            const COLS = ['bpo','cc','nickname','operacao','matricula','nome','data_admissao','tipo_contrato','cargo','salario','vencimento_contrato','renovacao','horario','escala','cpf','data_nascimento','nome_mae','celular','email','beneficio_mobilidade','logradouro','numero','complemento','bairro','cidade','uf','cep','tam_calca','tam_blusa','tam_calcado','tam_luva','status_colaborador','sexo','status_operacao','trintidio','categoria'];
+            for (let i=1;i<linhas.length;i++) {
+              const row = linhas[i].split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+              const obj = {};
+              COLS.forEach((c,idx)=>obj[c]=(row[idx]||'').trim());
+              if ((obj.matricula||'').replace(/^WE/i,'') === matNorm) { found = obj; break; }
+            }
+          }
+        }
+      }
+
       if (found) {
         _colabData = found;
         solPreencherColab();
@@ -647,11 +672,11 @@ function solBuscarColab() {
         solLimparColab();
         if (mat.length >= 4) {
           document.getElementById('s-matricula').style.borderColor = 'var(--danger)';
-          document.getElementById('s-nome').placeholder = '⚠️ Matrícula não encontrada no Template';
+          document.getElementById('s-nome').placeholder = '⚠️ Matrícula não encontrada';
           const ico = document.getElementById('s-mat-ico'); if(ico) ico.textContent = '❌';
         }
       }
-    } catch(e) { solLimparColab(); }
+    } catch(e) { solLimparColab(); console.error(e); }
   }, 500);
 }
 
