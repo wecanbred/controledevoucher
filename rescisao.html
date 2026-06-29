@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Solicitação de Desligamento | WeSys</title>
+<style>
+  :root {
+    --bg:       #0f0718; --surface:  #1a0a2e; --surface2: #2a1045;
+    --surface3: #3d1860; --border:   #432a5c; --accent:   #63ccb0;
+    --brand:    #4f0672; --success:  #22c55e; --danger:   #ef4444;
+    --warning:  #f59e0b; --text:     #efe9f7; --muted:    #a394bf;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  /* ── Header ── */
+  .resc-header {
+    background:#1e0b35; border-bottom:1px solid var(--border);
+    padding:14px 28px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:50;
+  }
+  .resc-header-left { display:flex; align-items:center; gap:14px; }
+  .resc-logo { width:34px; height:34px; background:var(--brand); border-radius:8px;
+    display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .resc-header h1 { font-size:15px; font-weight:700; }
+  .resc-header p  { font-size:11px; color:var(--muted); margin-top:1px; }
+  .btn-fechar { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3);
+    color:#ef4444; padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer; }
+  .btn-fechar:hover { background:rgba(239,68,68,.22); }
+
+  /* ── Layout ── */
+  .resc-body { max-width:860px; margin:0 auto; padding:28px 20px 60px; }
+
+  /* ── Seções ── */
+  .resc-section {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    margin-bottom:20px; overflow:hidden;
+  }
+  .resc-section-head {
+    background:var(--surface2); padding:12px 20px;
+    display:flex; align-items:center; gap:10px;
+    border-bottom:1px solid var(--border);
+  }
+  .resc-section-head h2 { font-size:12px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.6px; color:var(--accent); }
+  .resc-section-head .badge-auto {
+    font-size:9px; background:rgba(99,204,176,.15); color:var(--accent);
+    border:1px solid rgba(99,204,176,.3); padding:2px 8px; border-radius:20px; font-weight:700;
+  }
+  .resc-section-body { padding:20px; }
+
+  /* ── Grid de campos ── */
+  .form-grid { display:grid; gap:14px; }
+  .form-grid.cols-2 { grid-template-columns:1fr 1fr; }
+  .form-grid.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+  .form-grid.cols-1 { grid-template-columns:1fr; }
+  @media(max-width:600px) { .form-grid.cols-2,.form-grid.cols-3 { grid-template-columns:1fr; } }
+
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label {
+    font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--muted);
+  }
+  .form-group label .req { color:var(--danger); margin-left:2px; }
+  .form-group input, .form-group select, .form-group textarea {
+    background:var(--surface2); border:1px solid var(--border); border-radius:9px;
+    color:var(--text); font-family:var(--font); font-size:13px; padding:9px 12px;
+    transition:border-color .15s; outline:none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color:var(--accent);
+  }
+  .form-group input[readonly], .form-group select[disabled] {
+    opacity:.6; cursor:default;
+  }
+  .form-group input.auto-filled {
+    background:rgba(99,204,176,.06); border-color:rgba(99,204,176,.3);
+    color:var(--accent);
+  }
+  .form-group textarea { resize:vertical; min-height:80px; }
+  .form-group select option { background:var(--surface2); }
+
+  /* ── Upload ── */
+  .upload-area {
+    border:2px dashed var(--border); border-radius:10px; padding:20px;
+    text-align:center; cursor:pointer; transition:border-color .15s, background .15s;
+    background:var(--surface2);
+  }
+  .upload-area:hover { border-color:var(--accent); background:rgba(99,204,176,.05); }
+  .upload-area.has-file { border-color:var(--success); background:rgba(34,197,94,.06); }
+  .upload-area input[type=file] { display:none; }
+  .upload-ico { font-size:24px; margin-bottom:6px; }
+  .upload-txt { font-size:12px; color:var(--muted); }
+  .upload-name { font-size:12px; color:var(--success); font-weight:600; margin-top:4px; }
+
+  /* ── Verbas ── */
+  .verba-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .verba-item { background:var(--surface2); border:1px solid var(--border);
+    border-radius:9px; padding:10px 14px; }
+  .verba-label { font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase;
+    letter-spacing:.4px; margin-bottom:4px; }
+  .verba-input { background:none; border:none; color:var(--text); font-size:13px;
+    font-family:var(--font); width:100%; outline:none; }
+
+  /* ── Footer ── */
+  .resc-footer {
+    position:fixed; bottom:0; left:0; right:0;
+    background:#1e0b35; border-top:1px solid var(--border);
+    padding:12px 28px; display:flex; align-items:center; justify-content:space-between;
+    z-index:50;
+  }
+  .resc-footer-info { font-size:11px; color:var(--muted); }
+  .resc-footer-info b { color:var(--text); }
+  .btn-enviar {
+    background:var(--accent); color:#0f0718; border:none; border-radius:10px;
+    padding:10px 28px; font-size:13.5px; font-weight:700; cursor:pointer;
+    transition:opacity .15s; display:flex; align-items:center; gap:8px;
+  }
+  .btn-enviar:hover { opacity:.88; }
+  .btn-enviar:disabled { opacity:.5; cursor:default; }
+  .btn-cancel-footer { background:var(--surface2); border:1px solid var(--border);
+    color:var(--muted); border-radius:10px; padding:10px 18px; font-size:13px; cursor:pointer; }
+
+  /* ── Toast ── */
+  #toast { position:fixed; bottom:72px; left:50%; transform:translateX(-50%);
+    background:var(--surface3); color:var(--text); padding:10px 20px; border-radius:10px;
+    font-size:13px; border:1px solid var(--border); display:none; z-index:999;
+    box-shadow:0 4px 20px rgba(0,0,0,.4); }
+  #toast.success { background:rgba(34,197,94,.15); border-color:var(--success); color:var(--success); }
+  #toast.error   { background:rgba(239,68,68,.15); border-color:var(--danger);  color:var(--danger); }
+
+  /* ── Divider ── */
+  .section-divider { height:1px; background:var(--border); margin:14px 0; }
+
+  /* ══ PAINEL DE GESTÃO ══ */
+  .painel-wrap { max-width:1100px; margin:0 auto; padding:24px 20px 80px; }
+
+  .painel-tabs { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+  .painel-tab {
+    padding:8px 18px; border-radius:10px; font-size:12.5px; font-weight:700;
+    cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+    color:var(--muted); transition:all .15s; display:flex; align-items:center; gap:6px;
+  }
+  .painel-tab.active { background:var(--accent); color:#0f0718; border-color:var(--accent); }
+  .painel-tab .tab-count {
+    background:rgba(255,255,255,.2); border-radius:20px;
+    padding:1px 7px; font-size:10px;
+  }
+  .painel-tab:not(.active) .tab-count { background:var(--surface3); color:var(--text); }
+
+  .painel-section { display:none; }
+  .painel-section.active { display:block; }
+
+  .resc-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 18px; margin-bottom:10px; cursor:pointer;
+    transition:border-color .15s, background .15s;
+    display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+  }
+  .resc-card:hover { border-color:var(--accent); background:var(--surface2); }
+  .resc-card-status { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .resc-card-body {}
+  .resc-card-nome { font-size:13.5px; font-weight:700; }
+  .resc-card-meta { font-size:11px; color:var(--muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
+  .resc-card-meta span { display:flex; align-items:center; gap:3px; }
+  .resc-card-right { text-align:right; flex-shrink:0; }
+  .resc-card-data { font-size:11px; color:var(--muted); }
+  .resc-card-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; margin-top:4px; display:inline-block; }
+
+  .badge-pendente   { background:rgba(245,158,11,.14); color:var(--warning); }
+  .badge-andamento  { background:rgba(79,124,255,.14);  color:#4f7cff; }
+  .badge-concluido  { background:rgba(34,197,94,.14);   color:var(--success); }
+  .badge-cancelado  { background:rgba(239,68,68,.14);   color:var(--danger); }
+
+  /* Modal de detalhes da rescisão */
+  .resc-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .resc-detail-item { }
+  .resc-detail-label { font-size:9.5px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--muted); margin-bottom:3px; }
+  .resc-detail-val { font-size:12.5px; font-weight:600; }
+  .resc-detail-full { grid-column:span 2; }
+  .resc-hist-item {
+    display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);
+    font-size:12px;
+  }
+  .resc-hist-item:last-child { border-bottom:none; }
+  .resc-hist-dot { width:8px; height:8px; border-radius:50%; background:var(--accent);
+    margin-top:4px; flex-shrink:0; }
+  .resc-hist-txt { flex:1; }
+  .resc-hist-data { font-size:10px; color:var(--muted); margin-top:2px; }
+
+  /* Formulário de conclusão */
+  .concl-form { background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:16px; margin-top:14px; }
+  .concl-form h4 { font-size:11px; font-weight:800; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; }
+
+  .empty-state { text-align:center; padding:48px 24px; color:var(--muted); }
+  .empty-state .empty-ico { font-size:36px; margin-bottom:10px; }
+  .empty-state p { font-size:13px; }
+
+  .resc-toolbar { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .resc-search { flex:1; min-width:200px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:10px; padding:8px 14px;
+    color:var(--text); font-family:var(--font); font-size:13px; outline:none; }
+  .resc-search:focus { border-color:var(--accent); }
+
+</style>
+</head>
+<body>
+
+<!-- PAINEL DE GESTÃO (visível quando modo=painel) -->
+<div id="modo-painel" style="display:none">
+  <div class="resc-header">
+    <div class="resc-header-left">
+      <div class="resc-logo">📋</div>
+      <div>
+        <h1>Gestão de Rescisões</h1>
+        <p>Solicitações de desligamento — acompanhamento e cálculo</p>
+      </div>
+    </div>
+    <button class="btn-fechar" onclick="window.close()">✕ Fechar</button>
+  </div>
+
+  <div class="painel-wrap">
+    <!-- Toolbar -->
+    <div class="resc-toolbar">
+      <input class="resc-search" type="text" id="painel-busca" placeholder="🔍  Buscar por nome, matrícula, Jira…" oninput="painelFiltrar()"/>
+      <button class="btn-enviar" style="font-size:12px;padding:8px 16px" onclick="painelCarregar()">🔄 Atualizar</button>
+    </div>
+
+    <!-- Abas -->
+    <div class="painel-tabs">
+      <button class="painel-tab active" onclick="painelAba('pendente',this)">
+        🕐 Pendentes <span class="tab-count" id="cnt-pendente">0</span>
+      </button>
+      <button class="painel-tab" onclick="painelAba('andamento',this)">
+        ⚙️ Em Andamento <span class="tab-count" id="cnt-andamento">0</span>
+      </button>
+      <button class="painel-tab" onclick="painelAba('concluido',this)">
+        ✅ Concluídas <span class="tab-count" id="cnt-concluido">0</span>
+      </button>
+    </div>
+
+    <!-- Seções -->
+    <div class="painel-section active" id="sec-pendente">
+      <div id="lista-pendente"><div class="empty-state"><div class="empty-ico">⏳</div><p>Carregando…</p></div></div>
+    </div>
+    <div class="painel-section" id="sec-andamento">
+      <div id="lista-andamento"><div class="empty-state"><div class="empty-ico">⚙️</div><p>Carregando…</p></div></div>
+    </div>
+    <div class="painel-section" id="sec-concluido">
+      <div id="lista-concluido"><div class="empty-state"><div class="empty-ico">✅</div><p>Carregando…</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE DETALHES DA RESCISÃO -->
+<div id="modal-resc-detalhe" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;overflow-y:auto;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:700px;margin:0 auto;display:flex;flex-direction:column;max-height:90vh">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <div>
+        <div style="font-size:15px;font-weight:800" id="det-nome">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="det-sub">—</div>
+      </div>
+      <button onclick="fecharDetalhe()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">✕</button>
+    </div>
+
+    <div style="overflow-y:auto;flex:1;padding:18px 20px" id="det-body">
+      <!-- preenchido por JS -->
+    </div>
+
+    <div style="padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap" id="det-acoes">
+      <!-- botões por status -->
+    </div>
+  </div>
+</div>
+
+<!-- MODO FORM -->
+<div id="modo-form" style="display:none">
+<!-- HEADER -->
+<div class="resc-header">
+  <div class="resc-header-left">
+    <div class="resc-logo">📋</div>
+    <div>
+      <h1>Solicitação de Desligamento</h1>
+      <p id="resc-sub">Preencha os dados abaixo e envie para o RH processar</p>
+    </div>
+  </div>
+  <button class="btn-fechar" onclick="rescFechar()">✕ Fechar</button>
+</div>
+
+<!-- BODY -->
+<div class="resc-body">
+
+  <!-- ══ 1. DADOS DO COLABORADOR (auto) ══ -->
+  <div class="resc-section">
+    <div class="resc-section-head">
+      <span>👤</span>
+      <h2>Dados do Colaborador</h2>
+      <span class="badge-auto">✦ Preenchido automaticamente</span>
+    </div>
+    <div class="resc-section-body">
+      <div class="form-grid cols-3">
+        <div class="form-group">
+          <label>Matrícula <span class="req">*</span></label>
+          <input type="text" id="r-matricula" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Nome Completo <span class="req">*</span></label>
+          <input type="text" id="r-nome" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group">
+          <label>CPF</label>
+          <input type="text" id="r-cpf" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group">
+          <label>Contrato</label>
+          <input type="text" id="r-contrato" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group">
+          <label>Data de Admissão</label>
+          <input type="text" id="r-admissao" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group">
+          <label>Hub / Soc</label>
+          <input type="text" id="r-hub" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group">
+          <label>Centro de Custo</label>
+          <input type="text" id="r-cc" readonly class="auto-filled"/>
+        </div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <input type="text" id="r-departamento" readonly class="auto-filled"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2. DADOS DO DESLIGAMENTO ══ -->
+  <div class="resc-section">
+    <div class="resc-section-head">
+      <span>📅</span>
+      <h2>Dados do Desligamento</h2>
+    </div>
+    <div class="resc-section-body">
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label>Nº do Ticket Jira <span class="req">*</span></label>
+          <input type="text" id="r-jira" placeholder="VWF-000000"/>
+        </div>
+        <div class="form-group">
+          <label>Competência do Desligamento <span class="req">*</span></label>
+          <select id="r-competencia">
+            <option value="">— Selecione o mês/ano —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data do Desligamento <span class="req">*</span></label>
+          <input type="date" id="r-data-deslig"/>
+        </div>
+        <div class="form-group">
+          <label>Último Dia Trabalhado <span class="req">*</span></label>
+          <input type="date" id="r-ultimo-dia"/>
+        </div>
+        <div class="form-group">
+          <label>Período do Apontamento</label>
+          <input type="text" id="r-periodo" placeholder="Ex: 01/06/2026 a 25/06/2026"/>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Condução <span class="req">*</span></label>
+          <select id="r-conducao">
+            <option value="">— Selecione —</option>
+            <option>VALE TRANSPORTE</option>
+            <option>VOUCHER UBER</option>
+            <option>VALE TRANSPORTE/VOUCHER UBER</option>
+            <option>AUXILIO COMBUSTIVEL</option>
+            <option>FRETADO</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 3. TIPO DE SAÍDA E DESLIGAMENTO ══ -->
+  <div class="resc-section">
+    <div class="resc-section-head">
+      <span>🔖</span>
+      <h2>Classificação do Desligamento</h2>
+    </div>
+    <div class="resc-section-body">
+      <div class="form-grid cols-1">
+        <div class="form-group">
+          <label>Tipo de Saída <span class="req">*</span></label>
+          <select id="r-tipo-saida" onchange="rescAtualizarTipoDeslig()">
+            <option value="">— Selecione —</option>
+            <option>1 - VOLUNTÁRIA (PEDIDO DEMISSÃO)</option>
+            <option>2 - INVOLUNTÁRIA (SEM JUSTA CAUSA)</option>
+            <option>3 - INVOLUNTÁRIA (COM JUSTA CAUSA)</option>
+            <option>4 - NO SHOW</option>
+            <option>6 - EARLY TURNOVER</option>
+            <option>NO SHOW - PEDIDO DE DEMISSÃO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Desligamento <span class="req">*</span></label>
+          <select id="r-tipo-deslig">
+            <option value="">— Selecione o Tipo de Saída primeiro —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Motivo do Desligamento <span class="req">*</span></label>
+          <select id="r-motivo">
+            <option value="">— Selecione —</option>
+            <option>ABANDONO DE EMPREGO</option>
+            <option>AGRESSÃO FÍSICA / AMEAÇA</option>
+            <option>ALTO ÍNDICE DE ABSENTEÍSMO (ABS)</option>
+            <option>ASSÉDIO MORAL</option>
+            <option>ASSÉDIO SEXUAL</option>
+            <option>BAIXA PERFORMANCE</option>
+            <option>CESSÃO / ACORDO ENTRE PARTES</option>
+            <option>COMPLIANCE / MÁ CONDUTA ÉTICA</option>
+            <option>COMPORTAMENTO INADEQUADO / PROBLEMAS COMPORTAMENTAIS</option>
+            <option>CONDENAÇÃO JUDICIAL</option>
+            <option>DESLIGAMENTO SOLICITADO PELO TOMADOR (CONDUTA / OUTROS)</option>
+            <option>DISPENSA COM JUSTA CAUSA</option>
+            <option>EARLY TURNOVER</option>
+            <option>FALECIMENTO / ÓBITO</option>
+            <option>FRAUDE / FALSIFICAÇÃO DE DOCUMENTOS / PONTO</option>
+            <option>INDISPOSIÇÃO COM GESTORES E COLEGAS DE TRABALHO NA OPERAÇÃO</option>
+            <option>INSATISFAÇÃO COM JORNADA DE TRABALHO</option>
+            <option>INSATISFAÇÃO COM LIDERANÇA</option>
+            <option>INTERNALIZAÇÃO SPX</option>
+            <option>MOTIVOS DE SAÚDE</option>
+            <option>MOTIVOS PESSOAIS / FAMILIARES</option>
+            <option>MUDANÇA DE CIDADE</option>
+            <option>NÃO INFORMOU O MOTIVO DA DEMISSÃO</option>
+            <option>NÃO TEM COM QUEM DEIXAR DEPENDENTES / FILHOS</option>
+            <option>NO SHOW - NÃO RECEBEU PAGAMENTO</option>
+            <option>NO SHOW - RECEBEU PAGAMENTO</option>
+            <option>OUTRA OPORTUNIDADE DE EMPREGO / MELHOR SALÁRIO</option>
+            <option>OUTRA OPORTUNIDADE MELHOR SALARIO (PEDIDO DE DEMISSAO)</option>
+            <option>PEDIDO DE DEMISSÃO - Descrever o motivo</option>
+            <option>PEDIDO DE DEMISSAO - NAO SE ADAPTOU</option>
+            <option>PEDIDO DEMISSÃO - PROBLEMAS PESSOAIS</option>
+            <option>PEDIDO DEMISSÃO (EM BUSCA DE NOVAS PERSPECTIVAS)</option>
+            <option>PROBLEMAS COM TRANSPORTE / FRETADO / DISTÂNCIA</option>
+            <option>REDUÇÃO DO QUADRO</option>
+            <option>REPROVA EM PROCESSO DE INTERNALIZAÇÃO</option>
+            <option>RESC. ANT. CONTR. DET. - INIC. EMPREGADO</option>
+            <option>RESC. ANT. CONTR. DET. - INIC. EMPRESA</option>
+            <option>RESCISÃO INDIRETA</option>
+            <option>ROUBO / FURTO</option>
+            <option>SERVIÇO FISICAMENTE PESADO / DIFÍCIL EXECUÇÃO</option>
+            <option>TÉRMINO DE CONTRATO</option>
+            <option>USO DE ENTORPECENTES / SUBSTÂNCIAS ILÍCITAS</option>
+          </select>
+        </div>
+        <div class="form-group" id="grupo-motivo-desc" style="display:none">
+          <label>Descrever o Motivo Exato</label>
+          <textarea id="r-motivo-desc" placeholder="Descreva com detalhes o motivo do desligamento…"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 4. VERBAS / APONTAMENTO ══ -->
+  <div class="resc-section">
+    <div class="resc-section-head">
+      <span>🧾</span>
+      <h2>Verbas do Apontamento</h2>
+    </div>
+    <div class="resc-section-body">
+      <div class="form-grid cols-2">
+        <div class="form-group">
+          <label>H.E. a 50% (Verba 150)</label>
+          <input type="text" id="r-he50" placeholder="0,00" oninput="rescFmtVerba(this)"/>
+        </div>
+        <div class="form-group">
+          <label>H.E. a 100% (Verba 0157)</label>
+          <input type="text" id="r-he100" placeholder="0,00" oninput="rescFmtVerba(this)"/>
+        </div>
+        <div class="form-group">
+          <label>Adicional Noturno 20% (Verba 184)</label>
+          <input type="text" id="r-adic-not" placeholder="0,00" oninput="rescFmtVerba(this)"/>
+        </div>
+        <div class="form-group">
+          <label>Desc. Horas/Atrasos (Verba 0553)</label>
+          <input type="text" id="r-desc-horas" placeholder="0,00" oninput="rescFmtVerba(this)"/>
+        </div>
+        <div class="form-group">
+          <label>Desc. Faltas em Dias (Verba 552)</label>
+          <input type="text" id="r-desc-faltas" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label>Desconto de DSR (Verba 0733)</label>
+          <input type="text" id="r-desc-dsr" placeholder="0,00" oninput="rescFmtVerba(this)"/>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Recebe VA/Cesta? Se sim, qual o valor?</label>
+          <input type="text" id="r-va-cesta" placeholder="Ex: Sim — R$ 350,00 / Não"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 5. ANEXOS ══ -->
+  <div class="resc-section">
+    <div class="resc-section-head">
+      <span>📎</span>
+      <h2>Anexos</h2>
+    </div>
+    <div class="resc-section-body">
+      <div class="form-grid cols-1">
+        <div class="form-group">
+          <label>Espelho de Ponto <span class="req">*</span></label>
+          <div class="upload-area" id="ua-ponto" onclick="document.getElementById('file-ponto').click()">
+            <input type="file" id="file-ponto" accept=".pdf,.jpg,.jpeg,.png" onchange="rescArquivoSelecionado(this,'ua-ponto','nome-ponto')"/>
+            <div class="upload-ico">📄</div>
+            <div class="upload-txt">Clique para selecionar o espelho de ponto</div>
+            <div class="upload-txt" style="font-size:10px;margin-top:2px">PDF, JPG ou PNG</div>
+            <div class="upload-name" id="nome-ponto"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Comprovante de Desligamento <span class="req">*</span><br>
+            <span style="font-weight:400;text-transform:none;font-size:10px;color:var(--muted)">Pedido de demissão / Carta de término / Comunicado assinado / Print (abandono)</span>
+          </label>
+          <div class="upload-area" id="ua-deslig" onclick="document.getElementById('file-deslig').click()">
+            <input type="file" id="file-deslig" accept=".pdf,.jpg,.jpeg,.png" onchange="rescArquivoSelecionado(this,'ua-deslig','nome-deslig')"/>
+            <div class="upload-ico">📋</div>
+            <div class="upload-txt">Clique para selecionar o comprovante</div>
+            <div class="upload-txt" style="font-size:10px;margin-top:2px">PDF, JPG ou PNG</div>
+            <div class="upload-name" id="nome-deslig"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:64px"></div>
+</div>
+
+<!-- FOOTER FIXO -->
+<div class="resc-footer">
+  <div class="resc-footer-info">
+    <b id="footer-colab-nome">—</b><br>
+    <span id="footer-colab-info" style="font-size:10px">Preencha todos os campos obrigatórios</span>
+  </div>
+  <div style="display:flex;gap:10px">
+    <button class="btn-cancel-footer" onclick="rescFechar()">Cancelar</button>
+    <button class="btn-enviar" id="btn-enviar" onclick="rescEnviar()">
+      <span>📤</span> Enviar Solicitação
+    </button>
+  </div>
+</div>
+
+</div><!-- /modo-form -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  rescisao.html — WeSys | Integrado
+//  Comunicação com admissao.html via window.opener
+// ══════════════════════════════════════════════
+
+const SUPABASE_URL  = 'https://omwilcuzcvgzyzqqrbkh.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9td2lsY3V6Y3Znenl6cXFyYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzI1MTIsImV4cCI6MjA5NzcwODUxMn0.S1pbFqZ4B5_TWMBq_r8BeQ9OOFzkj73aOoI6g3Y987Q';
+
+let session = null;
+let _dadosColab = null;
+
+// ── Inicializar ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Pegar sessão da janela pai
+  try {
+    session = window.opener?.carregarSessaoSalva?.() ||
+              window.opener?.session || null;
+  } catch(e) {}
+
+  // Pegar dados do colaborador passados pela janela pai
+  try {
+    const raw = sessionStorage.getItem('resc_colab_data');
+    if (raw) { _dadosColab = JSON.parse(raw); rescPreencherAuto(); }
+  } catch(e) {}
+
+  rescPopularCompetencia();
+  rescPopularTipoDeslig();
+
+  // Ouvir mensagem do pai (fallback)
+  window.addEventListener('message', (ev) => {
+    if (ev.data?.tipo === 'resc_colab') {
+      _dadosColab = ev.data.colab;
+      session     = ev.data.session;
+      rescPreencherAuto();
+    }
+  });
+});
+
+// ── Preencher campos automáticos ───────────────────────────────────────
+function rescPreencherAuto() {
+  const c = _dadosColab;
+  if (!c) return;
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  set('r-matricula',   c.matricula);
+  set('r-nome',        c.nome);
+  set('r-cpf',         c.cpf);
+  set('r-contrato',    c.tipo_contrato);
+  set('r-admissao',    fmtData(c.data_admissao));
+  set('r-hub',         c.nickname || c.operacao || c.cc);
+  set('r-cc',          c.cc);
+  set('r-departamento',c.categoria);
+
+  document.getElementById('footer-colab-nome').textContent = c.nome || '—';
+  document.getElementById('footer-colab-info').textContent =
+    `${c.matricula || ''}  ·  ${c.cc || ''}`;
+  document.getElementById('resc-sub').textContent =
+    `Solicitação para: ${c.nome || ''} — ${c.matricula || ''}`;
+}
+
+function fmtData(v) {
+  if (!v) return '';
+  const s = String(v).trim();
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return s;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  try { const d = new Date(s); if (!isNaN(d)) return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}); } catch(e) {}
+  return s;
+}
+
+// ── Popular competência (últimos 6 meses + próximos 2) ─────────────────
+function rescPopularCompetencia() {
+  const sel = document.getElementById('r-competencia');
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const hoje = new Date();
+  for (let i = -5; i <= 2; i++) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
+    const label = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+    const val   = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+// ── Tipos de desligamento por tipo de saída ────────────────────────────
+const TIPOS_DESLIG = {
+  '1 - VOLUNTÁRIA (PEDIDO DEMISSÃO)': [
+    '3. PEDIDO DE DEMISSÃO CONTRATO TEMPORÁRIO',
+    '8. PEDIDO DE DEMISSÃO CLT COM DESCONTO DO AVISO',
+    '9. PEDIDO DE DEMISSÃO CLT SEM DESCONTO DO AVISO',
+    '13. PEDIDO DE DEMISSÃO NO PERÍODO DE EXPERIÊNCIA (CLT)',
+    'DESLIG. ABANDONO DE EMPREGO TEMPORÁRIO',
+    'ÓBITO',
+  ],
+  '2 - INVOLUNTÁRIA (SEM JUSTA CAUSA)': [
+    '1. TÉRMINO DE CONTRATO TEMP NO PRAZO (180 OU 270 DIAS)',
+    '4. DISPENSA CLT COM AVISO INDENIZADO',
+    '5. DISPENSA CLT COM AVISO TRABALHADO',
+    '6. TÉRMINO CONTRATO EXPERIÊNCIA',
+    '7. TÉRMINO ANTECIPADO CONTRATO EXPERIÊNCIA',
+    'TÉRMINO DE CONTRATO ANTECIPADO TEMPORÁRIO',
+  ],
+  '3 - INVOLUNTÁRIA (COM JUSTA CAUSA)': [
+    '10. DESLIGAMENTO POR JUSTA CAUSA',
+  ],
+  '4 - NO SHOW': [
+    '11. NO SHOW',
+  ],
+  '6 - EARLY TURNOVER': [
+    '12. EARLY TURNOVER (7 DIAS DE CONTRATO)',
+  ],
+  'NO SHOW - PEDIDO DE DEMISSÃO': [
+    '11. NO SHOW',
+    '3. PEDIDO DE DEMISSÃO CONTRATO TEMPORÁRIO',
+  ],
+};
+
+function rescPopularTipoDeslig() { rescAtualizarTipoDeslig(); }
+
+function rescAtualizarTipoDeslig() {
+  const saida = document.getElementById('r-tipo-saida').value;
+  const sel   = document.getElementById('r-tipo-deslig');
+  sel.innerHTML = '<option value="">— Selecione —</option>';
+  const opcoes = TIPOS_DESLIG[saida] || Object.values(TIPOS_DESLIG).flat();
+  opcoes.forEach(o => { const opt = document.createElement('option'); opt.value = opt.textContent = o; sel.appendChild(opt); });
+
+  // Mostrar campo de descrição para pedidos de demissão
+  const motivo = document.getElementById('r-motivo').value;
+  document.getElementById('grupo-motivo-desc').style.display =
+    motivo.includes('Descrever') || motivo.includes('MOTIVOS PARTICULARES') ? 'flex' : 'none';
+}
+
+// ── Mostrar/ocultar campo de motivo detalhado ──────────────────────────
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'r-motivo') {
+    const v = e.target.value;
+    document.getElementById('grupo-motivo-desc').style.display =
+      (v.includes('Descrever') || v.includes('PARTICULARES')) ? 'flex' : 'none';
+  }
+});
+
+// ── Formatação de verbas ───────────────────────────────────────────────
+function rescFmtVerba(el) {
+  let v = el.value.replace(/[^\d,]/g,'');
+  el.value = v;
+}
+
+// ── Upload de arquivo ──────────────────────────────────────────────────
+function rescArquivoSelecionado(input, areaId, nomeId) {
+  const area = document.getElementById(areaId);
+  const nome = document.getElementById(nomeId);
+  if (input.files?.[0]) {
+    area.classList.add('has-file');
+    nome.textContent = '✅ ' + input.files[0].name;
+  } else {
+    area.classList.remove('has-file');
+    nome.textContent = '';
+  }
+}
+
+// ── Upload de arquivo para Supabase Storage ────────────────────────────
+async function rescUploadArquivo(file, path) {
+  if (!file) return null;
+  const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/rescisoes/${path}`, {
+    method: 'POST',
+    headers: {
+      'apikey':        SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type':  file.type,
+      'x-upsert':      'true',
+    },
+    body: file
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(()=>({}));
+    throw new Error('Erro no upload: ' + (err.message || resp.status));
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/rescisoes/${path}`;
+}
+
+// ── Validar campos obrigatórios ────────────────────────────────────────
+function rescValidar() {
+  const obrig = [
+    { id:'r-jira',        label:'Nº do Ticket Jira' },
+    { id:'r-competencia', label:'Competência' },
+    { id:'r-data-deslig', label:'Data do Desligamento' },
+    { id:'r-ultimo-dia',  label:'Último Dia Trabalhado' },
+    { id:'r-conducao',    label:'Tipo de Condução' },
+    { id:'r-tipo-saida',  label:'Tipo de Saída' },
+    { id:'r-tipo-deslig', label:'Tipo de Desligamento' },
+    { id:'r-motivo',      label:'Motivo do Desligamento' },
+  ];
+  for (const f of obrig) {
+    const el = document.getElementById(f.id);
+    if (!el?.value?.trim()) {
+      toast(`Campo obrigatório: ${f.label}`, 'error');
+      el?.focus();
+      return false;
+    }
+  }
+  if (!document.getElementById('file-ponto')?.files?.[0]) {
+    toast('Anexe o Espelho de Ponto', 'error'); return false;
+  }
+  if (!document.getElementById('file-deslig')?.files?.[0]) {
+    toast('Anexe o Comprovante de Desligamento', 'error'); return false;
+  }
+  return true;
+}
+
+// ── Enviar solicitação ─────────────────────────────────────────────────
+async function rescEnviar() {
+  if (!rescValidar()) return;
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.innerHTML = '⏳ Enviando…';
+
+  try {
+    const tok = session?.token || window.opener?.session?.token || '';
+    const mat = _dadosColab?.matricula || document.getElementById('r-matricula').value;
+    const ts  = Date.now();
+
+    // Upload dos arquivos
+    toast('Enviando arquivos…', '');
+    const filePonto = document.getElementById('file-ponto').files[0];
+    const fileDeslig = document.getElementById('file-deslig').files[0];
+    const extP = filePonto.name.split('.').pop();
+    const extD = fileDeslig.name.split('.').pop();
+
+    const urlPonto = await rescUploadArquivo(filePonto,  `${mat}_${ts}_ponto.${extP}`);
+    const urlDeslig = await rescUploadArquivo(fileDeslig, `${mat}_${ts}_deslig.${extD}`);
+
+    // Montar payload
+    const payload = {
+      p_token:           tok,
+      p_matricula:       mat,
+      p_nome:            document.getElementById('r-nome').value,
+      p_cpf:             document.getElementById('r-cpf').value,
+      p_contrato:        document.getElementById('r-contrato').value,
+      p_data_admissao:   document.getElementById('r-admissao').value,
+      p_hub:             document.getElementById('r-hub').value,
+      p_cc:              document.getElementById('r-cc').value,
+      p_departamento:    document.getElementById('r-departamento').value,
+      p_jira:            document.getElementById('r-jira').value,
+      p_competencia:     document.getElementById('r-competencia').value,
+      p_data_deslig:     document.getElementById('r-data-deslig').value,
+      p_ultimo_dia:      document.getElementById('r-ultimo-dia').value,
+      p_periodo:         document.getElementById('r-periodo').value,
+      p_conducao:        document.getElementById('r-conducao').value,
+      p_tipo_saida:      document.getElementById('r-tipo-saida').value,
+      p_tipo_deslig:     document.getElementById('r-tipo-deslig').value,
+      p_motivo:          document.getElementById('r-motivo').value,
+      p_motivo_desc:     document.getElementById('r-motivo-desc').value,
+      p_he50:            document.getElementById('r-he50').value,
+      p_he100:           document.getElementById('r-he100').value,
+      p_adic_not:        document.getElementById('r-adic-not').value,
+      p_desc_horas:      document.getElementById('r-desc-horas').value,
+      p_desc_faltas:     document.getElementById('r-desc-faltas').value,
+      p_desc_dsr:        document.getElementById('r-desc-dsr').value,
+      p_va_cesta:        document.getElementById('r-va-cesta').value,
+      p_url_ponto:       urlPonto,
+      p_url_deslig:      urlDeslig,
+      p_onsite_nome:     session?.nome || '',
+    };
+
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_criar_rescisao`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await resp.json();
+    if (!resp.ok || data?.ok === false) throw new Error(data?.erro || data?.message || 'Erro ao salvar');
+
+    toast('✅ Solicitação enviada com sucesso!', 'success');
+    // Notificar a janela pai para atualizar lista
+    try { window.opener?.postMessage?.({ tipo:'resc_enviada', matricula: mat }, '*'); } catch(e) {}
+    setTimeout(() => rescFechar(), 2000);
+
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+    btn.disabled = false; btn.innerHTML = '<span>📤</span> Enviar Solicitação';
+  }
+}
+
+// ── Fechar ─────────────────────────────────────────────────────────────
+function rescFechar() {
+  if (window.opener) window.close();
+  else window.history.back();
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────
+function toast(msg, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = tipo || '';
+  el.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.style.display='none', 4000);
+}
+</script>
+</body>
+</html>
+
+<script>
+// ════════════════ PAINEL DE GESTÃO DE RESCISÕES ════════════════
+
+let _rescAll   = [];   // todas as rescisões carregadas
+let _rescFiltradas = [];
+let _rescAtual = null; // rescisão aberta no modal de detalhe
+let _abaAtual  = 'pendente';
+
+// ── Detectar modo ao carregar ──────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const modo = new URLSearchParams(location.search).get('modo') || 'painel';
+  if (modo === 'form') {
+    document.getElementById('modo-form').style.display   = 'block';
+    document.getElementById('modo-painel').style.display = 'none';
+  } else {
+    document.getElementById('modo-form').style.display   = 'none';
+    document.getElementById('modo-painel').style.display = 'block';
+    painelInit();
+  }
+}, { once: true });
+
+async function painelInit() {
+  // Pegar sessão
+  try {
+    session = window.opener?.session ||
+      JSON.parse(localStorage.getItem('wecan_session_v1') || '{}')?.session || null;
+  } catch(e) {}
+  await painelCarregar();
+}
+
+// ── Carregar rescisões do Supabase ─────────────────────────────
+async function painelCarregar() {
+  ['pendente','andamento','concluido'].forEach(s =>
+    document.getElementById('lista-' + s).innerHTML =
+      '<div class="empty-state"><div class="empty-ico">⏳</div><p>Carregando…</p></div>');
+  try {
+    const tok  = session?.token || '';
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_listar_rescisoes`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ p_token: tok })
+    });
+    const data = await resp.json();
+    if (data?.ok === false) throw new Error(data.erro || 'Erro ao carregar');
+    _rescAll = data.rescisoes || [];
+    painelFiltrar();
+  } catch(e) {
+    ['pendente','andamento','concluido'].forEach(s =>
+      document.getElementById('lista-' + s).innerHTML =
+        `<div class="empty-state"><div class="empty-ico">❌</div><p>${e.message}</p></div>`);
+  }
+}
+
+// ── Filtrar e renderizar ───────────────────────────────────────
+function painelFiltrar() {
+  const busca = (document.getElementById('painel-busca')?.value || '').toLowerCase();
+  _rescFiltradas = busca
+    ? _rescAll.filter(r => [r.nome,r.matricula,r.jira,r.cc,r.hub]
+        .some(f => (f||'').toLowerCase().includes(busca)))
+    : [..._rescAll];
+
+  const grupos = { pendente:[], andamento:[], concluido:[] };
+  _rescFiltradas.forEach(r => {
+    const s = r.status === 'em_andamento' ? 'andamento' : (r.status || 'pendente');
+    if (grupos[s]) grupos[s].push(r);
+  });
+
+  // Contadores
+  Object.entries(grupos).forEach(([k,v]) => {
+    const el = document.getElementById('cnt-' + k);
+    if (el) el.textContent = v.length;
+  });
+
+  // Renderizar cada lista
+  painelRenderLista('pendente',  grupos.pendente);
+  painelRenderLista('andamento', grupos.andamento);
+  painelRenderLista('concluido', grupos.concluido);
+}
+
+function painelRenderLista(tipo, lista) {
+  const el = document.getElementById('lista-' + tipo);
+  if (!el) return;
+  if (!lista.length) {
+    const msgs = { pendente:'Nenhuma solicitação pendente', andamento:'Nenhuma rescisão em andamento', concluido:'Nenhuma rescisão concluída' };
+    const icos = { pendente:'🕐', andamento:'⚙️', concluido:'✅' };
+    el.innerHTML = `<div class="empty-state"><div class="empty-ico">${icos[tipo]}</div><p>${msgs[tipo]}</p></div>`;
+    return;
+  }
+  el.innerHTML = lista.map(r => {
+    const badge = tipo === 'pendente'  ? '<span class="resc-card-badge badge-pendente">Pendente</span>'
+                : tipo === 'andamento' ? '<span class="resc-card-badge badge-andamento">Em Andamento</span>'
+                :                       '<span class="resc-card-badge badge-concluido">Concluído</span>';
+    const cor   = tipo === 'pendente'  ? 'var(--warning)'
+                : tipo === 'andamento' ? '#4f7cff'
+                :                       'var(--success)';
+    const dt    = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
+    const analista = r.analista_calc ? `· ${r.analista_calc}` : '';
+    return `<div class="resc-card" onclick='painelAbrirDetalhe(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+      <div class="resc-card-status" style="background:${cor}"></div>
+      <div class="resc-card-body">
+        <div class="resc-card-nome">${r.nome || '—'}</div>
+        <div class="resc-card-meta">
+          <span>🪪 ${r.matricula||'—'}</span>
+          <span>🏢 ${r.cc||'—'}</span>
+          ${r.jira ? `<span>🔗 ${r.jira}</span>` : ''}
+          <span>📅 ${r.competencia||'—'}</span>
+          ${analista ? `<span>👤 ${analista}</span>` : ''}
+        </div>
+      </div>
+      <div class="resc-card-right">
+        <div class="resc-card-data">${dt}</div>
+        ${badge}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function painelAba(aba, btn) {
+  _abaAtual = aba;
+  document.querySelectorAll('.painel-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.painel-section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sec-' + aba).classList.add('active');
+}
+
+// ── Modal de detalhes ──────────────────────────────────────────
+function painelAbrirDetalhe(r) {
+  _rescAtual = r;
+  document.getElementById('det-nome').textContent = r.nome || '—';
+  document.getElementById('det-sub').textContent  = `${r.matricula||''} · ${r.cc||''} · ${r.jira||''}`;
+
+  // Corpo: campos em grid
+  const campo = (label, val, full) =>
+    `<div class="resc-detail-item${full?' resc-detail-full':''}">
+      <div class="resc-detail-label">${label}</div>
+      <div class="resc-detail-val">${val||'—'}</div>
+    </div>`;
+
+  const hist = (r.historico || []).map(h =>
+    `<div class="resc-hist-item">
+      <div class="resc-hist-dot"></div>
+      <div class="resc-hist-txt">
+        <b>${h.acao}</b> — ${h.usuario}
+        <div class="resc-hist-data">${h.data}</div>
+        ${h.obs ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${h.obs}</div>` : ''}
+      </div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:12px">Sem histórico</div>';
+
+  const concluido = r.status === 'concluido';
+  const concl = concluido ? `
+    <div style="margin-top:14px;padding:12px 14px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px">
+      <div style="font-size:10px;font-weight:800;color:var(--success);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Dados da Conclusão</div>
+      <div class="resc-detail-grid">
+        ${campo('Data do Cálculo', r.data_calculo)}
+        ${campo('Data de Pagamento', r.data_pagamento)}
+        ${campo('Calculado por', r.analista_calc)}
+        ${campo('Valor da Rescisão', r.valor_rescisao ? 'R$ ' + r.valor_rescisao : '')}
+        ${campo('Observações', r.obs_rh, true)}
+      </div>
+    </div>` : '';
+
+  const anexos = `
+    <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+      ${r.url_ponto  ? `<a href="${r.url_ponto}"  target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:6px">📄 Espelho de Ponto</a>` : ''}
+      ${r.url_deslig ? `<a href="${r.url_deslig}" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:6px">📋 Comprovante</a>` : ''}
+    </div>`;
+
+  // Formulário de conclusão (só Em Andamento)
+  const formConcl = r.status === 'em_andamento' ? `
+    <div class="concl-form">
+      <h4>📝 Registrar Conclusão</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="form-group">
+          <label>Data do Cálculo <span class="req">*</span></label>
+          <input type="date" id="concl-data-calc"/>
+        </div>
+        <div class="form-group">
+          <label>Data de Pagamento <span class="req">*</span></label>
+          <input type="date" id="concl-data-pgto"/>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Valor da Rescisão (R$)</label>
+          <input type="text" id="concl-valor" placeholder="Ex: 1.250,00"/>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Observações / Notas</label>
+          <textarea id="concl-obs" placeholder="Observações do cálculo…"></textarea>
+        </div>
+      </div>
+    </div>` : '';
+
+  document.getElementById('det-body').innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">👤 Colaborador</div>
+      <div class="resc-detail-grid">
+        ${campo('Matrícula',      r.matricula)}
+        ${campo('CPF',            r.cpf)}
+        ${campo('Contrato',       r.contrato)}
+        ${campo('Admissão',       r.data_admissao)}
+        ${campo('Hub / Soc',      r.hub)}
+        ${campo('Centro de Custo',r.cc)}
+        ${campo('Departamento',   r.departamento, true)}
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📅 Desligamento</div>
+      <div class="resc-detail-grid">
+        ${campo('Ticket Jira',       r.jira)}
+        ${campo('Competência',        r.competencia)}
+        ${campo('Data Desligamento',  r.data_deslig)}
+        ${campo('Último Dia',         r.ultimo_dia)}
+        ${campo('Tipo de Condução',   r.conducao)}
+        ${campo('Período Apontamento',r.periodo)}
+        ${campo('Tipo de Saída',      r.tipo_saida, true)}
+        ${campo('Tipo de Desligamento',r.tipo_deslig, true)}
+        ${campo('Motivo',             r.motivo, true)}
+        ${r.motivo_desc ? campo('Descrição do Motivo', r.motivo_desc, true) : ''}
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🧾 Verbas</div>
+      <div class="resc-detail-grid">
+        ${campo('H.E. 50% (150)',    r.he50)}
+        ${campo('H.E. 100% (0157)',  r.he100)}
+        ${campo('Ad. Noturno (184)', r.adic_not)}
+        ${campo('Desc. Horas (0553)',r.desc_horas)}
+        ${campo('Desc. Faltas (552)',r.desc_faltas)}
+        ${campo('DSR (0733)',         r.desc_dsr)}
+        ${campo('VA / Cesta',         r.va_cesta, true)}
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📎 Anexos</div>
+      ${anexos}
+    </div>
+    ${concl}
+    ${formConcl}
+    <div style="margin-top:16px">
+      <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🕐 Histórico</div>
+      <div id="det-historico">${hist}</div>
+    </div>`;
+
+  // Botões de ação por status
+  let acoes = `<button onclick="fecharDetalhe()" class="btn-cancel-footer">Fechar</button>`;
+  if (r.status === 'pendente') {
+    acoes += `<button class="btn-enviar" style="background:#4f7cff;font-size:12px;padding:8px 18px" onclick="rescMudarStatus('em_andamento')">⚙️ Iniciar Cálculo</button>`;
+  } else if (r.status === 'em_andamento') {
+    acoes += `<button class="btn-enviar" style="font-size:12px;padding:8px 18px" onclick="rescConcluir()">✅ Cálculo Realizado</button>`;
+  }
+  document.getElementById('det-acoes').innerHTML = acoes;
+
+  document.getElementById('modal-resc-detalhe').style.display = 'block';
+}
+
+function fecharDetalhe() {
+  document.getElementById('modal-resc-detalhe').style.display = 'none';
+  _rescAtual = null;
+}
+
+// ── Mudar status (Pendente → Em Andamento) ─────────────────────
+async function rescMudarStatus(novoStatus) {
+  if (!_rescAtual) return;
+  const btn = document.querySelector('#det-acoes .btn-enviar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando…'; }
+  try {
+    const tok = session?.token || '';
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_atualizar_rescisao_status`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ p_token: tok, p_id: _rescAtual.id, p_status: novoStatus })
+    });
+    const data = await resp.json();
+    if (data?.ok === false) throw new Error(data.erro || 'Erro');
+    fecharDetalhe();
+    await painelCarregar();
+    painelAba('andamento', document.querySelectorAll('.painel-tab')[1]);
+    toast('Cálculo iniciado!', 'success');
+  } catch(e) { toast(e.message, 'error'); if(btn){btn.disabled=false;btn.textContent='⚙️ Iniciar Cálculo';} }
+}
+
+// ── Concluir rescisão ──────────────────────────────────────────
+async function rescConcluir() {
+  const dataCalc  = document.getElementById('concl-data-calc')?.value;
+  const dataPgto  = document.getElementById('concl-data-pgto')?.value;
+  const valor     = document.getElementById('concl-valor')?.value;
+  const obs       = document.getElementById('concl-obs')?.value;
+  if (!dataCalc)  { toast('Informe a Data do Cálculo', 'error'); return; }
+  if (!dataPgto)  { toast('Informe a Data de Pagamento', 'error'); return; }
+  const btn = document.querySelector('#det-acoes .btn-enviar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando…'; }
+  try {
+    const tok = session?.token || '';
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_concluir_rescisao`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ p_token: tok, p_id: _rescAtual.id, p_data_calculo: dataCalc, p_data_pagamento: dataPgto, p_valor: valor, p_obs: obs })
+    });
+    const data = await resp.json();
+    if (data?.ok === false) throw new Error(data.erro || 'Erro');
+    fecharDetalhe();
+    await painelCarregar();
+    painelAba('concluido', document.querySelectorAll('.painel-tab')[2]);
+    toast('Rescisão concluída!', 'success');
+  } catch(e) { toast(e.message, 'error'); if(btn){btn.disabled=false;btn.textContent='✅ Cálculo Realizado';} }
+}
+// ════════════════ FIM PAINEL ════════════════
+</script>
