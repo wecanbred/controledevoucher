@@ -895,15 +895,22 @@ async function solEnviar() {
       if (fe) urlAnexo2 = await solUpload(fe, `${mat}_${ts}_rb_evidencia.${fe.name.split('.').pop()}`);
     }
 
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_criar_solicitacao`, {
+    // Se é reenvio de solicitação devolvida, atualizar a existente
+    const solId = window._solEdicaoId || new URLSearchParams(location.search).get('id') || '';
+    const rpcNome = solId ? 'wc_reenviar_solicitacao' : 'wc_criar_solicitacao';
+    const bodyRpc = solId
+      ? { p_token: tok, p_id: solId, p_payload: { ...payload, url_anexo1: urlAnexo1, url_anexo2: urlAnexo2 } }
+      : { p_token: tok, p_payload: { ...payload, url_anexo1: urlAnexo1, url_anexo2: urlAnexo2 } };
+
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpcNome}`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
-      body: JSON.stringify({ p_token: tok, p_payload: { ...payload, url_anexo1: urlAnexo1, url_anexo2: urlAnexo2 } })
+      body: JSON.stringify(bodyRpc)
     });
     const data = await resp.json();
     if (!resp.ok || data?.ok === false) throw new Error(data?.erro || data?.message || 'Erro ao salvar');
 
-    toast('✅ Solicitação enviada!', 'success');
+    toast(solId ? '✅ Solicitação reenviada!' : '✅ Solicitação enviada!', 'success');
     try { window.opener?.postMessage?.({ tipo:'sol_enviada', mat }, '*'); } catch(e) {}
     setTimeout(() => solFechar(), 2000);
   } catch(e) {
