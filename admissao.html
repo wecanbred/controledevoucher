@@ -3961,11 +3961,7 @@ async function iniciarSessao(conta) {
   popularFiltroConsultor();
   popularFiltroCC();
   iniciarConfiguracoes();
-  window._homeDefaultPage = temPermissao('rs_dashboard') ? 'home'
-    : temPermissao('rs_vagas') ? 'vagas'
-    : temPermissao('rs_voucher') ? 'voucher'
-    : temPermissao('adp_beneficios') ? 'integracao'
-    : _algumVoucher ? 'vchr-dashboard' : 'home';
+  window._homeDefaultPage = 'home';
   navTo(window._homeDefaultPage || 'home');
 }
 
