@@ -9365,8 +9365,9 @@ function solAbrirForm(colab) {
   const tok    = session?.token  || '';
   const perfil = session?.perfil || '';
   const nome   = encodeURIComponent(session?.nome || '');
-  const webapp = encodeURIComponent(localStorage.getItem('wecan_colabs_webapp_url')||'');
-  const url    = `solicitacoes.html?modo=form&via=template&tok=${tok}&perfil=${perfil}&nome=${nome}&webapp=${webapp}`;
+  // Compartilhar URL do Apps Script via sessionStorage
+  try { sessionStorage.setItem('wecan_colabs_webapp_url', localStorage.getItem('wecan_colabs_webapp_url')||''); } catch(e) {}
+  const url    = `solicitacoes.html?modo=form&via=template&tok=${tok}&perfil=${perfil}&nome=${nome}`;
   const win    = window.open(url, 'sol_form', 'width=920,height=860,scrollbars=yes,resizable=yes,toolbar=no,menubar=no');
   if (win) {
     const t = setInterval(()=>{try{win.postMessage({tipo:'sol_colab',colab,session},'*');clearInterval(t);}catch(e){}},400);

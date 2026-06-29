@@ -602,8 +602,8 @@ function abrirFormNovo() {
   const tok    = params.get('tok') || session?.token || '';
   const perfil = params.get('perfil') || session?.perfil || '';
   const nome   = encodeURIComponent(params.get('nome') || session?.nome || '');
-  const webapp = encodeURIComponent(localStorage.getItem('wecan_colabs_webapp_url')||'');
-  const url    = `solicitacoes.html?modo=form&via=painel&tok=${tok}&perfil=${perfil}&nome=${nome}&webapp=${webapp}`;
+  try { sessionStorage.setItem('wecan_colabs_webapp_url', localStorage.getItem('wecan_colabs_webapp_url')||session?.webappUrl||''); } catch(e) {}
+  const url    = `solicitacoes.html?modo=form&via=painel&tok=${tok}&perfil=${perfil}&nome=${nome}`;
   window.open(url, 'sol_form_novo', 'width=920,height=860,scrollbars=yes,resizable=yes,toolbar=no,menubar=no');
 }
 function ehOnsite()  { return session?.perfil === 'onsite'; }
@@ -643,7 +643,7 @@ function solBuscarColab() {
       // 2ª tentativa: buscar via Apps Script se template não carregado
       if (!found) {
         const ico = document.getElementById('s-mat-ico'); if(ico) ico.textContent = '⏳';
-        const webAppUrl = decodeURIComponent(new URLSearchParams(location.search).get('webapp')||'')
+        const webAppUrl = sessionStorage.getItem('wecan_colabs_webapp_url')
           || localStorage.getItem('wecan_colabs_webapp_url') || '';
         if (webAppUrl) {
           const resp = await fetch(`${webAppUrl}?action=ler&tipo=ativos`);
