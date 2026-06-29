@@ -650,9 +650,7 @@ function solBuscarColab() {
           const data = await resp.json();
           if (data.ok && data.csv) {
             // Parsear CSV e encontrar colaborador
-            const linhas = data.csv.split(/
-?
-/);
+            const linhas = data.csv.split('\n');
             const COLS = ['bpo','cc','nickname','operacao','matricula','nome','data_admissao','tipo_contrato','cargo','salario','vencimento_contrato','renovacao','horario','escala','cpf','data_nascimento','nome_mae','celular','email','beneficio_mobilidade','logradouro','numero','complemento','bairro','cidade','uf','cep','tam_calca','tam_blusa','tam_calcado','tam_luva','status_colaborador','sexo','status_operacao','trintidio','categoria'];
             for (let i=1;i<linhas.length;i++) {
               const row = linhas[i].split(',').map(c=>c.replace(/^"|"$/g,'').replace(/""/g,'"').trim());
