@@ -9211,10 +9211,15 @@ function colabsAbrirModal(r, tipo) {
   document.getElementById('colab-modal-title').textContent = r.nome || '—';
   document.getElementById('colab-modal-sub').textContent   = `${r.matricula||''} · ${r.cc||''} · ${tipo === 'ativos' ? '✅ Ativo' : '⛔ Inativo'}`;
   document.getElementById('colab-modal-body').innerHTML    = bodyHtml;
-  document.getElementById('colab-modal-footer-edit').style.display = podEditar ? 'flex' : 'none';
+  const podDemitir = tipo === 'ativos' && temPermissao('adp_rescisao');
+  // Footer aparece se pode editar OU pode demitir
+  document.getElementById('colab-modal-footer-edit').style.display = (podEditar || podDemitir) ? 'flex' : 'none';
+  // Botão salvar: só para quem pode editar
+  const btnSalvar = document.getElementById('colab-btn-salvar');
+  if (btnSalvar) btnSalvar.style.display = podEditar ? 'inline-flex' : 'none';
   // Botão demitir: só para Ativos e quem tem permissão de desligamento
   const btnDemitir = document.getElementById('colab-btn-demitir');
-  if (btnDemitir) btnDemitir.style.display = (tipo === 'ativos' && temPermissao('adp_rescisao')) ? 'inline-flex' : 'none';
+  if (btnDemitir) btnDemitir.style.display = podDemitir ? 'inline-flex' : 'none';
 
   abrirModal('modal-colab');
 }
