@@ -1755,11 +1755,22 @@ function doPost(e) { return doGet(e); }</pre>
       </div>
     </div>
 
+    <!-- ── BANNER DE ALERTA DE PRAZO ── -->
+    <div id="integ-banner-prazo" style="display:none"></div>
+
     <!-- ── PREVIEW UPLOAD (antes de confirmar) ── -->
     <div id="integ-preview-wrap" style="display:none;margin-bottom:20px">
       <div style="background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:18px 22px">
         <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent)" id="integ-preview-titulo"></div>
         <div id="integ-preview-lista"></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <div class="form-group" style="margin-bottom:0;max-width:240px">
+            <label style="font-size:11px;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.4px">⏰ Prazo para confirmação <span style="color:var(--danger)">*</span></label>
+            <input type="date" id="integ-preview-prazo"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+            <span style="font-size:10.5px;color:var(--muted);margin-top:3px;display:block">O Onsite será avisado quando esse prazo estiver vencendo ou vencido</span>
+          </div>
+        </div>
         <div style="margin-top:16px;display:flex;gap:10px">
           <button class="btn btn-primary" onclick="integCriarColmeias()">✅ Confirmar e salvar</button>
           <button class="btn btn-ghost" onclick="integCancelarPreview()">Cancelar</button>
@@ -3983,6 +3994,15 @@ async function initApp() {
   if (temPermissao('adp_colabs_ver') && !COLABS_LOADED) {
     setTimeout(colabsCarregarBackground, 2500);
   }
+  // Carregar colmeias de benefícios em segundo plano (para cálculo de prazo na home)
+  if (temPermissao('adp_beneficios') && !INTEG_COLMEIAS?.length) {
+    setTimeout(async () => {
+      try {
+        await integCarregarColmeias();
+        if (document.getElementById('page-home')?.classList.contains('active')) renderHome();
+      } catch(e) {}
+    }, 2000);
+  }
   // Iniciar verificação de notificações após login
   setTimeout(solIniciarPolling, 3000);
   // Exibir modal de boas-vindas com pendências
@@ -4336,11 +4356,22 @@ async function renderHome() {
     const colabsInEscopo = colabsFiltrarEscopo(COLABS_INATIVOS);
     const cntInativos  = colabsInEscopo.length;
     const temTemplate  = COLABS_ATIVOS.length > 0;
+
+    // Calcular pior status de prazo dos benefícios pendentes do Onsite
+    const piorPrazoBen = INTEG_COLMEIAS?.length
+      ? integPiorStatusPrazo(integFiltrarPorOnsite(INTEG_COLMEIAS))
+      : null;
+    const corBenCard = piorPrazoBen && ['atrasado','vence_hoje'].includes(piorPrazoBen.status) ? '#ef4444'
+      : piorPrazoBen && piorPrazoBen.status === 'vence_amanha' ? '#f59e0b'
+      : '#f59e0b';
+    const subBenCard = piorPrazoBen && piorPrazoBen.status !== 'sem_prazo' && piorPrazoBen.status !== 'ok'
+      ? `${piorPrazoBen.ico} ${piorPrazoBen.label}` : 'Confirmações aguardando';
+
     el.innerHTML = `
       <div style="margin-bottom:24px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🏢 Administração de Pessoal</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
-          ${homePainelCard('🐝','Benefícios Pendentes',cnt.integ_pendentes??0,'Confirmações aguardando','#f59e0b','integracao')}
+          ${homePainelCard('🐝','Benefícios Pendentes',cnt.integ_pendentes??0,subBenCard,corBenCard,'integracao')}
           ${homePainelCard('⊘','Inativar Colaborador','→','Registrar desligamento','#ef4444','vchr-inativar')}
           ${homePainelCard('🎟️','Meus Vouchers',cnt.voucher_ativos??0,'Ativos no meu depto','#63ccb0','vchr-controle')}
         </div>
@@ -7538,11 +7569,21 @@ function integMostrarPreview() {
     </div>`;
   }).join('');
   wrap.style.display = 'block';
+
+  // Pré-preencher prazo sugerido: 3 dias corridos a partir de hoje
+  const prazoInput = document.getElementById('integ-preview-prazo');
+  if (prazoInput && !prazoInput.value) {
+    const sugestao = new Date();
+    sugestao.setDate(sugestao.getDate() + 3);
+    prazoInput.value = sugestao.toISOString().split('T')[0];
+  }
 }
 
 function integCancelarPreview() {
   INTEG_LOTE = [];
   document.getElementById('integ-preview-wrap').style.display = 'none';
+  const prazoInput = document.getElementById('integ-preview-prazo');
+  if (prazoInput) prazoInput.value = '';
 }
 
 // Normaliza data para o formato que está no banco (DD/MM/YYYY)
@@ -7563,9 +7604,39 @@ function integParaISO(data) {
   return data;
 }
 
+// ── Status de prazo: calcula situação de uma colmeia com base no campo prazo ──
+// Retorna: { status: 'ok'|'vence_hoje'|'vence_amanha'|'atrasado'|'sem_prazo', dias, cor, ico, label }
+function integStatusPrazo(colmeia) {
+  if (!colmeia?.prazo) return { status:'sem_prazo', dias:null, cor:'var(--muted)', ico:'—', label:'Sem prazo' };
+  const hoje  = new Date(); hoje.setHours(0,0,0,0);
+  const prazo = new Date(colmeia.prazo + 'T00:00:00');
+  const diffMs = prazo - hoje;
+  const dias = Math.round(diffMs / 86400000);
+
+  if (dias < 0)  return { status:'atrasado',     dias, cor:'var(--danger)',  ico:'🔴', label:`Atrasado ${Math.abs(dias)}d` };
+  if (dias === 0) return { status:'vence_hoje',   dias, cor:'var(--danger)',  ico:'🔴', label:'Vence hoje' };
+  if (dias === 1) return { status:'vence_amanha', dias, cor:'var(--warning)', ico:'🟡', label:'Vence amanhã' };
+  if (dias <= 3)  return { status:'proximo',      dias, cor:'var(--warning)', ico:'🟡', label:`Vence em ${dias}d` };
+  return { status:'ok', dias, cor:'var(--success)', ico:'🟢', label:`${dias}d restantes` };
+}
+
+// Pior status de prazo entre um conjunto de colmeias (ignora as já completas)
+function integPiorStatusPrazo(colmeias) {
+  const ordem = { atrasado:0, vence_hoje:1, vence_amanha:2, proximo:3, ok:4, sem_prazo:5 };
+  let pior = null;
+  colmeias.forEach(c => {
+    if (Number(c.pendentes) === 0) return; // já resolvida, não conta pro prazo
+    const st = integStatusPrazo(c);
+    if (!pior || ordem[st.status] < ordem[pior.status]) pior = st;
+  });
+  return pior;
+}
+
 async function integCriarColmeias() {
+  const prazo = document.getElementById('integ-preview-prazo')?.value || '';
+  if (!prazo) { showToast('Informe o prazo para confirmação.', 'error'); document.getElementById('integ-preview-prazo')?.focus(); return; }
   try {
-    const r = await rpc('wc_integ_criar_colmeia', { p_lote: INTEG_LOTE });
+    const r = await rpc('wc_integ_criar_colmeia', { p_lote: INTEG_LOTE, p_prazo: prazo });
     const msg = `${r.colmeias} grupo(s) criado(s) · ${r.colaboradores} colaborador(es)` +
       (r.puladas > 0 ? ` · ${r.puladas} data(s) fechada(s) preservada(s) 🔒` : '');
     showToast(msg, 'success');
@@ -7657,10 +7728,19 @@ function integRenderPills() {
     const cor = ativa ? 'var(--accent)' : completo ? 'var(--success)' : 'var(--border)';
     const bg  = ativa ? 'var(--accent)' : 'transparent';
     const txt = ativa ? 'var(--brand)'  : completo ? 'var(--success)' : 'var(--text)';
-    return `<button onclick="integSelecionarData('${data}')"
+
+    // Indicador de prazo (só relevante se ainda tem pendência)
+    const colsDt = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === data));
+    const statusPrazo = !completo ? integPiorStatusPrazo(colsDt) : null;
+    const corBorda = (!ativa && statusPrazo && ['atrasado','vence_hoje'].includes(statusPrazo.status))
+      ? 'var(--danger)' : cor;
+    const prazoIco = statusPrazo && statusPrazo.status !== 'sem_prazo' && statusPrazo.status !== 'ok' ? statusPrazo.ico : '';
+
+    return `<button onclick="integSelecionarData('${data}')" title="${statusPrazo?.label||''}"
       style="display:flex;flex-direction:column;align-items:center;padding:5px 12px;border-radius:8px;
-      border:1.5px solid ${cor};background:${bg};color:${txt};cursor:pointer;font-family:var(--font);
-      transition:all .15s;min-width:52px">
+      border:1.5px solid ${corBorda};background:${bg};color:${txt};cursor:pointer;font-family:var(--font);
+      transition:all .15s;min-width:52px;position:relative">
+      ${prazoIco?`<span style="position:absolute;top:-6px;right:-4px;font-size:11px">${prazoIco}</span>`:''}
       <span style="font-size:12px;font-weight:700">${label}</span>
       <span style="font-size:10px;opacity:.75;margin-top:1px">${total === 0 ? '—' : pend>0 ? '⏳'+pend : '✅'+pagos+'/'+total}</span>
     </button>`;
@@ -7669,6 +7749,55 @@ function integRenderPills() {
   pills.innerHTML = pendentesOuAtiva.length
     ? pendentesOuAtiva.map(renderPill).join('')
     : `<span style="font-size:12px;color:var(--muted);align-self:center">✅ Nenhuma pendência — tudo confirmado</span>`;
+
+  integRenderBannerPrazo(datas);
+}
+
+// ── Banner de alerta no topo (atrasados / vencendo hoje) ──
+function integRenderBannerPrazo(datas) {
+  const banner = document.getElementById('integ-banner-prazo');
+  if (!banner) return;
+
+  const alertas = [];
+  datas.forEach(data => {
+    const colsDt = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === data));
+    const pend = colsDt.reduce((s,c)=>s+Number(c.pendentes),0);
+    if (pend === 0) return; // já resolvida
+    const st = integPiorStatusPrazo(colsDt);
+    if (st && ['atrasado','vence_hoje','vence_amanha'].includes(st.status)) {
+      let label = data;
+      if (data.includes('/')) { const p=data.split('/'); label=p[0]+'/'+p[1]+'/'+p[2]; }
+      alertas.push({ data, label, pend, ...st });
+    }
+  });
+
+  if (!alertas.length) { banner.style.display = 'none'; return; }
+
+  // Ordenar: atrasados primeiro
+  const ordem = { atrasado:0, vence_hoje:1, vence_amanha:2 };
+  alertas.sort((a,b) => ordem[a.status] - ordem[b.status]);
+
+  const piorGeral = alertas[0];
+  const corBg  = piorGeral.status === 'vence_amanha' ? 'rgba(245,158,11,.1)' : 'rgba(239,68,68,.1)';
+  const corBd  = piorGeral.status === 'vence_amanha' ? 'rgba(245,158,11,.4)' : 'rgba(239,68,68,.4)';
+  const corTxt = piorGeral.status === 'vence_amanha' ? 'var(--warning)' : 'var(--danger)';
+
+  const itensTxt = alertas.slice(0,3).map(a =>
+    `<b>${a.label}</b> (${a.pend} pend.) — ${a.status==='atrasado'?`atrasado ${Math.abs(a.dias)}d`:a.status==='vence_hoje'?'vence hoje':'vence amanhã'}`
+  ).join(' · ');
+
+  banner.style.display = 'block';
+  banner.innerHTML = `
+    <div style="background:${corBg};border:1px solid ${corBd};border-radius:10px;
+      padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:22px">${piorGeral.status==='atrasado'?'🔴':piorGeral.status==='vence_hoje'?'⏰':'🟡'}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:${corTxt};font-size:13px">
+          ${alertas.length} lote(s) com prazo ${piorGeral.status==='atrasado'?'atrasado':'vencendo'}
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${itensTxt}</div>
+      </div>
+    </div>`;
 }
 
 // Modal/dropdown de histórico (datas já completas)
@@ -9795,46 +9924,76 @@ function notifAtualizarBadge() {
 }
 
 async function notifVerificar() {
-  if (!session?.token || !temPermissao('adp_sol_ver')) return;
-  try {
-    const body = { p_token: session.token };
-    if (session.perfil === 'onsite') {
-      body.p_onsite_nome = session.nome;
-      body.p_status = 'devolvida';
-    } else {
-      body.p_status = 'pendente';
-    }
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_listar_solicitacoes`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`},
-      body: JSON.stringify(body)
-    });
-    const data = await resp.json();
-    if (data?.ok === false) return;
-    const lista = data.solicitacoes || [];
+  if (!session?.token) return;
+  let notifSol = [];
+  let notifPrazo = [];
 
-    // Montar lista de notificações
-    if (session.perfil === 'onsite') {
-      _notifLista = lista.map(s => ({
-        id:     `devol-${s.id}`,
-        tipo:   'devolvida',
-        ico:    '↩️',
-        titulo: `Solicitação devolvida — ${s.tipo_label}`,
-        sub:    `${s.nome} · ${s.motivo_devolucao?.slice(0,50)||'Veja os detalhes'}`,
-        pagina: 'sol-resumo',
-      }));
-    } else {
-      _notifLista = lista.map(s => ({
-        id:     `pend-${s.id}`,
-        tipo:   'pendente',
-        ico:    '🕐',
-        titulo: `Nova solicitação — ${s.tipo_label}`,
-        sub:    `${s.nome} · ${s.onsite||''}`,
-        pagina: 'sol-resumo',
-      }));
-    }
-    notifAtualizarBadge();
-  } catch(e) {}
+  // ── Solicitações ──
+  if (temPermissao('adp_sol_ver')) {
+    try {
+      const body = { p_token: session.token };
+      if (session.perfil === 'onsite') {
+        body.p_onsite_nome = session.nome;
+        body.p_status = 'devolvida';
+      } else {
+        body.p_status = 'pendente';
+      }
+      const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_listar_solicitacoes`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`},
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json();
+      if (data?.ok !== false) {
+        const lista = data.solicitacoes || [];
+        if (session.perfil === 'onsite') {
+          notifSol = lista.map(s => ({
+            id:`devol-${s.id}`, tipo:'devolvida', ico:'↩️',
+            titulo:`Solicitação devolvida — ${s.tipo_label}`,
+            sub:`${s.nome} · ${s.motivo_devolucao?.slice(0,50)||'Veja os detalhes'}`,
+            pagina:'sol-resumo',
+          }));
+        } else {
+          notifSol = lista.map(s => ({
+            id:`pend-${s.id}`, tipo:'pendente', ico:'🕐',
+            titulo:`Nova solicitação — ${s.tipo_label}`,
+            sub:`${s.nome} · ${s.onsite||''}`,
+            pagina:'sol-resumo',
+          }));
+        }
+      }
+    } catch(e) {}
+  }
+
+  // ── Prazos de Gestão de Benefícios (vencendo / atrasado) ──
+  if (temPermissao('adp_beneficios')) {
+    try {
+      if (!INTEG_COLMEIAS?.length) await integCarregarColmeias();
+      const colmeias = integFiltrarPorOnsite(INTEG_COLMEIAS || []);
+      const datas = [...new Set(colmeias.map(c => c.data_admissao))];
+      datas.forEach(data => {
+        const colsDt = colmeias.filter(c => c.data_admissao === data);
+        const pend = colsDt.reduce((s,c)=>s+Number(c.pendentes),0);
+        if (pend === 0) return;
+        const st = integPiorStatusPrazo(colsDt);
+        if (st && ['atrasado','vence_hoje','vence_amanha'].includes(st.status)) {
+          let label = data;
+          if (data.includes('/')) { const p=data.split('/'); label=p[0]+'/'+p[1]+'/'+p[2]; }
+          notifPrazo.push({
+            id: `prazo-${data}`,
+            tipo: 'prazo',
+            ico: st.status==='atrasado' ? '🔴' : st.status==='vence_hoje' ? '⏰' : '🟡',
+            titulo: `Benefícios — ${label}`,
+            sub: `${pend} pendente(s) · ${st.status==='atrasado'?`atrasado ${Math.abs(st.dias)}d`:st.status==='vence_hoje'?'vence hoje':'vence amanhã'}`,
+            pagina: 'integracao',
+          });
+        }
+      });
+    } catch(e) {}
+  }
+
+  _notifLista = [...notifPrazo, ...notifSol]; // prazo primeiro (mais urgente)
+  notifAtualizarBadge();
 }
 
 // Substituir polling antigo pelo novo
