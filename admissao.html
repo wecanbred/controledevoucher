@@ -7471,7 +7471,23 @@ window.navTo = function(id) {
     const pg = document.getElementById('page-integracao');
     if (pg) pg.classList.add('active');
     document.querySelector('[data-page="integracao"]')?.classList.add('active');
-    integCarregarColmeias();
+    // Só recarrega do banco se ainda não tiver dados (evita race condition com autoload)
+    if (INTEG_COLMEIAS.length) {
+      if (!window._integDataAtiva) {
+        const datas = integGetDatasOrdenadas();
+        const comPend = datas.find(d => {
+          const cols = INTEG_COLMEIAS.filter(c => c.data_admissao === d);
+          return cols.some(c => Number(c.pendentes) > 0);
+        });
+        window._integDataAtiva = comPend || datas[0];
+        const picker = document.getElementById('integ-date-picker');
+        if (picker) picker.value = integParaISO(window._integDataAtiva);
+      }
+      integRenderPills();
+      integCarregarData(window._integDataAtiva);
+    } else {
+      integCarregarColmeias();
+    }
     return;
   }
   _origNavTo2(id);
