@@ -1794,7 +1794,7 @@ function doPost(e) { return doGet(e); }</pre>
             style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px 6px 32px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
           <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">🔍</span>
         </div>
-        <span id="integ-date-hist" style="font-size:11.5px;color:var(--muted)"></span>
+        <span id="integ-date-hist" onclick="integAbrirHistorico()" style="font-size:11.5px;color:var(--accent);cursor:pointer;text-decoration:underline" title="Ver histórico de integrações concluídas"></span>
         <div class="toolbar-right">
           <button class="btn btn-ghost btn-sm" onclick="cpAbrir('integ','integ-cp-popup',this)">⚙️ Colunas</button>
           <div class="col-picker-popup" id="integ-cp-popup">
@@ -2108,11 +2108,15 @@ function doPost(e) { return doGet(e); }</pre>
         </div>
       </div>
 
-      <!-- Cargo -->
+      <!-- Confirmação rápida -->
       <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Cargo</label>
-        <input type="text" id="integ-mc-cargo"
-          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Confirmação de Presença</label>
+        <div style="display:flex;gap:8px;margin-top:4px" id="integ-mc-presenca-btns">
+          <button id="integ-mc-btn-pagar" onclick="integMcTogglePresenca('PAGAR')"
+            style="flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--success);font-size:13px;cursor:pointer;font-weight:700;font-family:var(--font)">✅ Pagar</button>
+          <button id="integ-mc-btn-noshow" onclick="integMcTogglePresenca('NOSHOW')"
+            style="flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--danger);font-size:13px;cursor:pointer;font-weight:700;font-family:var(--font)">⊘ No Show</button>
+        </div>
       </div>
 
       <!-- Observação livre -->
@@ -7624,18 +7628,32 @@ function integRenderPills() {
   const hist  = document.getElementById('integ-date-hist');
   if (!pills) return;
   const datas = integGetDatasOrdenadas();
-  if (hist) hist.textContent = datas.length + ' integração(ões) no histórico';
 
-  pills.innerHTML = datas.slice(0,8).map(data => {
+  const montarInfo = (data) => {
     const colsDt = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === data));
     const pend  = colsDt.reduce((s,c)=>s+Number(c.pendentes),0);
     const total = colsDt.reduce((s,c)=>s+Number(c.total),0);
     const pagos = colsDt.reduce((s,c)=>s+Number(c.pagos),0);
+    const completo = pend === 0 && total > 0;
+    return { pend, total, pagos, completo };
+  };
+
+  // Pendentes (ou a data ativa, mesmo que completa) ficam visíveis em cima
+  const pendentesOuAtiva = datas.filter(d => {
+    const info = montarInfo(d);
+    return !info.completo || d === window._integDataAtiva;
+  });
+  // Completas (exceto a ativa) vão para o histórico
+  const completas = datas.filter(d => !pendentesOuAtiva.includes(d));
+
+  if (hist) hist.textContent = completas.length + ' integração(ões) no histórico';
+
+  const renderPill = (data) => {
+    const { pend, total, pagos, completo } = montarInfo(data);
     const ativa = data === window._integDataAtiva;
     let label = data;
     if (data.includes('/')) { const p=data.split('/'); label=p[0]+'/'+p[1]; }
     else if (data.includes('-')) { const p=data.split('-'); label=p[2]+'/'+p[1]; }
-    const completo = pend === 0 && total > 0;
     const cor = ativa ? 'var(--accent)' : completo ? 'var(--success)' : 'var(--border)';
     const bg  = ativa ? 'var(--accent)' : 'transparent';
     const txt = ativa ? 'var(--brand)'  : completo ? 'var(--success)' : 'var(--text)';
@@ -7646,7 +7664,52 @@ function integRenderPills() {
       <span style="font-size:12px;font-weight:700">${label}</span>
       <span style="font-size:10px;opacity:.75;margin-top:1px">${total === 0 ? '—' : pend>0 ? '⏳'+pend : '✅'+pagos+'/'+total}</span>
     </button>`;
-  }).join('') + (datas.length > 8 ? `<span style="font-size:11px;color:var(--muted);padding:4px 6px;align-self:center">+${datas.length-8} mais</span>` : '');
+  };
+
+  pills.innerHTML = pendentesOuAtiva.length
+    ? pendentesOuAtiva.map(renderPill).join('')
+    : `<span style="font-size:12px;color:var(--muted);align-self:center">✅ Nenhuma pendência — tudo confirmado</span>`;
+}
+
+// Modal/dropdown de histórico (datas já completas)
+function integAbrirHistorico() {
+  const datas = integGetDatasOrdenadas();
+  const montarInfo = (data) => {
+    const colsDt = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === data));
+    const pend  = colsDt.reduce((s,c)=>s+Number(c.pendentes),0);
+    const total = colsDt.reduce((s,c)=>s+Number(c.total),0);
+    return { pend, total, completo: pend === 0 && total > 0 };
+  };
+  const completas = datas.filter(d => montarInfo(d).completo && d !== window._integDataAtiva);
+
+  if (!completas.length) { showToast('Nenhuma data no histórico ainda.', 'info'); return; }
+
+  const lista = completas.map(d => {
+    const { total } = montarInfo(d);
+    let label = d;
+    if (d.includes('/')) { const p=d.split('/'); label=p[0]+'/'+p[1]+'/'+p[2]; }
+    return `<div onclick="integSelecionarData('${d}');fecharModal('integ-modal-historico')"
+      style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;
+      justify-content:space-between;align-items:center" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <span style="font-size:13px;font-weight:600">${label}</span>
+      <span style="font-size:11px;color:var(--success);font-weight:700">✅ ${total}/${total}</span>
+    </div>`;
+  }).join('');
+
+  let modal = document.getElementById('integ-modal-historico');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'integ-modal-historico';
+    modal.className = 'modal-backdrop';
+    modal.innerHTML = `<div class="modal" style="width:380px">
+      <div class="modal-head"><h2>📅 Histórico de Integrações</h2><p>Datas já confirmadas (100%)</p></div>
+      <div class="modal-body" style="max-height:400px;overflow-y:auto;padding:0" id="integ-hist-lista"></div>
+      <div class="modal-actions"><button class="btn btn-ghost" onclick="fecharModal('integ-modal-historico')">Fechar</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('integ-hist-lista').innerHTML = lista;
+  abrirModal('integ-modal-historico');
 }
 
 function integSelecionarData(data) {
@@ -7836,7 +7899,6 @@ function integAbrirColab(colabId) {
   document.getElementById('integ-mc-sub').textContent  =
     (col.cargo || '') + (col._depto_nome ? ' · ' + col._depto_nome : '') + (col.codigo ? ' · ' + col.codigo : '');
   document.getElementById('integ-mc-obs').value        = col.obs || '';
-  document.getElementById('integ-mc-cargo').value      = col.cargo || '';
   document.getElementById('integ-mc-ajuste-tipo').value   = '';
   document.getElementById('integ-mc-ajuste-valor').value  = '';
   document.getElementById('integ-mc-ajuste-select').value = '';
@@ -7844,6 +7906,9 @@ function integAbrirColab(colabId) {
   document.getElementById('integ-mc-ajuste-select').style.display = 'none';
   if (document.getElementById('integ-mc-vt-valor')) document.getElementById('integ-mc-vt-valor').value = '';
   if (document.getElementById('integ-mc-vt-valor-wrap')) document.getElementById('integ-mc-vt-valor-wrap').style.display = 'none';
+
+  // Atualizar visual dos botões Pagar/No Show conforme status atual
+  integMcAtualizarBotoesPresenca(col.presenca);
 
   // Pills de benefícios originais (somente leitura)
   const pills = document.getElementById('integ-mc-ben-pills');
@@ -7857,6 +7922,52 @@ function integAbrirColab(colabId) {
     : `<span style="color:var(--muted);font-size:12px">Nenhum benefício registrado</span>`;
 
   abrirModal('integ-modal-colab');
+}
+
+function integMcAtualizarBotoesPresenca(presenca) {
+  const btnPagar  = document.getElementById('integ-mc-btn-pagar');
+  const btnNoShow = document.getElementById('integ-mc-btn-noshow');
+  if (!btnPagar || !btnNoShow) return;
+  const ehPagar  = presenca === 'PAGAR';
+  const ehNoShow = presenca === 'NO SHOW';
+  btnPagar.style.background = ehPagar ? 'var(--success)' : 'transparent';
+  btnPagar.style.color      = ehPagar ? '#fff' : 'var(--success)';
+  btnNoShow.style.background = ehNoShow ? 'var(--danger)' : 'transparent';
+  btnNoShow.style.color      = ehNoShow ? '#fff' : 'var(--danger)';
+}
+
+// Botão Pagar dentro do modal — confirma direto (sem fechar)
+async function integMcTogglePresenca(tipo) {
+  const colabId = document.getElementById('integ-mc-id').value;
+  const col = INTEG_TODOS_COLABS.find(c => c.id === colabId);
+  if (!col) return;
+
+  if (tipo === 'NOSHOW') {
+    // No Show abre o fluxo completo (envia para Seleção) — fecha este modal e abre o de No Show
+    fecharModal('integ-modal-colab');
+    integAbrirNoShow(colabId);
+    return;
+  }
+
+  // PAGAR — toggle direto
+  const novaPresenca = (col.presenca === 'PAGAR') ? '' : 'PAGAR';
+  try {
+    await rpc('wc_integ_confirmar_presenca', { p_colab_id: colabId, p_presenca: novaPresenca, p_obs: col?.obs || '' });
+    col.presenca = novaPresenca;
+    col.confirmado_por = novaPresenca ? session?.nome : '';
+    integMcAtualizarBotoesPresenca(novaPresenca);
+    integRenderTabela();
+    const colmeias = integFiltrarPorOnsite(INTEG_COLMEIAS.filter(c => c.data_admissao === window._integDataAtiva));
+    colmeias.forEach(c => {
+      const cc = INTEG_TODOS_COLABS.filter(x => x._colmeia_id === c.id);
+      c.pagos    = cc.filter(x => x.presenca === 'PAGAR').length;
+      c.noshow   = cc.filter(x => x.presenca === 'NO SHOW').length;
+      c.pendentes= cc.filter(x => !x.presenca).length;
+    });
+    integRenderKPIs(colmeias);
+    integRenderPills();
+    showToast(novaPresenca ? 'Pagamento confirmado!' : 'Confirmação removida.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 function integMcAjusteTipo() {
@@ -7907,7 +8018,6 @@ async function integSalvarColab() {
   if (!col) return;
 
   const obs        = document.getElementById('integ-mc-obs').value.trim();
-  const cargo      = document.getElementById('integ-mc-cargo').value.trim();
   const ajusteTipo = document.getElementById('integ-mc-ajuste-tipo').value;
   const ajusteVal  = document.getElementById('integ-mc-ajuste-valor').value.trim();
   const ajusteSel  = document.getElementById('integ-mc-ajuste-select').value;
@@ -7940,7 +8050,6 @@ async function integSalvarColab() {
       p_obs: obsCompleta
     });
     col.obs   = obsCompleta;
-    col.cargo = cargo;
     col._tem_ajuste = temAjuste;
     fecharModal('integ-modal-colab');
     integRenderTabela();
