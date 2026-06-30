@@ -1748,6 +1748,7 @@ function doPost(e) { return doGet(e); }</pre>
         <p style="font-size:12px;color:var(--muted);margin-top:2px">Confirmação de presença para pagamento</p>
       </div>
       <div style="display:flex;gap:8px;align-items:center" id="integ-btns-admin">
+        <button class="btn btn-ghost btn-sm" onclick="integBaixarModelo()">⬇️ Baixar modelo .xlsx</button>
         <button class="btn btn-ghost btn-sm" id="integ-btn-upload" onclick="document.getElementById('integ-file-input').click()">
           📂 Subir planilha
         </button>
@@ -7492,6 +7493,43 @@ window.navTo = function(id) {
   }
   _origNavTo2(id);
 };
+
+// ── Baixar modelo de planilha ──
+function integBaixarModelo() {
+  const cabecalho = [
+    'Código', 'Nome do Funcionário', 'Cargo ou Função', 'Data de Admissão', 'Data Demissão',
+    'Vínculo', 'Depto/Centro de Custo', 'Departamento', 'Razão Social',
+    'Descrição do Horário', 'Nome Vale Transporte', 'Nome Vale Refeição', 'Nome Beneficios Outros',
+  ];
+  const exemplo = [
+    'WE123456', 'JOÃO DA SILVA SANTOS', 'AUXILIAR DE LOGISTICA', '29/06/2026', '',
+    'CLT', 'HUB-LSP-105', 'HUB-LSP-105', 'WE CAN BR',
+    'SEG A SAB 06:00 ÀS 14:20', '6758-VR SHOPEE TEMPORARIOS', '', '7006-AUXILIO MOBILIDADE SHOPEE (TEMP)',
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet([cabecalho, exemplo]);
+  ws['!cols'] = cabecalho.map(c => ({ wch: Math.max(c.length + 2, 18) }));
+
+  const wsRef = XLSX.utils.aoa_to_sheet([
+    ['Coluna', 'Obrigatório', 'Observação'],
+    ['Nome do Funcionário', 'Sim', 'Nome completo do colaborador'],
+    ['Data de Admissão', 'Sim', 'Formato DD/MM/AAAA — usada para agrupar o lote'],
+    ['Data Demissão', 'Não', 'Se preenchida, o colaborador é ignorado na importação'],
+    ['Depto/Centro de Custo', 'Não', 'Código do CC/HUB — usado para agrupar e filtrar por Onsite'],
+    ['Departamento', 'Não', 'Nome do departamento (se vazio, usa o código)'],
+    ['Razão Social', 'Não', 'Cliente/empresa — exibido no preview'],
+    ['Descrição do Horário', 'Não', 'Limitado a 80 caracteres'],
+    ['Nome Vale Transporte', 'Não', 'Texto do benefício VT'],
+    ['Nome Vale Refeição', 'Não', 'Texto do benefício VR'],
+    ['Nome Beneficios Outros', 'Não', 'Mobilidade, fretado, etc.'],
+  ]);
+  wsRef['!cols'] = [{wch:24},{wch:13},{wch:55}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
+  XLSX.utils.book_append_sheet(wb, wsRef, 'Instruções');
+  XLSX.writeFile(wb, 'modelo_gestao_beneficios.xlsx');
+}
 
 // ── Ler planilha ──
 function integLerPlanilha(input) {
