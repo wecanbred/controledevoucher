@@ -907,7 +907,7 @@
         <a onclick="rescAbrirPainel()" title="Gestão de Rescisões"><span class="sb-ico">📋</span><span class="sb-txt">Rescisões</span></a>
       </div>
       <div id="navgroup-adp-chamada" style="display:none">
-        <a onclick="chamadaAbrirPainel()" title="Chamada de Integração"><span class="sb-ico">🙋</span><span class="sb-txt">Chamada de Integração</span></a>
+        <a onclick="abrirGaveta('chamada', event)" class="sb-has-sub" id="sb-btn-chamada" title="Chamada de Integração"><span class="sb-ico">🙋</span><span class="sb-txt">Chamada de Integração</span><span class="sb-arr sb-txt">›</span></a>
       </div>
       <div id="navgroup-voucher-uber" style="display:none">
         <a onclick="abrirGaveta('voucher-uber', event)" class="sb-has-sub" id="sb-btn-voucher-uber" title="Voucher Uber"><span class="sb-ico">🚗</span><span class="sb-txt">Voucher Uber</span><span class="sb-arr sb-txt">›</span></a>
@@ -1274,6 +1274,20 @@
     <!-- Filtros -->
     <div class="toolbar" style="margin-bottom:16px">
       <input type="text" id="cham-busca" placeholder="🔍 Buscar por nome, matrícula, CC…" oninput="chamadasRenderTabela()" style="flex:1;min-width:200px"/>
+      <div style="position:relative">
+        <button class="btn btn-ghost btn-sm" id="cham-filtro-cc-btn" onclick="chamFiltroAbrir(event)">🔽 Filtrar CC / Operação</button>
+        <div class="col-picker-popup" id="cham-filtro-cc-popup">
+          <h4>CC / Operação</h4>
+          <div style="display:flex;gap:10px;margin-bottom:8px">
+            <a onclick="chamFiltroMarcarTodos(true)" style="font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline">Selecionar todos</a>
+            <a onclick="chamFiltroMarcarTodos(false)" style="font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline">Limpar</a>
+          </div>
+          <div class="col-picker-grid" id="cham-filtro-cc-grid"></div>
+          <div class="col-picker-actions">
+            <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="chamFiltroAplicar()">Aplicar</button>
+          </div>
+        </div>
+      </div>
       <select id="cham-filtro-status" onchange="chamadasRenderTabela()">
         <option value="">Todos os status</option>
         <option value="AUSENTE">❌ Ausentes</option>
@@ -1305,6 +1319,91 @@
         </thead>
         <tbody id="cham-tbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ══ CONTROLE DE ONBOARDING (escala rotativa de quem apresenta a chamada) ══ -->
+  <div class="page" id="page-onboarding-controle">
+    <div class="page-header">
+      <div>
+        <h1>📅 Controle de Onboarding</h1>
+        <p>Escala rotativa de quem apresenta a integração em cada data</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="onbCarregar()">🔄 Atualizar</button>
+    </div>
+
+    <!-- Painel da fila (só Gestor/Master) -->
+    <div class="card" id="onb-fila-card" style="display:none;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;font-weight:800">Fila de Rodízio</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Ordem em que os Onsites se revezam para apresentar a integração</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="onb-fila-add-select" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:var(--font);outline:none"></select>
+          <button class="btn btn-ghost btn-sm" onclick="onbFilaAdicionar()">+ Adicionar</button>
+        </div>
+      </div>
+      <div id="onb-fila-lista" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <button class="btn btn-primary btn-sm" onclick="onbFilaSalvar()">💾 Salvar Fila</button>
+      </div>
+    </div>
+
+    <!-- Painel de nova data (só Gestor/Master) -->
+    <div class="card" id="onb-nova-data-card" style="display:none;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px">+ Agendar Data</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Data da Integração</label>
+          <input type="date" id="onb-nova-data" style="margin-top:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none"/>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Onsite Responsável</label>
+          <select id="onb-nova-onsite" style="margin-top:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;min-width:200px"></select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="onbNovaData()">Agendar</button>
+      </div>
+    </div>
+
+    <!-- Tabela de escala -->
+    <div class="table-wrap">
+      <table class="main-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Onsite da Vez</th>
+            <th>Status</th>
+            <th>Histórico de Recusas</th>
+            <th style="width:220px">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="onb-escala-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal de recusa -->
+  <div class="modal-backdrop" id="modal-onb-recusar" onclick="if(event.target===this)fecharModal('modal-onb-recusar')">
+    <div class="modal" style="width:440px">
+      <div class="modal-head">
+        <div>
+          <h2 style="font-size:15px">Recusar Onboarding</h2>
+          <p style="font-size:12px;color:var(--muted);margin-top:3px" id="onb-recusar-sub"></p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="onb-recusar-id"/>
+        <div class="form-group">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Justificativa <span style="color:var(--danger)">*</span></label>
+          <textarea id="onb-recusar-motivo" rows="3" placeholder="Explique o motivo da recusa…"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box;margin-top:6px"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-onb-recusar')">Cancelar</button>
+        <button class="btn btn-primary" style="background:var(--danger);border-color:var(--danger)" onclick="onbConfirmarRecusa()">Confirmar Recusa</button>
+      </div>
     </div>
   </div>
 
@@ -4174,6 +4273,7 @@ function navTo(id) {
   if (id==='home')             renderHome();
   if (id==='noshow')           nsCarregar();
   if (id==='chamadas')         chamadasCarregar();
+  if (id==='onboarding-controle') onbCarregar();
   if (id==='dashboard')        renderDashboard();
   if (id==='vagas')            renderVagas();
   if (id==='voucher') {
@@ -4227,6 +4327,13 @@ const GAVETA_MENUS = {
       { id:'nav-pagar-ben',     label:'💰 Pagar Benefícios',     page:'pagar-beneficios', perm:'adp_beneficios_pagar' },
       { label:'📊 Dashboard',   disabled:true, soon:true },
       { id:'nav-ben-historico', label:'🕐 Histórico',            page:'ben-historico',    perm:'adp_beneficios_historico' },
+    ]
+  },
+  'chamada': {
+    titulo: 'Chamada de Integração',
+    items: [
+      { label:'🙋 Fazer Chamada',          action:'chamadaAbrirPainel()' },
+      { label:'📅 Controle de Onboarding', page:'onboarding-controle', perm:'adp_chamada' },
     ]
   },
   'tickets': {
@@ -4284,7 +4391,7 @@ function abrirGaveta(key, evt) {
     const isActive  = item.page && activePages.includes(item.page);
     const isDisabled = item.disabled;
     const soon = item.soon ? ' <small style="font-size:9px;opacity:.6">(em breve)</small>' : '';
-    const onclick = (!isDisabled && item.page) ? `onclick="navTo('${item.page}')"` : '';
+    const onclick = item.action ? `onclick="fecharGaveta();${item.action}"` : ((!isDisabled && item.page) ? `onclick="navTo('${item.page}')"` : '');
     const cls   = isActive ? 'active' : '';
     const style = isDisabled ? 'opacity:.45;cursor:default' : '';
     return `<a class="${cls}" ${onclick} style="${style}" data-page="${item.page||''}">${item.label}${soon}</a>`;
@@ -6975,6 +7082,74 @@ async function nsSalvarConsultor() {
 //  CHAMADAS — visão do Consultor/Gestor (chamada de integração)
 // ════════════════════════════════════════════════════════════
 let CHAM_DADOS = [];
+let CHAM_FILTRO_OCULTOS = new Set();
+let CHAM_FILTRO_TEMP    = new Set();
+const CHAM_FILTRO_KEY = 'wecan_cham_filtro_oculto';
+(function chamFiltroCarregarSalvo() {
+  try {
+    const raw = localStorage.getItem(CHAM_FILTRO_KEY);
+    if (raw) CHAM_FILTRO_OCULTOS = new Set(JSON.parse(raw));
+  } catch(e) {}
+})();
+
+function chamLabelCC(r) {
+  const cli = (r.cli_nome || '').trim();
+  const dep = (r.depto_nome || r.depto_cod || '').trim();
+  return cli && dep ? `${cli} · ${dep}` : (cli || dep || '—');
+}
+
+function chamFiltroAbrir(evt) {
+  document.querySelectorAll('.col-picker-popup.open').forEach(p => { if (p.id !== 'cham-filtro-cc-popup') p.classList.remove('open'); });
+  const popup = document.getElementById('cham-filtro-cc-popup');
+  const isOpen = popup.classList.toggle('open');
+  if (isOpen) {
+    const rect = evt.currentTarget.getBoundingClientRect();
+    popup.style.top  = (rect.bottom + 6) + 'px';
+    popup.style.left = rect.left + 'px';
+    CHAM_FILTRO_TEMP = new Set(CHAM_FILTRO_OCULTOS);
+    chamFiltroRenderGrid();
+  }
+}
+
+function chamFiltroRenderGrid() {
+  const labels = [...new Set(CHAM_DADOS.map(chamLabelCC))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const grid = document.getElementById('cham-filtro-cc-grid');
+  if (!labels.length) { grid.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:6px">Nenhuma operação encontrada.</div>'; return; }
+  grid.innerHTML = labels.map(l => {
+    const marcado = !CHAM_FILTRO_TEMP.has(l);
+    const safe = l.replace(/'/g, "\\'");
+    return `<label class="col-check-item ${marcado?'checked':''}">
+      <input type="checkbox" ${marcado?'checked':''} onchange="chamFiltroTogglePendente('${safe}', this.checked)"/>
+      ${l}
+    </label>`;
+  }).join('');
+}
+function chamFiltroTogglePendente(label, marcado) {
+  if (marcado) CHAM_FILTRO_TEMP.delete(label); else CHAM_FILTRO_TEMP.add(label);
+  document.querySelectorAll('#cham-filtro-cc-grid .col-check-item').forEach(el => {
+    const chk = el.querySelector('input');
+    el.classList.toggle('checked', chk.checked);
+  });
+}
+function chamFiltroMarcarTodos(marcarTodos) {
+  CHAM_FILTRO_TEMP = marcarTodos ? new Set() : new Set(CHAM_DADOS.map(chamLabelCC));
+  chamFiltroRenderGrid();
+}
+function chamAtualizarBotaoFiltro() {
+  const btn = document.getElementById('cham-filtro-cc-btn');
+  if (!btn) return;
+  const labels = new Set(CHAM_DADOS.map(chamLabelCC));
+  const ocultos = [...CHAM_FILTRO_OCULTOS].filter(l => labels.has(l)).length;
+  btn.textContent = ocultos ? `🔽 Filtrar CC / Operação (${labels.size-ocultos}/${labels.size})` : '🔽 Filtrar CC / Operação';
+}
+function chamFiltroAplicar() {
+  CHAM_FILTRO_OCULTOS = new Set(CHAM_FILTRO_TEMP);
+  try { localStorage.setItem(CHAM_FILTRO_KEY, JSON.stringify([...CHAM_FILTRO_OCULTOS])); } catch(e) {}
+  document.getElementById('cham-filtro-cc-popup').classList.remove('open');
+  chamAtualizarBotaoFiltro();
+  chamadasRenderTabela();
+}
+
 
 function chamadaAbrirPainel() {
   const tok    = session?.token  || '';
@@ -6990,6 +7165,7 @@ async function chamadasCarregar() {
   try {
     const r = await rpc('wc_chamada_listar', {});
     CHAM_DADOS = r.itens || [];
+    chamAtualizarBotaoFiltro();
     chamadasRenderKpis();
     chamadasRenderTabela();
     const pendAusentes = CHAM_DADOS.filter(c => c.status === 'AUSENTE' && !c.resolvido).length;
@@ -7038,6 +7214,7 @@ function chamadasRenderTabela() {
   let dados = CHAM_DADOS.filter(r => {
     const txt = `${r.nome||''} ${r.codigo||''} ${r.depto_nome||''} ${r.depto_cod||''} ${r.cli_nome||''}`.toLowerCase();
     if (busca && !txt.includes(busca)) return false;
+    if (CHAM_FILTRO_OCULTOS.has(chamLabelCC(r))) return false;
     if (status === 'PENDENTE' && r.status) return false;
     if ((status === 'AUSENTE' || status === 'PRESENTE') && r.status !== status) return false;
     if (acomp === 'pendente'  && (r.status !== 'AUSENTE' || r.resolvido))  return false;
@@ -7189,6 +7366,171 @@ async function chamadasSalvar() {
     }
     fecharModal('modal-chamada-consultor');
     await chamadasCarregar();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONTROLE DE ONBOARDING — escala rotativa de quem faz a chamada
+// ════════════════════════════════════════════════════════════
+let ONB_FILA   = [];
+let ONB_ESCALA = [];
+
+async function onbCarregar() {
+  const admin = podeAdmin();
+  document.getElementById('onb-fila-card').style.display = admin ? 'block' : 'none';
+  document.getElementById('onb-nova-data-card').style.display = admin ? 'block' : 'none';
+
+  if (admin && !USUARIOS_LISTA.length) {
+    try { await rpc('wc_listar_usuarios', {}).then(r => USUARIOS_LISTA = r.usuarios || []); } catch(e) {}
+  }
+
+  try {
+    const [rFila, rEscala] = await Promise.all([
+      rpc('wc_onboarding_fila_listar', {}),
+      rpc('wc_onboarding_escala_listar', {})
+    ]);
+    ONB_FILA   = rFila.itens || [];
+    ONB_ESCALA = rEscala.itens || [];
+    if (admin) { onbPopularSelects(); onbFilaRenderLista(); }
+    onbRenderEscalaTabela();
+  } catch(e) { showToast('Erro ao carregar onboarding: ' + e.message, 'error'); }
+}
+
+function onbOnsitesAtivos() {
+  return USUARIOS_LISTA.filter(u => u.perfil === 'onsite' && u.ativo !== false);
+}
+
+function onbPopularSelects() {
+  const naFila = new Set(ONB_FILA.map(f => f.onsite_nome));
+  const disponiveis = onbOnsitesAtivos().filter(u => !naFila.has(u.nome));
+  const selAdd = document.getElementById('onb-fila-add-select');
+  selAdd.innerHTML = disponiveis.length
+    ? disponiveis.map(u => `<option value="${u.nome}">${u.nome}</option>`).join('')
+    : '<option value="">Todos já estão na fila</option>';
+
+  const selNova = document.getElementById('onb-nova-onsite');
+  const todos = onbOnsitesAtivos();
+  selNova.innerHTML = '<option value="">Selecione…</option>' +
+    todos.map(u => `<option value="${u.nome}">${u.nome}</option>`).join('');
+}
+
+function onbFilaAdicionar() {
+  const sel = document.getElementById('onb-fila-add-select');
+  const nome = sel.value;
+  if (!nome) return;
+  ONB_FILA.push({ onsite_nome: nome, ordem: ONB_FILA.length, ativo: true });
+  onbPopularSelects();
+  onbFilaRenderLista();
+}
+
+function onbFilaRenderLista() {
+  const wrap = document.getElementById('onb-fila-lista');
+  if (!ONB_FILA.length) { wrap.innerHTML = '<div style="font-size:12px;color:var(--muted)">Nenhum Onsite na fila ainda.</div>'; return; }
+  wrap.innerHTML = ONB_FILA.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+      <span style="font-size:11px;color:var(--muted);width:22px">#${i+1}</span>
+      <span style="flex:1;font-size:13px;font-weight:600;${f.ativo===false?'opacity:.5':''}">${f.onsite_nome}</span>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer">
+        <input type="checkbox" ${f.ativo!==false?'checked':''} onchange="onbFilaToggleAtivo(${i}, this.checked)"/> Ativo
+      </label>
+      <button class="btn btn-ghost btn-sm" onclick="onbFilaMover(${i},-1)" ${i===0?'disabled':''} style="padding:2px 8px">↑</button>
+      <button class="btn btn-ghost btn-sm" onclick="onbFilaMover(${i},1)" ${i===ONB_FILA.length-1?'disabled':''} style="padding:2px 8px">↓</button>
+      <button class="btn btn-ghost btn-sm" onclick="onbFilaRemover(${i})" style="padding:2px 8px;color:var(--danger)">✕</button>
+    </div>`).join('');
+}
+function onbFilaToggleAtivo(i, ativo) { ONB_FILA[i].ativo = ativo; }
+function onbFilaMover(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= ONB_FILA.length) return;
+  [ONB_FILA[i], ONB_FILA[j]] = [ONB_FILA[j], ONB_FILA[i]];
+  onbFilaRenderLista();
+}
+function onbFilaRemover(i) {
+  ONB_FILA.splice(i, 1);
+  onbPopularSelects();
+  onbFilaRenderLista();
+}
+async function onbFilaSalvar() {
+  try {
+    await rpc('wc_onboarding_fila_salvar', { p_itens: ONB_FILA.map(f => ({ onsite_nome: f.onsite_nome, ativo: f.ativo !== false })) });
+    showToast('Fila salva!', 'success');
+    await onbCarregar();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function onbNovaData() {
+  const dataIso = document.getElementById('onb-nova-data').value;
+  const onsite  = document.getElementById('onb-nova-onsite').value;
+  if (!dataIso || !onsite) { showToast('Preencha a data e o Onsite responsável.', 'error'); return; }
+  const dataBR = integNormalizarData(dataIso);
+  try {
+    await rpc('wc_onboarding_escala_definir', { p_data: dataBR, p_onsite_nome: onsite });
+    showToast('Data agendada!', 'success');
+    document.getElementById('onb-nova-data').value = '';
+    document.getElementById('onb-nova-onsite').value = '';
+    await onbCarregar();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function onbRenderEscalaTabela() {
+  const tbody = document.getElementById('onb-escala-tbody');
+  if (!ONB_ESCALA.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Nenhuma data agendada ainda.</td></tr>';
+    return;
+  }
+  const statusPill = st => ({
+    agendado:   `<span style="background:rgba(245,158,11,.15);color:var(--warning);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">⏳ Agendado</span>`,
+    confirmado: `<span style="background:rgba(34,197,94,.15);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">✅ Confirmado</span>`,
+    recusado:   `<span style="background:rgba(239,68,68,.12);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🚫 Recusado</span>`,
+    realizado:  `<span style="background:rgba(99,204,176,.15);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🏁 Realizado</span>`,
+    sem_onsite: `<span style="background:rgba(239,68,68,.15);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">⚠ Sem Onsite disponível</span>`,
+  }[st] || st);
+
+  tbody.innerHTML = ONB_ESCALA.map(e => {
+    const podeAgir = e.status === 'agendado' && (podeAdmin() || session?.nome === e.onsite_atual);
+    const hist = (e.historico || []).length
+      ? `<div style="font-size:11px;color:var(--muted)">${e.historico.map(h => `${h.onsite}: "${h.motivo}"`).join(' · ')}</div>`
+      : '<span style="color:var(--muted);font-size:11px">—</span>';
+    return `<tr>
+      <td style="white-space:nowrap">${e.data_integracao}</td>
+      <td><strong>${e.onsite_atual}</strong></td>
+      <td>${statusPill(e.status)}</td>
+      <td>${hist}</td>
+      <td>
+        ${podeAgir ? `
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-primary btn-sm" onclick="onbConfirmar('${e.id}')">✅ Confirmar</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="onbAbrirRecusar('${e.id}','${(e.onsite_atual||'').replace(/'/g,"\\'")}')">🚫 Recusar</button>
+          </div>` : '<span style="color:var(--muted);font-size:11px">—</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function onbConfirmar(id) {
+  try {
+    await rpc('wc_onboarding_confirmar', { p_id: id });
+    showToast('Confirmado!', 'success');
+    await onbCarregar();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function onbAbrirRecusar(id, nome) {
+  document.getElementById('onb-recusar-id').value = id;
+  document.getElementById('onb-recusar-sub').textContent = `Onsite atual: ${nome}`;
+  document.getElementById('onb-recusar-motivo').value = '';
+  abrirModal('modal-onb-recusar');
+}
+
+async function onbConfirmarRecusa() {
+  const id     = document.getElementById('onb-recusar-id').value;
+  const motivo = document.getElementById('onb-recusar-motivo').value.trim();
+  if (!motivo) { showToast('Informe a justificativa.', 'error'); return; }
+  try {
+    const r = await rpc('wc_onboarding_recusar', { p_id: id, p_justificativa: motivo });
+    fecharModal('modal-onb-recusar');
+    showToast(r.novo_onsite ? `Passado para ${r.novo_onsite}.` : 'Recusado — nenhum Onsite disponível na fila.', r.novo_onsite ? 'success' : 'error');
+    await onbCarregar();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 

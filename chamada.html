@@ -32,7 +32,7 @@
 
   .ch-body { max-width:920px; margin:0 auto; padding:24px 20px 60px; }
 
-  .ch-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .ch-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; position:relative; }
   .ch-toolbar select, .ch-toolbar input[type=text] {
     background:var(--surface2); border:1px solid var(--border); color:var(--text);
     border-radius:8px; padding:8px 12px; font-size:13px; font-family:var(--font); outline:none;
@@ -44,6 +44,30 @@
     border-radius:8px; padding:8px 14px; font-size:12.5px; cursor:pointer; font-family:var(--font);
   }
   .btn-ghost:hover { border-color:var(--accent); }
+  .btn-ghost.tem-filtro { border-color:var(--accent); color:var(--accent); }
+
+  /* Filtro estilo planilha (checkbox list) */
+  .ch-filtro-popup {
+    display:none; position:absolute; top:44px; left:0; z-index:80;
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5); width:280px; max-height:360px;
+    display:flex; flex-direction:column;
+  }
+  .ch-filtro-popup.aberto { display:flex; }
+  .ch-filtro-head { padding:10px 12px; border-bottom:1px solid var(--border); display:flex; gap:8px; }
+  .ch-filtro-head input { flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    border-radius:6px; padding:6px 8px; font-size:12px; font-family:var(--font); outline:none; }
+  .ch-filtro-acoes { padding:6px 12px; border-bottom:1px solid var(--border); display:flex; gap:10px; }
+  .ch-filtro-acoes a { font-size:11px; color:var(--accent); cursor:pointer; text-decoration:underline; }
+  .ch-filtro-lista { overflow-y:auto; padding:6px 4px; flex:1; }
+  .ch-filtro-item { display:flex; align-items:center; gap:8px; padding:5px 10px; font-size:12.5px; cursor:pointer; border-radius:6px; }
+  .ch-filtro-item:hover { background:var(--surface2); }
+  .ch-filtro-item input { cursor:pointer; }
+  .ch-filtro-footer { padding:10px 12px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
+  .btn-primary-sm {
+    background:var(--accent); color:#0f0718; border:none; border-radius:7px;
+    padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font);
+  }
 
   .ch-kpis { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
   .ch-kpi {
@@ -106,6 +130,20 @@
     <select id="ch-data" onchange="chSelecionarData(this.value)">
       <option value="">Selecione a data da integração…</option>
     </select>
+    <div style="position:relative">
+      <button class="btn-ghost" id="ch-filtro-btn" onclick="chFiltroToggle()">🔽 Filtrar CC / Operação</button>
+      <div class="ch-filtro-popup" id="ch-filtro-popup">
+        <div class="ch-filtro-head"><input type="text" id="ch-filtro-busca" placeholder="Buscar…" oninput="chFiltroRenderLista()"/></div>
+        <div class="ch-filtro-acoes">
+          <a onclick="chFiltroMarcarTodos(true)">Selecionar todos</a>
+          <a onclick="chFiltroMarcarTodos(false)">Limpar</a>
+        </div>
+        <div class="ch-filtro-lista" id="ch-filtro-lista"></div>
+        <div class="ch-filtro-footer">
+          <button class="btn-primary-sm" onclick="chFiltroAplicar()">Aplicar</button>
+        </div>
+      </div>
+    </div>
     <input type="text" id="ch-busca" placeholder="🔍 Buscar por nome…" oninput="chRenderTabela()"/>
     <button class="btn-ghost" onclick="chCarregarColmeias()">🔄 Atualizar</button>
   </div>
@@ -145,6 +183,81 @@ let session = null;
 let CH_COLMEIAS = [];   // colmeias filtradas para este onsite
 let CH_COLABS   = [];   // colaboradores da data selecionada (flat)
 let CH_STATUS   = {};   // colab_id -> {status, obs}
+let CH_FILTRO_OCULTOS = new Set(); // labels de CC/operação escondidos (aplicado)
+let CH_FILTRO_TEMP    = new Set(); // rascunho enquanto o popup está aberto
+
+const CH_FILTRO_KEY = 'wecan_chamada_filtro_oculto';
+function chFiltroCarregarSalvo() {
+  try {
+    const raw = localStorage.getItem(CH_FILTRO_KEY);
+    if (raw) CH_FILTRO_OCULTOS = new Set(JSON.parse(raw));
+  } catch(e) {}
+}
+function chFiltroSalvar() {
+  try { localStorage.setItem(CH_FILTRO_KEY, JSON.stringify([...CH_FILTRO_OCULTOS])); } catch(e) {}
+}
+
+function chLabelColmeia(c) {
+  const cli = (c.cli_nome || '').trim();
+  const dep = (c.depto_nome || c.depto_cod || '').trim();
+  return cli && dep ? `${cli} · ${dep}` : (cli || dep || '—');
+}
+
+function chFiltroToggle() {
+  const pop = document.getElementById('ch-filtro-popup');
+  if (pop.classList.contains('aberto')) { pop.classList.remove('aberto'); return; }
+  CH_FILTRO_TEMP = new Set(CH_FILTRO_OCULTOS);
+  document.getElementById('ch-filtro-busca').value = '';
+  chFiltroRenderLista();
+  pop.classList.add('aberto');
+}
+document.addEventListener('click', (ev) => {
+  const pop = document.getElementById('ch-filtro-popup');
+  const btn = document.getElementById('ch-filtro-btn');
+  if (pop && pop.classList.contains('aberto') && !pop.contains(ev.target) && ev.target !== btn) {
+    pop.classList.remove('aberto');
+  }
+});
+
+function chFiltroRenderLista() {
+  const busca = (document.getElementById('ch-filtro-busca')?.value || '').toLowerCase();
+  const labels = [...new Set(CH_COLMEIAS.map(chLabelColmeia))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const lista = document.getElementById('ch-filtro-lista');
+  const filtrados = busca ? labels.filter(l => l.toLowerCase().includes(busca)) : labels;
+  if (!filtrados.length) { lista.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px">Nenhuma operação encontrada.</div>'; return; }
+  lista.innerHTML = filtrados.map(l => {
+    const marcado = !CH_FILTRO_TEMP.has(l);
+    const safe = l.replace(/'/g, "\\'");
+    return `<label class="ch-filtro-item">
+      <input type="checkbox" ${marcado?'checked':''} onchange="chFiltroTogglePendente('${safe}', this.checked)"/>
+      <span>${l}</span>
+    </label>`;
+  }).join('');
+}
+function chFiltroTogglePendente(label, marcado) {
+  if (marcado) CH_FILTRO_TEMP.delete(label); else CH_FILTRO_TEMP.add(label);
+}
+function chFiltroMarcarTodos(marcarTodos) {
+  const labels = [...new Set(CH_COLMEIAS.map(chLabelColmeia))];
+  if (marcarTodos) CH_FILTRO_TEMP = new Set();
+  else CH_FILTRO_TEMP = new Set(labels);
+  chFiltroRenderLista();
+}
+function chFiltroAtualizarBotao() {
+  const btn = document.getElementById('ch-filtro-btn');
+  const labels = new Set(CH_COLMEIAS.map(chLabelColmeia));
+  const total = labels.size;
+  const ocultos = [...CH_FILTRO_OCULTOS].filter(l => labels.has(l)).length;
+  btn.textContent = ocultos ? `🔽 Filtrar CC / Operação (${total-ocultos}/${total})` : '🔽 Filtrar CC / Operação';
+  btn.classList.toggle('tem-filtro', !!ocultos);
+}
+function chFiltroAplicar() {
+  CH_FILTRO_OCULTOS = new Set(CH_FILTRO_TEMP);
+  chFiltroSalvar();
+  document.getElementById('ch-filtro-popup').classList.remove('aberto');
+  chFiltroAtualizarBotao();
+  chSelecionarData(document.getElementById('ch-data').value);
+}
 
 function toast(msg, tipo) {
   const el = document.getElementById('toast');
@@ -204,6 +317,7 @@ window.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  chFiltroCarregarSalvo();
   chCarregarColmeias();
 });
 
@@ -247,6 +361,7 @@ async function chCarregarColmeias() {
   try {
     const r = await rpc('wc_integ_listar_colmeias', {});
     CH_COLMEIAS = chFiltrarPorOnsite(r.colmeias || []);
+    chFiltroAtualizarBotao();
     const datas = [...new Set(CH_COLMEIAS.map(c => c.data_admissao))]
       .sort((a,b) => chParaISO(b).localeCompare(chParaISO(a)));
     const sel = document.getElementById('ch-data');
@@ -272,7 +387,7 @@ async function chCarregarColmeias() {
 async function chSelecionarData(data) {
   if (!data) { document.getElementById('ch-tbody').innerHTML = '<tr><td colspan="4" class="ch-empty">Selecione uma data.</td></tr>'; return; }
   document.getElementById('ch-tbody').innerHTML = '<tr><td colspan="4" class="ch-empty">Carregando colaboradores…</td></tr>';
-  const colmeias = CH_COLMEIAS.filter(c => c.data_admissao === data);
+  const colmeias = CH_COLMEIAS.filter(c => c.data_admissao === data && !CH_FILTRO_OCULTOS.has(chLabelColmeia(c)));
   if (!colmeias.length) { CH_COLABS = []; chRenderTabela(); chRenderKpis(); return; }
 
   try {
