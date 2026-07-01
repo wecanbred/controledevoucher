@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Portal do Líder | WeCan BR</title>
+<style>
+:root {
+  --bg:#0f0718; --surface:#1a0a2e; --surface2:#2a1045; --surface3:#3d1860;
+  --border:#432a5c; --accent:#63ccb0; --brand:#4f0672;
+  --success:#22c55e; --danger:#ef4444; --warning:#f59e0b;
+  --text:#efe9f7; --muted:#a394bf;
+  --font:'Segoe UI',system-ui,sans-serif;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{
+  background:#1e0b35;border-bottom:1px solid var(--border);
+  padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-logo{width:30px;height:30px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.topbar-brand h1{font-size:14px;font-weight:800;letter-spacing:.5px}
+.topbar-brand p{font-size:11px;color:var(--accent);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px}
+.btn-sair{background:transparent;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:var(--font)}
+
+.main{max-width:860px;margin:0 auto;padding:24px 16px 60px;width:100%}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card+.card{margin-top:16px}
+.card-title{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* ── BOTÕES ── */
+.btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:700;transition:.15s}
+.btn-primary{background:var(--accent);color:#0f0718}
+.btn-primary:hover{background:#7adcc4}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--accent)}
+.btn-danger{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.btn-icon{padding:6px 10px;font-size:14px;border-radius:8px}
+
+/* ── FORM ── */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;
+  font-family:var(--font);outline:none;transition:.15s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.form-row{grid-template-columns:1fr}}
+
+/* ── TIPO TOGGLE ── */
+.tipo-toggle{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tipo-btn{
+  border:1.5px solid var(--border);border-radius:10px;padding:14px;
+  cursor:pointer;text-align:center;background:var(--surface2);transition:.15s;
+}
+.tipo-btn:hover{border-color:var(--accent)}
+.tipo-btn.ativo.advertencia{border-color:#f59e0b;background:rgba(245,158,11,.1)}
+.tipo-btn.ativo.suspensao{border-color:#ef4444;background:rgba(239,68,68,.1)}
+.tipo-btn .ico{font-size:24px;margin-bottom:4px}
+.tipo-btn .lbl{font-size:13px;font-weight:700}
+.tipo-btn .sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── COLABORADOR SEARCH ── */
+.colab-search-wrap{position:relative;margin-bottom:14px}
+.colab-dropdown{
+  position:absolute;top:100%;left:0;right:0;z-index:60;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;display:none;
+}
+.colab-dropdown.aberto{display:block}
+.colab-item{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.colab-item:last-child{border-bottom:none}
+.colab-item:hover{background:var(--surface2)}
+.colab-item .nome{font-weight:600}
+.colab-item .sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── LISTA DE SOLICITAÇÕES ── */
+.sol-item{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px;
+}
+.sol-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sol-nome{font-size:14px;font-weight:700}
+.sol-meta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.sol-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px}
+.pill.pendente   {background:rgba(245,158,11,.15);color:var(--warning)}
+.pill.em_andamento{background:rgba(99,204,176,.15);color:var(--accent)}
+.pill.assinado   {background:rgba(99,204,176,.2);color:var(--success)}
+.pill.concluido  {background:rgba(34,197,94,.15);color:var(--success)}
+.pill.cancelado  {background:rgba(239,68,68,.1);color:var(--danger)}
+.pill.advertencia{background:rgba(245,158,11,.12);color:var(--warning)}
+.pill.suspensao  {background:rgba(239,68,68,.1);color:var(--danger)}
+
+/* ── LOGIN ── */
+#pg-login{
+  position:fixed;inset:0;background:radial-gradient(circle at 20% 20%,rgba(99,204,176,.08),transparent 50%),var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:20px;z-index:999;
+}
+.login-box{width:400px;max-width:100%}
+.login-logo{width:48px;height:48px;background:var(--brand);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.login-box h1{font-size:24px;font-weight:800}
+.login-box p{color:var(--accent);font-size:13px;margin-top:4px;margin-bottom:24px}
+.login-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger);padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:none}
+
+/* ── UPLOAD AREA ── */
+.upload-area{
+  border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;
+  cursor:pointer;transition:.15s;background:var(--surface2);
+}
+.upload-area:hover{border-color:var(--accent)}
+.upload-area.dragover{border-color:var(--accent);background:rgba(99,204,176,.08)}
+
+/* ── TOAST ── */
+#toast{
+  display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.5);
+  white-space:nowrap;
+}
+#toast.success{border-color:var(--success);color:var(--success)}
+#toast.error{border-color:var(--danger);color:var(--danger)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.tab{padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);transition:.15s}
+.tab.ativa{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="pg-login">
+  <div class="login-box">
+    <div class="login-logo">👔</div>
+    <h1>Portal do Líder</h1>
+    <p>WeCan BR — Advertências e Suspensões</p>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-group"><label>E-mail</label>
+      <input type="email" id="l-email" placeholder="seu@email.com" autocomplete="email"/>
+    </div>
+    <div class="form-group"><label>Senha</label>
+      <input type="password" id="l-senha" placeholder="••••••"/>
+    </div>
+    <button class="btn btn-primary" id="btn-entrar" onclick="fazerLogin()" style="width:100%;margin-top:4px">Entrar</button>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="app" id="pg-app" style="display:none">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">👔</div>
+      <div>
+        <h1>Portal do Líder</h1>
+        <p>WeCan BR</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip" id="user-chip">—</div>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab ativa" onclick="trocarTab('minhas')" id="tab-minhas">📋 Minhas Solicitações</button>
+      <button class="tab"       onclick="trocarTab('nova')"   id="tab-nova">+ Nova Solicitação</button>
+    </div>
+
+    <!-- ══ ABA: MINHAS SOLICITAÇÕES ══ -->
+    <div id="pg-minhas">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+        <button class="btn btn-ghost btn-sm" onclick="carregarSolicitacoes()">🔄 Atualizar</button>
+      </div>
+      <div id="sol-lista"><div class="empty">Carregando…</div></div>
+    </div>
+
+    <!-- ══ ABA: NOVA SOLICITAÇÃO ══ -->
+    <div id="pg-nova" style="display:none">
+      <div class="card">
+        <div class="card-title">📄 Nova Solicitação</div>
+
+        <!-- Tipo -->
+        <div class="form-group"><label>Tipo de documento</label></div>
+        <div class="tipo-toggle">
+          <div class="tipo-btn advertencia ativo" id="tipo-advertencia" onclick="selecionarTipo('advertencia')">
+            <div class="ico">⚠️</div>
+            <div class="lbl">Advertência</div>
+            <div class="sub">Ato de indisciplina</div>
+          </div>
+          <div class="tipo-btn suspensao" id="tipo-suspensao" onclick="selecionarTipo('suspensao')">
+            <div class="ico">🚫</div>
+            <div class="lbl">Suspensão</div>
+            <div class="sub">Afastamento temporário</div>
+          </div>
+        </div>
+
+        <!-- Busca de colaborador -->
+        <div class="form-group">
+          <label>Colaborador</label>
+          <div class="colab-search-wrap">
+            <input type="text" id="colab-busca" placeholder="Buscar por nome ou matrícula…"
+              oninput="colabBuscar()" autocomplete="off"/>
+            <div class="colab-dropdown" id="colab-dropdown"></div>
+          </div>
+        </div>
+
+        <!-- Dados do colaborador (preenchidos ao selecionar) -->
+        <div id="colab-selecionado" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700" id="cs-nome"></div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px" id="cs-sub"></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="limparColab()">✕</button>
+          </div>
+        </div>
+        <input type="hidden" id="colab-nome-hid"/>
+        <input type="hidden" id="colab-cpf-hid"/>
+        <input type="hidden" id="colab-mat-hid"/>
+        <input type="hidden" id="colab-cargo-hid"/>
+        <input type="hidden" id="colab-local-hid"/>
+
+        <!-- Campos comuns -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cidade</label>
+            <input type="text" id="f-cidade" value="Ananindeua"/>
+          </div>
+          <div class="form-group">
+            <label>Data do Documento</label>
+            <input type="date" id="f-data"/>
+          </div>
+        </div>
+
+        <!-- Campos de suspensão -->
+        <div id="campos-suspensao" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Quantidade de dias</label>
+              <input type="number" id="f-dias" min="1" max="30" placeholder="Ex: 3"/>
+            </div>
+            <div class="form-group">
+              <label>Data de início</label>
+              <input type="date" id="f-inicio" oninput="calcularRetorno()"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Data de retorno</label>
+            <input type="date" id="f-retorno"/>
+          </div>
+        </div>
+
+        <!-- Motivo -->
+        <div class="form-group">
+          <label id="lbl-motivo">Ato de indisciplina / Motivo</label>
+          <textarea id="f-motivo" placeholder="Descreva o ato de indisciplina, as faltas ou irregularidades…"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Observação adicional (opcional)</label>
+          <textarea id="f-obs" rows="2" placeholder="Qualquer contexto adicional para o Onsite…"></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="trocarTab('minhas')">Cancelar</button>
+          <button class="btn btn-primary" onclick="enviarSolicitacao()">📤 Enviar Solicitação</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: detalhes / upload assinado -->
+<div id="modal-bg" onclick="fecharModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;align-items:center;justify-content:center;padding:16px">
+  <div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <h2 style="font-size:15px;font-weight:800" id="modal-titulo">Detalhes</h2>
+      <button onclick="fecharModal()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <div id="modal-corpo" style="padding:18px 20px;display:grid;gap:14px"></div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap" id="modal-acoes"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ══════════════════════════════════════════════
+//  lider.html — Portal do Líder | WeCan BR
+// ══════════════════════════════════════════════
+
+const SUPABASE_URL  = 'https://omwilcuzcvgzyzqqrbkh.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9td2lsY3V6Y3Znenl6cXFyYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzI1MTIsImV4cCI6MjA5NzcwODUxMn0.S1pbFqZ4B5_TWMBq_r8BeQ9OOFzkj73aOoI6g3Y987Q';
+const SESSION_KEY   = 'wecan_lider_session_v1';
+
+let session = null;
+let COLABS  = [];
+let TIPO    = 'advertencia';
+
+// ── RPC ──────────────────────────────────────
+async function rpc(fn, args = {}) {
+  if (fn !== 'wc_login' && args.p_token === undefined)
+    args.p_token = session?.token || '';
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`},
+    body: JSON.stringify(args)
+  });
+  const data = await r.json().catch(() => { throw new Error('Erro de comunicação.'); });
+  if (!r.ok) throw new Error(data?.message || data?.hint || `Erro ${r.status}`);
+  if (data?.ok === false) {
+    if (data.sessaoInvalida) sair();
+    throw new Error(data.erro || 'Erro desconhecido.');
+  }
+  return data;
+}
+
+// ── Storage upload ───────────────────────────
+async function storageUpload(bucket, path, blob, contentType) {
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
+    method:'POST',
+    headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':contentType,'x-upsert':'true'},
+    body: blob
+  });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.message || `Upload error ${r.status}`); }
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+}
+
+// ── Toast ────────────────────────────────────
+let _toastTimer;
+function toast(msg, tipo='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = tipo; el.style.display = 'block';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.style.display='none', 3500);
+}
+
+// ── Sessão ───────────────────────────────────
+function salvarSessao(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify({session:s, savedAt:Date.now()})); } catch(e){} }
+function limparSessao()   { try { localStorage.removeItem(SESSION_KEY); } catch(e){} }
+function carregarSessao() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (!p.savedAt || Date.now()-p.savedAt > 8*60*60*1000) { localStorage.removeItem(SESSION_KEY); return null; }
+    return p.session;
+  } catch(e) { return null; }
+}
+
+// ── Login ────────────────────────────────────
+async function fazerLogin() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const senha  = document.getElementById('l-senha').value;
+  const err    = document.getElementById('login-error');
+  const btn    = document.getElementById('btn-entrar');
+  err.style.display = 'none';
+  if (!email || !senha) { err.textContent='Preencha e-mail e senha.'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  try {
+    const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
+    if (resp.sessao?.perfil !== 'lider') throw new Error('Este portal é exclusivo para líderes. Acesse o sistema principal.');
+    session = resp.sessao;
+    salvarSessao(session);
+    iniciarApp();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+  } finally { btn.disabled=false; btn.textContent='Entrar'; }
+}
+document.addEventListener('keydown', e => { if (e.key==='Enter' && !session) fazerLogin(); });
+
+function sair() { limparSessao(); session=null; document.getElementById('pg-login').style.display='flex'; document.getElementById('pg-app').style.display='none'; }
+
+// ── Iniciar App ──────────────────────────────
+async function iniciarApp() {
+  document.getElementById('pg-login').style.display = 'none';
+  document.getElementById('pg-app').style.display   = 'flex';
+  document.getElementById('user-chip').textContent   = session.nome || 'Líder';
+  document.getElementById('f-data').value = new Date().toISOString().substring(0,10);
+  await Promise.all([carregarSolicitacoes(), carregarColabs()]);
+}
+
+// ── Carregar colaboradores ───────────────────
+async function carregarColabs() {
+  try {
+    const r = await rpc('wc_lider_listar_colabs', {});
+    COLABS = r.colabs || [];
+  } catch(e) { COLABS = []; }
+}
+
+// ── Busca de colaborador ─────────────────────
+function colabBuscar() {
+  const q   = (document.getElementById('colab-busca').value || '').toLowerCase().trim();
+  const drop = document.getElementById('colab-dropdown');
+  if (!q || q.length < 2) { drop.classList.remove('aberto'); return; }
+  const res = COLABS.filter(c =>
+    (c.nome||'').toLowerCase().includes(q) ||
+    (c.matricula||'').toLowerCase().includes(q)
+  ).slice(0,10);
+  if (!res.length) {
+    drop.innerHTML = '<div class="colab-item" style="color:var(--muted)">Nenhum resultado encontrado.</div>';
+  } else {
+    drop.innerHTML = res.map(c => `
+      <div class="colab-item" onclick="selecionarColab(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+        <div class="nome">${c.nome||'—'}</div>
+        <div class="sub">${c.cargo||''} · Matrícula ${c.matricula||'—'} · ${c.cc||''}</div>
+      </div>`).join('');
+  }
+  drop.classList.add('aberto');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.colab-search-wrap'))
+    document.getElementById('colab-dropdown').classList.remove('aberto');
+});
+
+function selecionarColab(c) {
+  document.getElementById('colab-busca').value    = c.nome;
+  document.getElementById('colab-nome-hid').value = c.nome || '';
+  document.getElementById('colab-cpf-hid').value  = c.cpf  || '';
+  document.getElementById('colab-mat-hid').value  = c.matricula || '';
+  document.getElementById('colab-cargo-hid').value= c.cargo || '';
+  document.getElementById('colab-local-hid').value= c.cc   || '';
+  document.getElementById('cs-nome').textContent  = c.nome || '—';
+  document.getElementById('cs-sub').textContent   = `${c.cargo||''} · Matrícula ${c.matricula||'—'} · ${c.cc||''}`;
+  document.getElementById('colab-selecionado').style.display = 'block';
+  document.getElementById('colab-dropdown').classList.remove('aberto');
+}
+function limparColab() {
+  ['colab-busca','colab-nome-hid','colab-cpf-hid','colab-mat-hid','colab-cargo-hid','colab-local-hid'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('colab-selecionado').style.display = 'none';
+}
+
+// ── Tipo de documento ────────────────────────
+function selecionarTipo(t) {
+  TIPO = t;
+  ['advertencia','suspensao'].forEach(x => document.getElementById('tipo-'+x).classList.toggle('ativo', x===t));
+  document.getElementById('campos-suspensao').style.display = t==='suspensao' ? 'block' : 'none';
+  document.getElementById('lbl-motivo').textContent = t==='suspensao'
+    ? 'Faltas / Irregularidades (ex: Falta injustificada em 02/01/2026)'
+    : 'Ato de indisciplina / Motivo';
+}
+
+function calcularRetorno() {
+  const ini  = document.getElementById('f-inicio').value;
+  const dias  = parseInt(document.getElementById('f-dias').value) || 0;
+  if (ini && dias > 0) {
+    const d = new Date(ini + 'T12:00:00');
+    d.setDate(d.getDate() + dias);
+    document.getElementById('f-retorno').value = d.toISOString().substring(0,10);
+  }
+}
+
+// ── Tabs ─────────────────────────────────────
+function trocarTab(id) {
+  ['minhas','nova'].forEach(t => {
+    document.getElementById('pg-'+t).style.display      = t===id ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('ativa', t===id);
+  });
+  if (id === 'minhas') carregarSolicitacoes();
+}
+
+// ── Enviar solicitação ───────────────────────
+async function enviarSolicitacao() {
+  const nome    = document.getElementById('colab-nome-hid').value.trim();
+  const motivo  = document.getElementById('f-motivo').value.trim();
+  const cidade  = document.getElementById('f-cidade').value.trim() || 'Ananindeua';
+  const dataDoc = document.getElementById('f-data').value;
+  if (!nome)   { toast('Selecione um colaborador.', 'error'); return; }
+  if (!motivo) { toast('Informe o motivo.', 'error'); return; }
+  if (TIPO === 'suspensao' && (!document.getElementById('f-dias').value || !document.getElementById('f-inicio').value)) {
+    toast('Preencha os dias e a data de início da suspensão.', 'error'); return;
+  }
+
+  const args = {
+    p_tipo:             TIPO,
+    p_colab_nome:       nome,
+    p_colab_cpf:        document.getElementById('colab-cpf-hid').value,
+    p_colab_matricula:  document.getElementById('colab-mat-hid').value,
+    p_colab_cargo:      document.getElementById('colab-cargo-hid').value,
+    p_colab_local:      document.getElementById('colab-local-hid').value,
+    p_motivo:           motivo,
+    p_dias_suspensao:   TIPO==='suspensao' ? parseInt(document.getElementById('f-dias').value)||null : null,
+    p_data_inicio_susp: TIPO==='suspensao' ? (document.getElementById('f-inicio').value||null)      : null,
+    p_data_retorno_susp:TIPO==='suspensao' ? (document.getElementById('f-retorno').value||null)     : null,
+    p_data_documento:   dataDoc || null,
+    p_cidade_documento: cidade,
+    p_obs_lider:        document.getElementById('f-obs').value.trim() || null,
+  };
+
+  try {
+    const r = await rpc('wc_lider_solicitar', args);
+    toast('Solicitação enviada! O Onsite irá processar em breve.', 'success');
+    limparColab();
+    document.getElementById('f-motivo').value = '';
+    document.getElementById('f-obs').value    = '';
+    setTimeout(() => trocarTab('minhas'), 1200);
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+// ── Carregar solicitações ────────────────────
+async function carregarSolicitacoes() {
+  const wrap = document.getElementById('sol-lista');
+  wrap.innerHTML = '<div class="empty">Carregando…</div>';
+  try {
+    const r = await rpc('wc_lider_listar_solicitacoes', {});
+    const itens = r.itens || [];
+    if (!itens.length) { wrap.innerHTML = '<div class="empty">Você ainda não fez nenhuma solicitação.</div>'; return; }
+    wrap.innerHTML = itens.map(s => renderSolItem(s)).join('');
+  } catch(e) { wrap.innerHTML = `<div class="empty" style="color:var(--danger)">${e.message}</div>`; }
+}
+
+const STATUS_LABEL = { pendente:'⏳ Pendente', em_andamento:'⚙ Em Andamento', assinado:'✍ Aguardando Onsite', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+
+function renderSolItem(s) {
+  const fmt = d => d ? d.split('-').reverse().join('/') : '—';
+  const tipoPill = `<span class="pill ${s.tipo}">${s.tipo==='advertencia'?'⚠️ Advertência':'🚫 Suspensão'}</span>`;
+  const statusPill = `<span class="pill ${s.status}">${STATUS_LABEL[s.status]||s.status}</span>`;
+  const suspInfo = s.tipo === 'suspensao' && s.dias_suspensao
+    ? `<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Suspensão: ${s.dias_suspensao} dia(s) · ${fmt(s.data_inicio_susp)} → ${fmt(s.data_retorno_susp)}</div>` : '';
+  const podeBaixar = s.pdf_gerado_path && (s.status === 'em_andamento' || s.status === 'pendente');
+  const podeUpload = s.pdf_gerado_path && s.status !== 'concluido' && s.status !== 'cancelado';
+  const podeBaixarConc = s.pdf_assinado_path;
+
+  return `<div class="sol-item">
+    <div class="sol-head">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          ${tipoPill} ${statusPill}
+        </div>
+        <div class="sol-nome">${s.colab_nome}</div>
+        <div class="sol-meta">${fmt(s.data_documento)} · ${s.colab_local||''}</div>
+        ${suspInfo}
+        ${s.obs_onsite ? `<div style="font-size:11.5px;color:var(--accent);margin-top:4px">Obs. Onsite: ${s.obs_onsite}</div>` : ''}
+      </div>
+      <div class="sol-actions">
+        <button class="btn btn-ghost btn-sm" onclick='abrirDetalhe(${JSON.stringify(s).replace(/'/g,"&#39;")})'>Ver</button>
+      </div>
+    </div>
+    ${podeUpload && !s.pdf_assinado_path ? `
+    <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        ${s.pdf_gerado_path
+          ? '📥 Baixe o documento, obtenha as assinaturas, e devolva aqui:'
+          : '⏳ Aguardando o Onsite gerar o documento…'}
+      </div>
+      ${s.pdf_gerado_path ? `
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="${s.pdf_gerado_path}" target="_blank" class="btn btn-ghost btn-sm">📥 Baixar documento</a>
+        <button class="btn btn-primary btn-sm" onclick="abrirUploadAssinado('${s.id}')">📤 Enviar assinado</button>
+      </div>` : ''}
+    </div>` : ''}
+    ${s.pdf_assinado_path && s.status === 'assinado' ? `
+    <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;font-size:11.5px;color:var(--success)">
+      ✅ Documento assinado enviado — aguardando confirmação do Onsite.
+    </div>` : ''}
+    ${s.status === 'concluido' ? `
+    <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+      <a href="${s.pdf_assinado_path||s.pdf_gerado_path||'#'}" target="_blank" class="btn btn-ghost btn-sm">📁 Ver no dossiê</a>
+    </div>` : ''}
+  </div>`;
+}
+
+// ── Upload assinado ──────────────────────────
+let _uploadId = null;
+function abrirUploadAssinado(id) {
+  _uploadId = id;
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/pdf';
+  inp.onchange = async () => {
+    const file = inp.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') { toast('Apenas arquivos PDF.', 'error'); return; }
+    toast('Enviando…');
+    try {
+      const path = `lider/${_uploadId}/assinado_${Date.now()}.pdf`;
+      const url  = await storageUpload('dossie', path, file, 'application/pdf');
+      await rpc('wc_lider_upload_assinado', { p_id: _uploadId, p_path: url });
+      toast('Documento enviado com sucesso!', 'success');
+      await carregarSolicitacoes();
+    } catch(e) { toast('Erro: ' + e.message, 'error'); }
+  };
+  inp.click();
+}
+
+// ── Modal de detalhe ─────────────────────────
+function abrirDetalhe(s) {
+  const fmt = d => d ? d.split('-').reverse().join('/') : '—';
+  document.getElementById('modal-titulo').textContent = s.tipo === 'advertencia' ? '⚠️ Advertência' : '🚫 Suspensão';
+  document.getElementById('modal-corpo').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px">
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Colaborador</div><strong>${s.colab_nome}</strong></div>
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">CPF</div>${s.colab_cpf||'—'}</div>
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Matrícula</div>${s.colab_matricula||'—'}</div>
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Local</div>${s.colab_local||'—'}</div>
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Data</div>${fmt(s.data_documento)}</div>
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Status</div>${STATUS_LABEL[s.status]||s.status}</div>
+      ${s.tipo==='suspensao'?`<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Dias</div>${s.dias_suspensao||'—'}</div>
+      <div><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Início → Retorno</div>${fmt(s.data_inicio_susp)} → ${fmt(s.data_retorno_susp)}</div>`:''}
+    </div>
+    <div>
+      <div style="color:var(--muted);font-size:10px;text-transform:uppercase;margin-bottom:4px">Motivo</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:12.5px;line-height:1.6">${s.motivo}</div>
+    </div>
+    ${s.obs_onsite?`<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase;margin-bottom:4px">Observação do Onsite</div><div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:12.5px">${s.obs_onsite}</div></div>`:''}`;
+
+  const acoes = document.getElementById('modal-acoes');
+  acoes.innerHTML = '';
+  if (s.pdf_gerado_path) {
+    const a = document.createElement('a');
+    a.href = s.pdf_gerado_path; a.target='_blank'; a.className='btn btn-ghost btn-sm'; a.textContent='📥 Baixar documento';
+    acoes.appendChild(a);
+  }
+  if (s.pdf_assinado_path) {
+    const a = document.createElement('a');
+    a.href = s.pdf_assinado_path; a.target='_blank'; a.className='btn btn-ghost btn-sm'; a.textContent='📋 Ver assinado';
+    acoes.appendChild(a);
+  }
+  if (s.status !== 'concluido' && s.status !== 'cancelado' && s.pdf_gerado_path && !s.pdf_assinado_path) {
+    const b = document.createElement('button');
+    b.className='btn btn-primary btn-sm'; b.textContent='📤 Enviar assinado';
+    b.onclick = () => { fecharModal(); abrirUploadAssinado(s.id); };
+    acoes.appendChild(b);
+  }
+  const bc = document.createElement('button');
+  bc.className='btn btn-ghost btn-sm'; bc.textContent='Fechar'; bc.onclick=fecharModal;
+  acoes.appendChild(bc);
+
+  document.getElementById('modal-bg').style.display = 'flex';
+}
+function fecharModal() { document.getElementById('modal-bg').style.display = 'none'; }
+
+// ── Boot ─────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const s = carregarSessao();
+  if (s && s.perfil === 'lider') { session = s; iniciarApp(); }
+});
+</script>
+</body>
+</html>
