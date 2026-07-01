@@ -34,9 +34,27 @@
   .info{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
     padding:10px 14px;font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.6}
   .info strong{color:var(--text)}
+
+  /* Modal troca de senha */
+  #modal-troca{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+    z-index:99999;align-items:center;justify-content:center;padding:24px}
+  #modal-troca.aberto{display:flex}
+  .troca-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    width:400px;max-width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .troca-box h2{font-size:18px;font-weight:800;margin-bottom:6px}
+  .troca-box p{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
+  .troca-aviso{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);
+    color:#f59e0b;padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:16px}
+  .troca-erro{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);
+    padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:14px;display:none}
+  .senha-req{font-size:11px;color:var(--muted);margin-top:6px}
+  .senha-req span{display:block;margin-top:2px}
+  .senha-req span.ok{color:var(--accent)}
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
 <div id="login-page">
   <div class="login-box">
     <div class="login-head">
@@ -55,26 +73,110 @@
   </div>
 </div>
 
+<!-- MODAL: TROCA DE SENHA OBRIGATÓRIA -->
+<div id="modal-troca">
+  <div class="troca-box">
+    <h2>🔐 Defina sua senha</h2>
+    <p>Este é seu primeiro acesso. Por segurança, crie uma senha pessoal antes de continuar.</p>
+    <div class="troca-aviso">⚠️ Você não poderá usar a senha temporária após essa troca.</div>
+    <div class="troca-erro" id="troca-erro"></div>
+    <div class="form-group">
+      <label>Nova senha</label>
+      <input type="password" id="troca-nova" placeholder="Mínimo 6 caracteres" oninput="validarSenha()"/>
+      <div class="senha-req" id="troca-req">
+        <span id="req-len">• Mínimo 6 caracteres</span>
+        <span id="req-dif">• Diferente da senha temporária (WeCan@2026)</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Confirmar senha</label>
+      <input type="password" id="troca-conf" placeholder="Repita a nova senha"/>
+    </div>
+    <button class="btn btn-primary" id="btn-trocar" onclick="trocarSenha()">Salvar e Entrar</button>
+  </div>
+</div>
+
 <script src="shared.js"></script>
 <script>
+let _sessaoPendente = null;
+
+function validarSenha() {
+  const v = document.getElementById('troca-nova').value;
+  const lenOk = v.length >= 6;
+  const difOk = v !== 'WeCan@2026';
+  const reqLen = document.getElementById('req-len');
+  const reqDif = document.getElementById('req-dif');
+  reqLen.className = lenOk ? 'ok' : '';
+  reqDif.className = difOk ? 'ok' : '';
+}
+
 async function fazerLogin() {
   const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const senha = document.getElementById('login-senha').value;
-  const err   = document.getElementById('login-error');
-  const btn   = document.getElementById('btn-entrar');
+  const senha  = document.getElementById('login-senha').value;
+  const err    = document.getElementById('login-error');
+  const btn    = document.getElementById('btn-entrar');
   err.style.display = 'none';
   if (!email || !senha) { err.textContent='Informe e-mail e senha.'; err.style.display='block'; return; }
   btn.disabled=true; btn.textContent='Entrando…';
   try {
     const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
-    salvarSessao(resp.sessao);
+    const sessao = resp.sessao;
+
+    // Redireciona líderes para o portal deles
+    if (sessao.perfil === 'lider') {
+      salvarSessao(sessao);
+      window.location.href = 'lider.html';
+      return;
+    }
+
+    // Senha temporária → abre modal de troca
+    if (sessao.senha_temporaria) {
+      _sessaoPendente = sessao;
+      document.getElementById('modal-troca').classList.add('aberto');
+      return;
+    }
+
+    salvarSessao(sessao);
     window.location.href = 'admissao.html';
   } catch(e) {
     err.textContent = e.message || 'E-mail ou senha incorretos.';
     err.style.display = 'block';
   } finally { btn.disabled=false; btn.textContent='Entrar'; }
 }
-document.addEventListener('keydown', e => { if (e.key==='Enter') fazerLogin(); });
+
+async function trocarSenha() {
+  const nova  = document.getElementById('troca-nova').value;
+  const conf  = document.getElementById('troca-conf').value;
+  const erro  = document.getElementById('troca-erro');
+  const btn   = document.getElementById('btn-trocar');
+  erro.style.display = 'none';
+
+  if (nova.length < 6)          { erro.textContent='A senha deve ter pelo menos 6 caracteres.'; erro.style.display='block'; return; }
+  if (nova === 'WeCan@2026')    { erro.textContent='Use uma senha diferente da temporária.'; erro.style.display='block'; return; }
+  if (nova !== conf)            { erro.textContent='As senhas não coincidem.'; erro.style.display='block'; return; }
+
+  btn.disabled=true; btn.textContent='Salvando…';
+  try {
+    // Usa o token da sessão pendente para trocar a senha
+    await rpc('wc_trocar_senha', { p_token: _sessaoPendente.token, p_senha_nova: nova });
+    // Marca como não temporária e salva
+    _sessaoPendente.senha_temporaria = false;
+    salvarSessao(_sessaoPendente);
+    window.location.href = 'admissao.html';
+  } catch(e) {
+    erro.textContent = e.message || 'Erro ao salvar senha.';
+    erro.style.display = 'block';
+    btn.disabled=false; btn.textContent='Salvar e Entrar';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('modal-troca').classList.contains('aberto')) trocarSenha();
+    else fazerLogin();
+  }
+});
+
 if (carregarSessaoSalva()) window.location.href = 'admissao.html';
 </script>
 </body>
