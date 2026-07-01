@@ -104,7 +104,7 @@ async function fazerLogin(){
     bv.style.display='block';
     if(sessao.senha_temporaria){_sessaoPendente=sessao;setTimeout(()=>document.getElementById('modal-troca').classList.add('aberto'),700);return;}
     salvarSessao(sessao);
-    setTimeout(()=>{window.location.href=sessao.perfil==='lider'?'lider.html':'admissao.html';},600);
+    setTimeout(()=>{window.location.href=sessao.perfil==='lider'?'lider.html':(['onsite','folha'].some(p=>p===sessao.perfil)?'adp.html':'selecao.html');},600);
   }catch(e){err.textContent=e.message||'E-mail ou senha incorretos.';err.style.display='block';}
   finally{btn.disabled=false;btn.textContent='Entrar';}
 }
@@ -122,12 +122,12 @@ async function trocarSenha(){
     await rpc('wc_trocar_senha',{p_token:_sessaoPendente.token,p_senha_nova:nova});
     _sessaoPendente.senha_temporaria=false;
     salvarSessao(_sessaoPendente);
-    window.location.href=_sessaoPendente.perfil==='lider'?'lider.html':'admissao.html';
+    window.location.href=_sessaoPendente.perfil==='lider'?'lider.html':(['onsite','folha'].some(p=>p===_sessaoPendente.perfil)?'adp.html':'selecao.html');
   }catch(e){erro.textContent=e.message||'Erro ao salvar senha.';erro.style.display='block';btn.disabled=false;btn.textContent='Salvar e Entrar';}
 }
 document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;document.getElementById('modal-troca').classList.contains('aberto')?trocarSenha():fazerLogin();});
 const _s=carregarSessaoSalva();
-if(_s)window.location.href=_s.perfil==='lider'?'lider.html':'admissao.html';
+if(_s)window.location.href=_s.perfil==='lider'?'lider.html':(['onsite','folha'].some(p=>p===_s.perfil)?'adp.html':'selecao.html');
 </script>
 </body>
 </html>
