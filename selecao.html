@@ -1143,30 +1143,6 @@
         <div>
           <h2 style="font-size:15px">Acompanhamento — <span id="ns-cons-nome"></span></h2>
           <p style="font-size:12px;color:var(--muted);margin-top:3px" id="ns-cons-sub"></p>
-        </div>
-      </div>
-      <div class="modal-body" style="display:grid;gap:14px">
-        <input type="hidden" id="ns-cons-id"/>
-
-        <!-- Info resumida do No Show -->
-        <div id="ns-cons-info" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div>
-
-        <!-- Vaga encontrada -->
-        <div class="form-group">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Código da Vaga</label>
-          <div style="display:flex;gap:8px;margin-top:6px">
-            <input type="text" id="ns-cons-vaga" placeholder="Buscando vaga automaticamente…"
-              style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
-            <button class="btn btn-ghost btn-sm" onclick="nsBuscarVaga()" title="Buscar vaga">🔍</button>
-          </div>
-          <div id="ns-vaga-info" style="margin-top:6px;font-size:11.5px;color:var(--muted)"></div>
-        </div>
-
-        <!-- Processo -->
-        <div class="form-group">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Processo</label>
-          <select id="ns-cons-processo" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px">
-            <option value="">Selecione…</option>
             <option value="PRESENCIAL">Presencial</option>
             <option value="ONLINE">Online</option>
           </select>
@@ -1261,189 +1237,6 @@
         </thead>
         <tbody id="cham-tbody"></tbody>
       </table>
-    </div>
-  </div>
-
-  <!-- ══ CONTROLE DE ONBOARDING ══ -->
-  <div class="page" id="page-onboarding-controle">
-    <div class="page-header">
-      <div>
-        <h1>📅 Controle de Onboarding</h1>
-        <p>Escala rotativa de quem apresenta a integração em cada data</p>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="onbCarregar()">🔄 Atualizar</button>
-    </div>
-
-    <!-- Painel da fila (só Gestor/Master) -->
-    <div class="card" id="onb-fila-card" style="display:none;margin-bottom:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div>
-          <div style="font-size:13px;font-weight:800">Fila de Rodízio</div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Ordem em que os Onsites se revezam para apresentar a integração</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <select id="onb-fila-add-select" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:var(--font);outline:none"></select>
-          <button class="btn btn-ghost btn-sm" onclick="onbFilaAdicionar()">+ Adicionar</button>
-        </div>
-      </div>
-      <div id="onb-fila-lista" style="display:flex;flex-direction:column;gap:6px"></div>
-      <div style="margin-top:12px;display:flex;justify-content:flex-end">
-        <button class="btn btn-primary btn-sm" onclick="onbFilaSalvar()">💾 Salvar Fila</button>
-      </div>
-    </div>
-
-    <!-- Painel de nova data (só Gestor/Master) -->
-    <div class="card" id="onb-nova-data-card" style="display:none;margin-bottom:20px">
-      <div style="font-size:13px;font-weight:800;margin-bottom:10px">+ Agendar Data</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Data da Integração</label>
-          <input type="date" id="onb-nova-data" style="margin-top:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none"/>
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Onsite Responsável</label>
-          <select id="onb-nova-onsite" style="margin-top:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;min-width:200px"></select>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="onbNovaData()">Agendar</button>
-      </div>
-    </div>
-
-    <!-- Tabela de escala -->
-    <div class="table-wrap">
-      <table class="main-table">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Onsite da Vez</th>
-            <th>Status</th>
-            <th>Histórico de Recusas</th>
-            <th style="width:220px">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="onb-escala-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modal de recusa -->
-  <div class="modal-backdrop" id="modal-onb-recusar" onclick="if(event.target===this)fecharModal('modal-onb-recusar')">
-    <div class="modal" style="width:440px">
-      <div class="modal-head">
-        <div>
-          <h2 style="font-size:15px">Recusar Onboarding</h2>
-          <p style="font-size:12px;color:var(--muted);margin-top:3px" id="onb-recusar-sub"></p>
-        </div>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="onb-recusar-id"/>
-        <div class="form-group">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Justificativa <span style="color:var(--danger)">*</span></label>
-          <textarea id="onb-recusar-motivo" rows="3" placeholder="Explique o motivo da recusa…"
-            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box;margin-top:6px"></textarea>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="fecharModal('modal-onb-recusar')">Cancelar</button>
-        <button class="btn btn-primary" style="background:var(--danger);border-color:var(--danger)" onclick="onbConfirmarRecusa()">Confirmar Recusa</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de acompanhamento — Chamadas -->
-  <div class="modal-backdrop" id="modal-chamada-consultor" onclick="if(event.target===this)fecharModal('modal-chamada-consultor')">
-    <div class="modal" style="width:540px">
-      <div class="modal-head">
-        <div>
-          <h2 style="font-size:15px">Acompanhamento — <span id="cham-cons-nome"></span></h2>
-          <p style="font-size:12px;color:var(--muted);margin-top:3px" id="cham-cons-sub"></p>
-        </div>
-      </div>
-      <div class="modal-body" style="display:grid;gap:14px">
-        <input type="hidden" id="cham-cons-id"/>
-
-        <div id="cham-cons-info" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div>
-
-        <div class="form-group">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Observação</label>
-          <textarea id="cham-cons-obs" rows="2" placeholder="Justificativa da ausência, contexto, etc…"
-            style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;resize:vertical;box-sizing:border-box;margin-top:6px"></textarea>
-        </div>
-
-        <!-- Toggle: desistência confirmada -->
-        <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:700">⊘ Confirmar Desistência</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Reabre a vaga automaticamente para reposição</div>
-          </div>
-          <label style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer">
-            <input type="checkbox" id="cham-cons-desistencia" style="opacity:0;width:0;height:0;position:absolute"
-              onchange="chamadasToggleDesistencia(this.checked)"/>
-            <span style="position:absolute;inset:0;background:var(--surface3);border-radius:24px;transition:.2s">
-              <em style="position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;display:block"></em>
-            </span>
-          </label>
-        </div>
-
-        <!-- Campos de desistência (escondidos por padrão) -->
-        <div id="cham-cons-desist-campos" style="display:none;display:grid;gap:14px">
-          <div class="form-group">
-            <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Código da Vaga</label>
-            <div style="display:flex;gap:8px;margin-top:6px">
-              <input type="text" id="cham-cons-vaga" placeholder="Buscando vaga automaticamente…"
-                style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box"/>
-              <button class="btn btn-ghost btn-sm" onclick="chamadasBuscarVaga()" title="Buscar vaga">🔍</button>
-            </div>
-            <div id="cham-cons-vaga-info" style="margin-top:6px;font-size:11.5px;color:var(--muted)"></div>
-          </div>
-          <div class="form-group">
-            <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Processo</label>
-            <select id="cham-cons-processo" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px">
-              <option value="">Selecione…</option>
-              <option value="PRESENCIAL">Presencial</option>
-              <option value="ONLINE">Online</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Data do Desligamento</label>
-            <input type="date" id="cham-cons-data-deslig"
-              style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px"/>
-          </div>
-          <div class="form-group">
-            <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Motivo</label>
-            <input type="text" id="cham-cons-motivo" placeholder="Ex: desistiu do processo, não tem mais interesse…"
-              style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box;margin-top:6px"/>
-          </div>
-        </div>
-
-        <!-- Opção única de resolução (quando não é desistência) -->
-        <div id="cham-cons-resolvido-wrap" style="display:flex;flex-direction:column;gap:8px">
-          <div id="cham-cons-opt-resolvido"
-            onclick="chamadasSelecionarResolucao('resolvido')"
-            style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s">
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700">✅ Marcar como Resolvido</div>
-              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Ausência tratada — admissão segue normalmente, sem necessidade de reabrir vaga</div>
-            </div>
-            <span id="cham-cons-opt-resolvido-ico" style="font-size:18px;flex-shrink:0">⬜</span>
-          </div>
-
-          <!-- Sub-opção: participou do Onboarding Shopee (aparece só quando Resolvido está marcado) -->
-          <label id="cham-cons-shopee-wrap" onclick="event.stopPropagation()"
-            style="display:none;align-items:center;gap:10px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.3);border-radius:8px;padding:10px 14px;cursor:pointer;margin-left:12px">
-            <input type="checkbox" id="cham-cons-shopee-chk" style="width:15px;height:15px;cursor:pointer;accent-color:#f97316"/>
-            <div>
-              <div style="font-size:12.5px;font-weight:700;color:#fb923c">🟠 Participou do Onboarding Shopee à tarde</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:1px">Ausente na integração WeCan, mas compareceu ao Onboarding da Shopee — admissão validada</div>
-            </div>
-          </label>
-
-          <input type="hidden" id="cham-cons-resolucao" value=""/>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="fecharModal('modal-chamada-consultor')">Cancelar</button>
-        <button class="btn btn-primary" onclick="chamadasSalvar()">💾 Salvar</button>
-      </div>
     </div>
   </div>
 
@@ -3397,7 +3190,6 @@ function navTo(id) {
   if (id==='home')             renderHome();
   if (id==='noshow')           nsCarregar();
   if (id==='chamadas')         chamadasCarregar();
-  if (id==='onboarding-controle') onbCarregar();
   if (id==='lideres')             liderCarregar();
   if (id==='dashboard')        renderDashboard();
   if (id==='vagas')            renderVagas();
@@ -3458,7 +3250,6 @@ const GAVETA_MENUS = {
     titulo: 'Chamada de Integração',
     items: [
       { label:'🙋 Fazer Chamada',          action:'chamadaAbrirPainel()', perm:'adp_chamada' },
-      { label:'📅 Controle de Onboarding', page:'onboarding-controle',    perm:'adp_onboarding' },
     ]
   },
   'lideres': {
