@@ -898,7 +898,7 @@
     <div id="navgroup-suporte-cadastros" style="display:none">
       <a onclick="abrirGaveta('cadastros', event)" class="sb-has-sub nav-suporte-item" title="Cadastros"><span class="sb-ico">🗂️</span><span class="sb-txt">Cadastros</span><span class="sb-arr sb-txt">›</span></a>
     </div>
-    <a class="nav-suporte-item" href="adp.html" style="color:var(--accent);font-size:12px;padding:6px 14px;display:flex;align-items:center;gap:8px"><span class="sb-ico">🏭</span><span class="sb-txt">Ir para ADP</span></a>
+    <a id="link-ir-adp" class="nav-suporte-item" href="adp.html" style="display:none;color:var(--accent);font-size:12px;padding:6px 14px;align-items:center;gap:8px"><span class="sb-ico">🏭</span><span class="sb-txt">Ir para ADP</span></a>
     <hr class="section-divider" style="margin:6px 14px;"/>
     <div class="sidebar-user">
       <div class="user-avatar" id="user-avatar" onclick="navTo('configuracoes')" title="Configurações de perfil">?</div>
@@ -3054,6 +3054,10 @@ async function iniciarSessao(conta) {
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('user-nome').textContent  = session.nome;
   document.getElementById('user-perfil').textContent = PERFIL_LABEL[session.perfil];
+  // Mostrar link "Ir para ADP" só para master
+  const _linkAdp = document.getElementById('link-ir-adp');
+  if (_linkAdp) _linkAdp.style.display = session.perfil === 'master' ? 'flex' : 'none';
+
   const initials = (session.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
   const avEl = document.getElementById('user-avatar');
   avEl.textContent = initials;

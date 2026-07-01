@@ -935,7 +935,7 @@
     <div id="navgroup-suporte-cadastros" style="display:none">
       <a onclick="abrirGaveta('cadastros', event)" class="sb-has-sub nav-suporte-item" title="Cadastros"><span class="sb-ico">🗂️</span><span class="sb-txt">Cadastros</span><span class="sb-arr sb-txt">›</span></a>
     </div>
-    <a href="selecao.html" style="color:var(--accent);font-size:12px;padding:6px 14px;display:flex;align-items:center;gap:8px;text-decoration:none"><span class="sb-ico">📂</span><span class="sb-txt">Ir para Seleção</span></a>
+    <a id="link-ir-selecao" href="selecao.html" style="display:none;color:var(--accent);font-size:12px;padding:6px 14px;align-items:center;gap:8px;text-decoration:none"><span class="sb-ico">📂</span><span class="sb-txt">Ir para Seleção</span></a>
     <hr class="section-divider" style="margin:6px 14px;"/>
     <div class="sidebar-user">
       <div class="user-avatar" id="user-avatar" onclick="navTo('configuracoes')" title="Configurações de perfil">?</div>
@@ -3848,6 +3848,10 @@ async function iniciarSessao(conta) {
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('user-nome').textContent  = session.nome;
   document.getElementById('user-perfil').textContent = PERFIL_LABEL[session.perfil];
+  // Mostrar link "Ir para Seleção" só para master
+  const _linkSel = document.getElementById('link-ir-selecao');
+  if (_linkSel) _linkSel.style.display = session.perfil === 'master' ? 'flex' : 'none';
+
   const initials = (session.nome||'?').split(' ').map(p=>p[0]).slice(0,2).join('');
   const avEl = document.getElementById('user-avatar');
   avEl.textContent = initials;
