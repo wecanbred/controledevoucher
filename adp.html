@@ -857,6 +857,16 @@
 
 </style>
 </head>
+<!-- GAVETA lateral (estilo Jira) -->
+<div id="gaveta-overlay" onclick="fecharGaveta()" style="display:none;position:fixed;inset:0;z-index:199;background:transparent"></div>
+<div id="gaveta" style="display:none;position:fixed;top:0;left:200px;width:200px;background:#1e0b35;border:1px solid #4a1d7a;border-left:none;z-index:200;flex-direction:column;box-shadow:4px 4px 16px rgba(0,0,0,.25);border-radius:0 0 10px 0">
+  <div id="gaveta-header" style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <span id="gaveta-titulo" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)"></span>
+    <button onclick="fecharGaveta()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1">✕</button>
+  </div>
+  <div id="gaveta-items" style="flex:1;overflow-y:auto;padding:4px 0"></div>
+</div>
+
 <div id="sidebar-overlay" onclick="fecharSidebarMobile()"></div>
 <div id="sidebar" style="display:none">
   <div class="sidebar-logo">
@@ -3704,7 +3714,7 @@ async function iniciarSessao(conta) {
   show('nav-suporte-usuarios', session.perfil === 'master' || temPermissao('sup_gestao_usuarios'));
   // botões de Cadastros (só aparecem depois que o _MAIN_HTML é reinserido, por isso via delegação)
   window._cadPodeCriar = podeVerTudo();
-  document.getElementById('voucherapp-open-tab').href = VOUCHER_APP_URL;
+  const _vtab = document.getElementById('voucherapp-open-tab'); if (_vtab) _vtab.href = VOUCHER_APP_URL;
 
   const main = document.getElementById('main');
   // Mostrar overlay de loading sem destruir o innerHTML do main
