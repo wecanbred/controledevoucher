@@ -668,6 +668,9 @@ async function enviarSolicitacao() {
     toast('Preencha os dias e a data de início da suspensão.', 'error'); return;
   }
 
+  const ccLider = (session._operacoes || session.operacoes || [])[0];
+  const ccCod   = ccLider?.cc_cod || ccLider?.nome || ccLider || '';
+
   const args = {
     p_tipo:             TIPO,
     p_colab_nome:       nome,
@@ -682,6 +685,7 @@ async function enviarSolicitacao() {
     p_data_documento:   dataDoc || null,
     p_cidade_documento: cidade,
     p_obs_lider:        document.getElementById('f-obs').value.trim() || null,
+    p_cc_cod:           ccCod,
   };
 
   try {
