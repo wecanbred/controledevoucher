@@ -1473,18 +1473,33 @@
           </div>
         </div>
 
-        <!-- Marcar resolvido (quando não é desistência) -->
-        <div id="cham-cons-resolvido-wrap" style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:700">Marcar como Resolvido</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Já foi tratado, sem necessidade de reabrir vaga</div>
+        <!-- Opções de resolução (quando não é desistência) -->
+        <div id="cham-cons-resolvido-wrap" style="display:flex;flex-direction:column;gap:8px">
+
+          <!-- Opção 1: Presente no Onboarding Shopee -->
+          <div id="cham-cons-opt-shopee"
+            onclick="chamadasSelecionarResolucao('shopee')"
+            style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">🟠 Presente no Onboarding Shopee</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Não participou da integração WeCan, mas compareceu ao Onboarding da Shopee à tarde — admissão validada</div>
+            </div>
+            <span id="cham-cons-opt-shopee-ico" style="font-size:18px;flex-shrink:0">⬜</span>
           </div>
-          <label style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer">
-            <input type="checkbox" id="cham-cons-resolvido" style="opacity:0;width:0;height:0;position:absolute" onchange="this.parentElement.querySelector('span').style.background=this.checked?'var(--success)':'var(--surface3)';this.parentElement.querySelector('em').style.left=this.checked?'22px':'3px'"/>
-            <span style="position:absolute;inset:0;background:var(--surface3);border-radius:24px;transition:.2s">
-              <em style="position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;display:block"></em>
-            </span>
-          </label>
+
+          <!-- Opção 2: Resolvido (justificativa simples) -->
+          <div id="cham-cons-opt-resolvido"
+            onclick="chamadasSelecionarResolucao('resolvido')"
+            style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">✅ Marcar como Resolvido</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Ausência tratada — sem necessidade de reabrir vaga</div>
+            </div>
+            <span id="cham-cons-opt-resolvido-ico" style="font-size:18px;flex-shrink:0">⬜</span>
+          </div>
+
+          <!-- Nenhum (pendente) -->
+          <input type="hidden" id="cham-cons-resolucao" value=""/>
         </div>
       </div>
       <div class="modal-actions">
@@ -7169,7 +7184,7 @@ async function chamadasCarregar() {
     chamAtualizarBotaoFiltro();
     chamadasRenderKpis();
     chamadasRenderTabela();
-    const pendAusentes = CHAM_DADOS.filter(c => c.status === 'AUSENTE' && !c.resolvido).length;
+    const pendAusentes = CHAM_DADOS.filter(c => c.status === 'AUSENTE' && !c.resolvido && !c.onboarding_shopee).length;
     const badge = document.getElementById('nav-chamadas-count');
     if (badge) { badge.textContent = pendAusentes; badge.style.display = pendAusentes ? 'inline-flex' : 'none'; }
   } catch(e) {
@@ -7181,8 +7196,8 @@ function chamadasRenderKpis() {
   const total     = CHAM_DADOS.length;
   const presentes = CHAM_DADOS.filter(c => c.status === 'PRESENTE').length;
   const ausentes  = CHAM_DADOS.filter(c => c.status === 'AUSENTE').length;
-  const pend      = CHAM_DADOS.filter(c => c.status === 'AUSENTE' && !c.resolvido).length;
-  const resolvidos= CHAM_DADOS.filter(c => c.status === 'AUSENTE' &&  c.resolvido).length;
+  const pend      = CHAM_DADOS.filter(c => c.status === 'AUSENTE' && !c.resolvido && !c.onboarding_shopee).length;
+  const resolvidos= CHAM_DADOS.filter(c => c.status === 'AUSENTE' && (c.resolvido || c.onboarding_shopee)).length;
 
   document.getElementById('cham-kpis').innerHTML = `
     <div class="card" style="text-align:center">
@@ -7218,13 +7233,13 @@ function chamadasRenderTabela() {
     if (CHAM_FILTRO_OCULTOS.has(chamLabelCC(r))) return false;
     if (status === 'PENDENTE' && r.status) return false;
     if ((status === 'AUSENTE' || status === 'PRESENTE') && r.status !== status) return false;
-    if (acomp === 'pendente'  && (r.status !== 'AUSENTE' || r.resolvido))  return false;
-    if (acomp === 'resolvido' && (r.status !== 'AUSENTE' || !r.resolvido)) return false;
+    if (acomp === 'pendente'  && (r.status !== 'AUSENTE' || r.resolvido || r.onboarding_shopee))  return false;
+    if (acomp === 'resolvido' && (r.status !== 'AUSENTE' || (!r.resolvido && !r.onboarding_shopee))) return false;
     return true;
   });
 
   // Ausentes sem acompanhamento primeiro, depois ausentes resolvidos, depois o resto
-  const peso = r => (r.status === 'AUSENTE' && !r.resolvido) ? 0 : (r.status === 'AUSENTE' ? 1 : (r.status === 'PRESENTE' ? 3 : 2));
+  const peso = r => (r.status === 'AUSENTE' && !r.resolvido && !r.onboarding_shopee) ? 0 : (r.status === 'AUSENTE' ? 1 : (r.status === 'PRESENTE' ? 3 : 2));
   dados = [...dados].sort((a,b) => peso(a) - peso(b) || new Date(b.created_at) - new Date(a.created_at));
 
   const tbody = document.getElementById('cham-tbody');
@@ -7243,9 +7258,13 @@ function chamadasRenderTabela() {
       : `<span style="background:rgba(245,158,11,.15);color:var(--warning);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">⏳ PENDENTE</span>`;
     let acompPill = '<span style="color:var(--muted);font-size:11px">—</span>';
     if (r.status === 'AUSENTE') {
-      acompPill = r.resolvido
-        ? `<span style="background:rgba(99,204,176,.15);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">✅ Resolvido${r.desistencia?' · Vaga reaberta':''}</span>`
-        : `<span style="background:rgba(239,68,68,.1);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🔴 Pendente</span>`;
+      if (r.onboarding_shopee) {
+        acompPill = `<span style="background:rgba(249,115,22,.15);color:#fb923c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🟠 Onboarding Shopee</span>`;
+      } else {
+        acompPill = r.resolvido
+          ? `<span style="background:rgba(99,204,176,.15);color:var(--success);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">✅ Resolvido${r.desistencia?' · Vaga reaberta':''}</span>`
+          : `<span style="background:rgba(239,68,68,.1);color:var(--danger);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">🔴 Pendente</span>`;
+      }
     }
     const dataR = JSON.stringify(r).replace(/"/g,'&quot;');
     const clickable = r.status === 'AUSENTE' ? `onclick="chamadasAbrirConsultor(${dataR})" style="cursor:pointer"` : '';
@@ -7284,10 +7303,11 @@ async function chamadasAbrirConsultor(r) {
   desistEl.parentElement.querySelector('em').style.left = desistEl.checked ? '22px' : '3px';
   chamadasToggleDesistencia(desistEl.checked);
 
-  const resolvidoEl = document.getElementById('cham-cons-resolvido');
-  resolvidoEl.checked = !!r.resolvido;
-  resolvidoEl.parentElement.querySelector('span').style.background = resolvidoEl.checked ? 'var(--success)' : 'var(--surface3)';
-  resolvidoEl.parentElement.querySelector('em').style.left = resolvidoEl.checked ? '22px' : '3px';
+  // Restaurar seleção de resolução
+  document.getElementById('cham-cons-resolucao').value = '';
+  chamadasSelecionarResolucao(
+    r.onboarding_shopee ? 'shopee' : r.resolvido ? 'resolvido' : ''
+  );
 
   abrirModal('modal-chamada-consultor');
 
@@ -7298,6 +7318,29 @@ async function chamadasAbrirConsultor(r) {
 function chamadasToggleDesistencia(ativo) {
   document.getElementById('cham-cons-desist-campos').style.display = ativo ? 'grid' : 'none';
   document.getElementById('cham-cons-resolvido-wrap').style.display = ativo ? 'none' : 'flex';
+}
+
+function chamadasSelecionarResolucao(opcao) {
+  // toggle: clique de novo na mesma opção desmarca
+  const atual = document.getElementById('cham-cons-resolucao').value;
+  const novo  = atual === opcao ? '' : opcao;
+  document.getElementById('cham-cons-resolucao').value = novo;
+
+  // visual shopee
+  const optShopee    = document.getElementById('cham-cons-opt-shopee');
+  const icoShopee    = document.getElementById('cham-cons-opt-shopee-ico');
+  const ativoShopee  = novo === 'shopee';
+  optShopee.style.borderColor = ativoShopee ? '#f97316' : 'var(--border)';
+  optShopee.style.background  = ativoShopee ? 'rgba(249,115,22,.1)' : 'var(--surface2)';
+  icoShopee.textContent       = ativoShopee ? '🟠' : '⬜';
+
+  // visual resolvido
+  const optResolvido   = document.getElementById('cham-cons-opt-resolvido');
+  const icoResolvido   = document.getElementById('cham-cons-opt-resolvido-ico');
+  const ativoResolvido = novo === 'resolvido';
+  optResolvido.style.borderColor = ativoResolvido ? 'var(--success)' : 'var(--border)';
+  optResolvido.style.background  = ativoResolvido ? 'rgba(34,197,94,.08)' : 'var(--surface2)';
+  icoResolvido.textContent       = ativoResolvido ? '✅' : '⬜';
 }
 
 async function chamadasBuscarVagaAuto(nome, matricula) {
@@ -7361,9 +7404,18 @@ async function chamadasSalvar() {
       });
       showToast('Desistência confirmada' + (vaga ? ' e vaga reaberta!' : '.'), 'success');
     } else {
-      const resolvido = document.getElementById('cham-cons-resolvido').checked;
-      await rpc('wc_chamada_salvar_consultor', { p_id: id, p_obs_consultor: obs, p_resolvido: resolvido });
-      showToast('Acompanhamento salvo!', 'success');
+      const resolucao       = document.getElementById('cham-cons-resolucao').value;
+      const resolvido       = resolucao === 'resolvido' || resolucao === 'shopee';
+      const onboarding_shopee = resolucao === 'shopee';
+      await rpc('wc_chamada_salvar_consultor', {
+        p_id: id, p_obs_consultor: obs,
+        p_resolvido: resolvido, p_onboarding_shopee: onboarding_shopee
+      });
+      showToast(
+        onboarding_shopee ? '🟠 Registrado: presente no Onboarding Shopee!' :
+        resolvido ? '✅ Acompanhamento resolvido!' : 'Observação salva.',
+        'success'
+      );
     }
     fecharModal('modal-chamada-consultor');
     await chamadasCarregar();
