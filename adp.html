@@ -1395,8 +1395,9 @@ function doGet(e) {
   const p      = e?.parameter || {};
   const action = p.action || '';
 
-  if (action === 'ler')   return lerColaboradores(p.tipo || 'ativos');
-  if (action === 'salvar') return salvarColaborador(p);
+  if (action === 'ler')         return lerColaboradores(p.tipo || 'ativos');
+  if (action === 'salvar')      return salvarColaborador(p);
+  if (action === 'sincronizar') return sincronizarAba(p);
 
   return json({ ok:true, msg:'WeSys Template OK' });
 }
@@ -1454,7 +1455,65 @@ function getSheet(tipo) {
 }
 
 // doPost mantido como fallback (não funciona cross-origin, mas não quebra)
-function doPost(e) { return doGet(e); }</pre>
+function doPost(e) { return doGet(e); }
+
+// ── Sincronização completa — recebe linhas do banco, sobrescreve aba ──
+// ?action=sincronizar&tipo=ativos&linhas=[["WeCan","SOC-RJ1",...],...]
+function sincronizarAba(p) {
+  try {
+    const tipo   = p.tipo || 'ativos';
+    const linhas = JSON.parse(p.linhas || '[]');
+    if (!Array.isArray(linhas) || linhas.length === 0)
+      throw new Error('Nenhuma linha recebida');
+
+    const sheet  = getSheet(tipo);
+    const ultima = sheet.getLastRow();
+
+    // Cabeçalhos das abas (linha 1 — preservada, nunca apagada)
+    const cabAtivos = [
+      'BPO','C.custo','NickName','Operação','Matricula',
+      'Nome completo tudo Maiúsculo Colaborador(a)',
+      'Não pode ser posterior a data da atualização Data Admissão (Formato BR)',
+      'Tipo de Contrato','Letra Maiuscula e sem acento Cargo (Nome completo)',
+      'Salário Base (Formato BR)','Vencimento Contrato (Formato BR)',
+      'Renovação (Formato BR)','Horário XX AS XX',
+      'Escala Ex: 6X1 220h SEG A SAB xx:xx às xx:xx',
+      'CPF','Data de Nascimento (Formato BR)','Nome Completo da Mãe',
+      'Celular','E-mail','Beneficio Mobilidade','Logradouro','Numero',
+      'Complemento','Bairro','Cidade','UF','CEP','Tamanho Calça',
+      'Tamanho Blusa','Tamanho Calçado','Tamanho Luva',
+      'Status Colaborador','Sexo','Status Operação',
+      'Trintídio Mês Base','Categoria - Área'
+    ];
+    const cabInativos = [
+      'BPO','C.custo','NickName','Matricula',
+      'Nome completo tudo Maiúsculo Colaborador(a)','CPF',
+      'Tipo de Contrato','Cargo (Nome completo)',
+      'Data Admissão (Formato BR)','Vencimento da Demissão (Formato BR)',
+      'Motivo Desligamento','Tipo do desligamento',
+      'Se involuntário, por favor adicionar o nº do ticket, se houver',
+      'Status Colaborador','Beneficio Mobilidade','Gênero','IDADE',
+      'Categoria - Área'
+    ];
+
+    const cab = tipo === 'ativos' ? cabAtivos : cabInativos;
+
+    // Limpar dados (linha 2 em diante), preservar cabeçalho
+    if (ultima > 1) {
+      sheet.getRange(2, 1, ultima - 1, cab.length).clearContent();
+    }
+
+    // Escrever cabeçalho (garante que nunca some)
+    sheet.getRange(1, 1, 1, cab.length).setValues([cab]);
+
+    // Escrever linhas de dados
+    if (linhas.length > 0) {
+      sheet.getRange(2, 1, linhas.length, cab.length).setValues(linhas);
+    }
+
+    return json({ ok:true, total: linhas.length });
+  } catch(err) { return json({ ok:false, error: err.message }); }
+}</pre>
       </details>
     </div>
   </div>
@@ -2277,9 +2336,10 @@ function doPost(e) { return doGet(e); }</pre>
         <h1>✅ Colaboradores Ativos</h1>
         <p>Sincronizado com o Template Base (Google Sheets)</p>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span id="colabs-ativos-sync" style="font-size:11px;color:var(--muted)"></span>
         <button class="btn btn-ghost btn-sm" onclick="COLABS_LOADED=false;colabsCarregar('ativos')">🔄 Atualizar</button>
+        <span id="btn-sync-ativos-wrap"></span>
       </div>
     </div>
     <div class="vagas-toolbar">
@@ -2324,9 +2384,10 @@ function doPost(e) { return doGet(e); }</pre>
         <h1>⛔ Colaboradores Inativos</h1>
         <p>Sincronizado com o Template Base (Google Sheets)</p>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span id="colabs-inativos-sync" style="font-size:11px;color:var(--muted)"></span>
         <button class="btn btn-ghost btn-sm" onclick="COLABS_LOADED=false;colabsCarregar('inativos')">🔄 Atualizar</button>
+        <span id="btn-sync-inativos-wrap"></span>
       </div>
     </div>
     <div class="vagas-toolbar">
@@ -3197,6 +3258,53 @@ function doPost(e) { return doGet(e); }</pre>
   <button class="btn btn-danger btn-sm" onclick="excluirSelecionadas()">🗑️ Excluir selecionadas</button>
 </div>
 
+<!-- ══ MODAL — SINCRONIZAR TEMPLATE ══ -->
+<div class="modal-backdrop" id="modal-sync-template" style="display:none;align-items:center;justify-content:center">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <h2>📤 Sincronizar Template Base</h2>
+      <button class="modal-close" onclick="syncFecharModal()">✕</button>
+    </div>
+
+    <!-- Aviso de horário crítico -->
+    <div id="sync-aviso-horario" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#f59e0b;border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:14px;line-height:1.6">
+      ⚠️ <strong>Atenção:</strong> O cliente costuma baixar os dados às <strong>terças, quintas e sextas à tarde</strong>. Verifique se este é um bom momento para sincronizar.
+    </div>
+
+    <!-- Trintídio -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <p style="font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Trintídio Mês Base</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">Informe o mês base do trintídio para os colaboradores <strong>ativos</strong>. Deixe em branco para manter o valor atual de cada registro.</p>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="sync-trintidio" placeholder="ex: JUNHO/2026"
+          style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none"/>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('sync-trintidio').value=''">✕ Limpar</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px">Preenchendo aqui, <strong>todos</strong> os ativos receberão este trintídio na planilha. Vazio = mantém o que está no banco de cada um.</p>
+    </div>
+
+    <!-- Seleção de abas -->
+    <div style="margin-bottom:16px">
+      <p style="font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">O que sincronizar</p>
+      <div style="display:flex;gap:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="sync-cb-ativos" checked style="accent-color:var(--accent)"/> ✅ Ativos
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="sync-cb-inativos" checked style="accent-color:var(--accent)"/> ⛔ Inativos
+        </label>
+      </div>
+    </div>
+
+    <div id="sync-status" style="display:none;font-size:12.5px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)"></div>
+
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="syncFecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-sync-executar" onclick="syncExecutar()">📤 Sincronizar agora</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="shared.js"></script>
 <script>
@@ -3650,6 +3758,7 @@ const PERMISSOES_GRUPOS = [
   { grupo: 'Template — Colaboradores', itens: [
     { id:'adp_colabs_ver',   nome:'Ver Colaboradores',   descricao:'Consulta o Template Base de ativos e inativos' },
     { id:'adp_colabs_editar',nome:'Editar Colaboradores',descricao:'Pode editar dados diretamente na planilha via sistema' },
+    { id:'adp_sync',         nome:'Sincronizar Template',descricao:'Exporta dados do banco para a planilha Google Sheets do cliente' },
     { id:'adp_rescisao',        nome:'Iniciar Desligamento',    descricao:'Pode abrir solicitação de rescisão a partir do Template' },
     { id:'adp_chamada',         nome:'Chamada de Integração',   descricao:'Fazer a chamada de presença dos colaboradores na integração online (popup)' },
     { id:'adp_onboarding',      nome:'Controle de Onboarding',  descricao:'Gerenciar a fila rotativa e a escala de quem apresenta a integração' },
@@ -11120,4 +11229,186 @@ window.addEventListener('message', (ev) => {
   }
 });
 // ════════════════ FIM INTEGRAÇÃO RESCISÃO ════════════════
+
+// ════════════════════════════════════════════════════════════════
+// MÓDULO — SINCRONIZAR TEMPLATE BASE (Banco → Google Sheets)
+// ════════════════════════════════════════════════════════════════
+
+// Renderiza botão de sync nas páginas de ativos/inativos conforme permissão
+function syncRenderBotoes() {
+  const podeSync = temPermissao('adp_sync') ||
+    ['folha','gestor_adm','master'].includes(session?.perfil);
+  if (!podeSync) return;
+
+  ['ativos','inativos'].forEach(tipo => {
+    const wrap = document.getElementById(`btn-sync-${tipo}-wrap`);
+    if (!wrap) return;
+    wrap.innerHTML = `<button class="btn btn-primary btn-sm" onclick="syncAbrirModal('${tipo}')">📤 Sincronizar planilha</button>`;
+  });
+}
+
+// Verifica se é horário crítico (ter/qui/sex à tarde = após 12h)
+function syncHorarioCritico() {
+  const agora = new Date();
+  const dia   = agora.getDay(); // 0=dom,2=ter,4=qui,5=sex
+  const hora  = agora.getHours();
+  return [2, 4, 5].includes(dia) && hora >= 12;
+}
+
+function syncAbrirModal(tipoInicial) {
+  const el = document.getElementById('modal-sync-template');
+  if (!el) return;
+
+  // Aviso de horário
+  const avisoEl = document.getElementById('sync-aviso-horario');
+  if (avisoEl) avisoEl.style.display = syncHorarioCritico() ? 'block' : 'none';
+
+  // Marcar checkbox do tipo que originou o clique
+  const cbAtivos   = document.getElementById('sync-cb-ativos');
+  const cbInativos = document.getElementById('sync-cb-inativos');
+  if (cbAtivos)   cbAtivos.checked   = tipoInicial === 'ativos'   || tipoInicial === 'ambos';
+  if (cbInativos) cbInativos.checked = tipoInicial === 'inativos' || tipoInicial === 'ambos';
+
+  // Limpar status
+  const statusEl = document.getElementById('sync-status');
+  if (statusEl) statusEl.style.display = 'none';
+
+  el.style.display = 'flex';
+}
+
+function syncFecharModal() {
+  const el = document.getElementById('modal-sync-template');
+  if (el) el.style.display = 'none';
+}
+
+async function syncExecutar() {
+  const url = colabsWebAppUrl();
+  if (!url) {
+    toast('⚠️ Configure a URL do Apps Script em Configurações > Template Base.', 'warning');
+    return;
+  }
+
+  const cbAtivos   = document.getElementById('sync-cb-ativos');
+  const cbInativos = document.getElementById('sync-cb-inativos');
+  const trintidio  = (document.getElementById('sync-trintidio')?.value || '').trim();
+  const sincAtivos   = cbAtivos?.checked;
+  const sincInativos = cbInativos?.checked;
+
+  if (!sincAtivos && !sincInativos) {
+    toast('Selecione pelo menos uma aba para sincronizar.', 'warning');
+    return;
+  }
+
+  const btnEl    = document.getElementById('btn-sync-executar');
+  const statusEl = document.getElementById('sync-status');
+  btnEl.disabled = true;
+  btnEl.textContent = '⏳ Sincronizando…';
+  statusEl.style.display = 'block';
+  statusEl.style.color   = 'var(--muted)';
+  statusEl.textContent   = 'Buscando dados do banco…';
+
+  let qtdAtivos = null, qtdInativos = null;
+  try {
+    // ── 1. Buscar dados do banco via RPCs ──────────────────────────
+    if (sincAtivos) {
+      statusEl.textContent = '⬇️ Exportando colaboradores ativos…';
+      const resAtivos = await rpc('wc_template_ativos_export', { p_token: session.token });
+      let linhasAtivos = resAtivos.linhas || [];
+
+      // Sobrescrever trintídio se informado
+      if (trintidio) {
+        const idxTrint = 34; // índice 34 = coluna 35 (base 0)
+        linhasAtivos = linhasAtivos.map(l => {
+          const arr = [...l];
+          arr[idxTrint] = trintidio;
+          return arr;
+        });
+
+        // Salvar trintídio no banco para persistir
+        // (fire-and-forget, não bloqueia o sync)
+        rpc('wc_trintidio_salvar_lote', { p_token: session.token, p_trintidio: trintidio })
+          .catch(() => {}); // RPC opcional — se não existir não quebra
+      }
+
+      qtdAtivos = linhasAtivos.length;
+      statusEl.textContent = `⬆️ Enviando ${qtdAtivos} ativos para o Sheets…`;
+
+      const respAtivos = await fetch(
+        url + '?action=sincronizar&tipo=ativos&linhas=' +
+        encodeURIComponent(JSON.stringify(linhasAtivos))
+      );
+      const jAtivos = await respAtivos.json();
+      if (!jAtivos.ok) throw new Error('Ativos: ' + (jAtivos.error || 'Erro no Apps Script'));
+    }
+
+    if (sincInativos) {
+      statusEl.textContent = '⬇️ Exportando colaboradores inativos…';
+      const resInativos = await rpc('wc_template_inativos_export', { p_token: session.token });
+      const linhasInativos = resInativos.linhas || [];
+      qtdInativos = linhasInativos.length;
+
+      statusEl.textContent = `⬆️ Enviando ${qtdInativos} inativos para o Sheets…`;
+
+      const respInativos = await fetch(
+        url + '?action=sincronizar&tipo=inativos&linhas=' +
+        encodeURIComponent(JSON.stringify(linhasInativos))
+      );
+      const jInativos = await respInativos.json();
+      if (!jInativos.ok) throw new Error('Inativos: ' + (jInativos.error || 'Erro no Apps Script'));
+    }
+
+    // ── 2. Log de sucesso ──────────────────────────────────────────
+    const tipo = sincAtivos && sincInativos ? 'ambos' : (sincAtivos ? 'ativos' : 'inativos');
+    await rpc('wc_sync_registrar_log', {
+      p_token: session.token,
+      p_tipo: tipo,
+      p_status: 'ok',
+      p_qtd_ativos: qtdAtivos,
+      p_qtd_inativos: qtdInativos
+    }).catch(() => {});
+
+    // ── 3. Feedback ───────────────────────────────────────────────
+    const partes = [];
+    if (qtdAtivos   !== null) partes.push(`${qtdAtivos} ativos`);
+    if (qtdInativos !== null) partes.push(`${qtdInativos} inativos`);
+    statusEl.style.color   = 'var(--success, #22c55e)';
+    statusEl.textContent   = `✅ Sincronizado com sucesso! ${partes.join(' e ')} enviados à planilha.`;
+    toast(`📤 Template sincronizado! ${partes.join(' e ')}.`, 'success');
+
+    // Recarregar dados locais
+    COLABS_LOADED = false;
+    colabsCarregarBackground();
+
+    setTimeout(syncFecharModal, 2500);
+
+  } catch(e) {
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '❌ ' + (e.message || 'Erro desconhecido');
+
+    await rpc('wc_sync_registrar_log', {
+      p_token: session.token,
+      p_tipo: (sincAtivos && sincInativos) ? 'ambos' : (sincAtivos ? 'ativos' : 'inativos'),
+      p_status: 'erro',
+      p_erro_msg: e.message
+    }).catch(() => {});
+
+  } finally {
+    btnEl.disabled = false;
+    btnEl.textContent = '📤 Sincronizar agora';
+  }
+}
+
+// Renderizar botões ao abrir as páginas de colaboradores
+const _syncOrigNavTo = typeof navTo === 'function' ? navTo : null;
+document.addEventListener('DOMContentLoaded', () => {
+  // Garantir renderização dos botões quando as páginas abrirem
+  const _origGaveta = window.abrirGaveta;
+  if (_origGaveta) {
+    window.abrirGaveta = function(id, ev) {
+      _origGaveta(id, ev);
+      if (id === 'colaboradores') setTimeout(syncRenderBotoes, 100);
+    };
+  }
+});
+// ════════════════ FIM MÓDULO SYNC TEMPLATE ════════════════
 </script>
