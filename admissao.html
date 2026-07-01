@@ -910,7 +910,7 @@
         <a onclick="abrirGaveta('chamada', event)" class="sb-has-sub" id="sb-btn-chamada" title="Chamada de Integração"><span class="sb-ico">🙋</span><span class="sb-txt">Chamada de Integração</span><span class="sb-arr sb-txt">›</span></a>
       </div>
       <div id="navgroup-adp-lideres" style="display:none">
-        <a id="nav-lideres" onclick="navTo('lideres')" data-page="lideres" title="Solicitações de Líderes"><span class="sb-ico">👔</span><span class="sb-txt">Líderes</span><span class="count-badge alert" id="nav-lideres-count" style="display:none">0</span></a>
+        <a onclick="abrirGaveta('lideres', event)" class="sb-has-sub" id="sb-btn-lideres" title="Líderes"><span class="sb-ico">👔</span><span class="sb-txt">Líderes</span><span class="sb-arr sb-txt">›</span></a>
       </div>
       <div id="navgroup-voucher-uber" style="display:none">
         <a onclick="abrirGaveta('voucher-uber', event)" class="sb-has-sub" id="sb-btn-voucher-uber" title="Voucher Uber"><span class="sb-ico">🚗</span><span class="sb-txt">Voucher Uber</span><span class="sb-arr sb-txt">›</span></a>
@@ -4450,6 +4450,13 @@ const GAVETA_MENUS = {
       { label:'📅 Controle de Onboarding', page:'onboarding-controle',    perm:'adp_onboarding' },
     ]
   },
+  'lideres': {
+    titulo: 'Líderes',
+    items: [
+      { label:'📋 Solicitações', page:'lideres',             badge:'nav-lideres-count' },
+      { label:'+ Cadastrar Líder', action:'liderCadastrarLider()' },
+    ]
+  },
   'tickets': {
     titulo: 'Tickets Shopee',
     items: [
@@ -4508,7 +4515,8 @@ function abrirGaveta(key, evt) {
     const onclick = item.action ? `onclick="fecharGaveta();${item.action}"` : ((!isDisabled && item.page) ? `onclick="navTo('${item.page}')"` : '');
     const cls   = isActive ? 'active' : '';
     const style = isDisabled ? 'opacity:.45;cursor:default' : '';
-    return `<a class="${cls}" ${onclick} style="${style}" data-page="${item.page||''}">${item.label}${soon}</a>`;
+    const badgeEl = item.badge ? `<span class="count-badge alert" id="${item.badge}" style="display:none">0</span>` : '';
+    return `<a class="${cls}" ${onclick} style="${style}" data-page="${item.page||''}">${item.label}${soon}${badgeEl}</a>`;
   }).join('');
 
   const gaveta = document.getElementById('gaveta');
