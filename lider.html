@@ -108,17 +108,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .pill.advertencia{background:rgba(245,158,11,.12);color:var(--warning)}
 .pill.suspensao  {background:rgba(239,68,68,.1);color:var(--danger)}
 
-/* ── LOGIN ── */
-#pg-login{
-  position:fixed;inset:0;background:radial-gradient(circle at 20% 20%,rgba(99,204,176,.08),transparent 50%),var(--bg);
-  display:flex;align-items:center;justify-content:center;padding:20px;z-index:999;
-}
-.login-box{width:400px;max-width:100%}
-.login-logo{width:48px;height:48px;background:var(--brand);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
-.login-box h1{font-size:24px;font-weight:800}
-.login-box p{color:var(--accent);font-size:13px;margin-top:4px;margin-bottom:24px}
-.login-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger);padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:none}
-
 /* ── UPLOAD AREA ── */
 .upload-area{
   border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;
@@ -144,25 +133,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* ── EMPTY ── */
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+/* ── REDIRECT ── */
+#pg-redirect{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
-<div id="pg-login">
-  <div class="login-box">
-    <div class="login-logo">👔</div>
-    <h1>Portal do Líder</h1>
-    <p>WeCan BR — Advertências e Suspensões</p>
-    <div class="login-error" id="login-error"></div>
-    <div class="form-group"><label>E-mail</label>
-      <input type="email" id="l-email" placeholder="seu@email.com" autocomplete="email"/>
-    </div>
-    <div class="form-group"><label>Senha</label>
-      <input type="password" id="l-senha" placeholder="••••••"/>
-    </div>
-    <button class="btn btn-primary" id="btn-entrar" onclick="fazerLogin()" style="width:100%;margin-top:4px">Entrar</button>
-  </div>
+<!-- ══ REDIRECT (mostrado enquanto verifica sessão) ══ -->
+<div id="pg-redirect">
+  <div style="font-size:28px">👔</div>
+  <div>Verificando sessão…</div>
 </div>
 
 <!-- ══ APP ══ -->
@@ -204,7 +185,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="card">
         <div class="card-title">📄 Nova Solicitação</div>
 
-        <!-- Tipo -->
         <div class="form-group"><label>Tipo de documento</label></div>
         <div class="tipo-toggle">
           <div class="tipo-btn advertencia ativo" id="tipo-advertencia" onclick="selecionarTipo('advertencia')">
@@ -219,7 +199,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           </div>
         </div>
 
-        <!-- Busca de colaborador -->
         <div class="form-group">
           <label>Colaborador</label>
           <div class="colab-search-wrap">
@@ -229,7 +208,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           </div>
         </div>
 
-        <!-- Dados do colaborador (preenchidos ao selecionar) -->
         <div id="colab-selecionado" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
@@ -245,7 +223,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         <input type="hidden" id="colab-cargo-hid"/>
         <input type="hidden" id="colab-local-hid"/>
 
-        <!-- Campos comuns -->
         <div class="form-row">
           <div class="form-group">
             <label>Cidade</label>
@@ -257,7 +234,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           </div>
         </div>
 
-        <!-- Campos de suspensão -->
         <div id="campos-suspensao" style="display:none">
           <div class="form-row">
             <div class="form-group">
@@ -275,7 +251,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           </div>
         </div>
 
-        <!-- Motivo -->
         <div class="form-group">
           <label id="lbl-motivo">Ato de indisciplina / Motivo</label>
           <textarea id="f-motivo" placeholder="Descreva o ato de indisciplina, as faltas ou irregularidades…"></textarea>
@@ -291,7 +266,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           <button class="btn btn-primary" onclick="enviarSolicitacao()">📤 Enviar Solicitação</button>
         </div>
       </div>
-    </div><!-- /pg-nova -->
+    </div>
 
     <!-- ══ ABA: INDICAR CANDIDATO ══ -->
     <div id="pg-indicar" style="display:none">
@@ -353,7 +328,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
           </div>
         </div>
       </div>
-    </div><!-- /pg-indicar -->
+    </div>
 
     <!-- ══ ABA: MINHAS INDICAÇÕES ══ -->
     <div id="pg-indicacoes" style="display:none">
@@ -361,12 +336,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         <button class="btn btn-ghost btn-sm" onclick="carregarIndicacoes()">🔄 Atualizar</button>
       </div>
       <div id="ind-lista"><div class="empty">Carregando…</div></div>
-    </div><!-- /pg-indicacoes -->
+    </div>
 
   </main>
 </div>
 
-<!-- MODAL: detalhes / upload assinado -->
+<!-- MODAL -->
 <div id="modal-bg" onclick="fecharModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;align-items:center;justify-content:center;padding:16px">
   <div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
     <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
@@ -382,10 +357,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ══════════════════════════════════════════════
-//  lider.html — Portal do Líder | WeCan BR
-// ══════════════════════════════════════════════
-
 const SUPABASE_URL  = 'https://omwilcuzcvgzyzqqrbkh.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9td2lsY3V6Y3Znenl6cXFyYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzI1MTIsImV4cCI6MjA5NzcwODUxMn0.S1pbFqZ4B5_TWMBq_r8BeQ9OOFzkj73aOoI6g3Y987Q';
 const SESSION_KEY   = 'wecan_lider_session_v1';
@@ -394,7 +365,6 @@ let session = null;
 let COLABS  = [];
 let TIPO    = 'advertencia';
 
-// ── RPC ──────────────────────────────────────
 async function rpc(fn, args = {}) {
   if (fn !== 'wc_login' && args.p_token === undefined)
     args.p_token = session?.token || '';
@@ -412,7 +382,6 @@ async function rpc(fn, args = {}) {
   return data;
 }
 
-// ── Storage upload ───────────────────────────
 async function storageUpload(bucket, path, blob, contentType) {
   const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
     method:'POST',
@@ -423,7 +392,6 @@ async function storageUpload(bucket, path, blob, contentType) {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 }
 
-// ── Toast ────────────────────────────────────
 let _toastTimer;
 function toast(msg, tipo='') {
   const el = document.getElementById('toast');
@@ -432,7 +400,6 @@ function toast(msg, tipo='') {
   _toastTimer = setTimeout(() => el.style.display='none', 3500);
 }
 
-// ── Sessão ───────────────────────────────────
 function salvarSessao(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify({session:s, savedAt:Date.now()})); } catch(e){} }
 function limparSessao()   { try { localStorage.removeItem(SESSION_KEY); } catch(e){} }
 function carregarSessao() {
@@ -445,41 +412,20 @@ function carregarSessao() {
   } catch(e) { return null; }
 }
 
-// ── Login ────────────────────────────────────
-async function fazerLogin() {
-  const email = document.getElementById('l-email').value.trim().toLowerCase();
-  const senha  = document.getElementById('l-senha').value;
-  const err    = document.getElementById('login-error');
-  const btn    = document.getElementById('btn-entrar');
-  err.style.display = 'none';
-  if (!email || !senha) { err.textContent='Preencha e-mail e senha.'; err.style.display='block'; return; }
-  btn.disabled = true; btn.textContent = 'Entrando…';
-  try {
-    const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
-    if (resp.sessao?.perfil !== 'lider') throw new Error('Este portal é exclusivo para líderes. Acesse o sistema principal.');
-    session = resp.sessao;
-    // Popula _operacoes igual ao admissao.html
-    if (session.operacoes?.length) session._operacoes = session.operacoes;
-    salvarSessao(session);
-    iniciarApp();
-  } catch(e) {
-    err.textContent = e.message; err.style.display = 'block';
-  } finally { btn.disabled=false; btn.textContent='Entrar'; }
+function sair() {
+  limparSessao();
+  session = null;
+  window.location.href = 'index.html';
 }
-document.addEventListener('keydown', e => { if (e.key==='Enter' && !session) fazerLogin(); });
 
-function sair() { limparSessao(); session=null; document.getElementById('pg-login').style.display='flex'; document.getElementById('pg-app').style.display='none'; }
-
-// ── Iniciar App ──────────────────────────────
 async function iniciarApp() {
-  document.getElementById('pg-login').style.display = 'none';
-  document.getElementById('pg-app').style.display   = 'flex';
-  document.getElementById('user-chip').textContent   = session.nome || 'Líder';
+  document.getElementById('pg-redirect').style.display = 'none';
+  document.getElementById('pg-app').style.display      = 'flex';
+  document.getElementById('user-chip').textContent      = session.nome || 'Líder';
   document.getElementById('f-data').value = new Date().toISOString().substring(0,10);
   await Promise.all([carregarSolicitacoes(), carregarColabs(), indCarregarDeptos()]);
 }
 
-// ── Colaboradores do Template (via Apps Script proxy) ────────
 const COLABS_SHEET_ID    = '1WBYOF9AkoS7NpzhqFyqm5PzQRP13yUF2p5ZY8FfZp_c';
 const COLABS_GID_ATIVOS  = '690743947';
 const COLABS_COLS = [
@@ -494,10 +440,8 @@ const COLABS_COLS = [
 let _appsScriptUrl = '';
 
 async function carregarAppsScriptUrl() {
-  // 1. tenta localStorage (já carregado antes)
   try { _appsScriptUrl = localStorage.getItem('wecan_colabs_webapp_url') || ''; } catch(e) {}
   if (_appsScriptUrl) return;
-  // 2. busca do Supabase
   try {
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_get_config`, {
       method:'POST',
@@ -505,10 +449,7 @@ async function carregarAppsScriptUrl() {
       body: JSON.stringify({ p_chave:'colabs_webapp_url' })
     });
     const url = await resp.json();
-    if (url) {
-      _appsScriptUrl = url;
-      try { localStorage.setItem('wecan_colabs_webapp_url', url); } catch(e) {}
-    }
+    if (url) { _appsScriptUrl = url; try { localStorage.setItem('wecan_colabs_webapp_url', url); } catch(e) {} }
   } catch(e) {}
 }
 
@@ -554,8 +495,6 @@ function colabsFiltrarPorCC(todos) {
 async function carregarColabs() {
   await carregarAppsScriptUrl();
   let todos = [];
-
-  // Tenta gviz direto primeiro
   try {
     const url = `https://docs.google.com/spreadsheets/d/${COLABS_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${COLABS_GID_ATIVOS}`;
     const resp = await fetch(url);
@@ -564,7 +503,6 @@ async function carregarColabs() {
     if (text.trim().startsWith('<!') || text.trim().startsWith('<h')) throw new Error('auth');
     todos = colabsParseCSV(text);
   } catch(e) {
-    // Fallback: Apps Script como proxy
     if (!_appsScriptUrl) { console.warn('Apps Script URL não configurada'); COLABS = []; return; }
     try {
       const resp = await fetch(_appsScriptUrl + '?action=ler&tipo=ativos');
@@ -572,19 +510,14 @@ async function carregarColabs() {
       const json = await resp.json();
       if (!json.ok) throw new Error(json.error || 'Erro Apps Script');
       todos = colabsParseCSV(json.csv);
-    } catch(e2) {
-      console.warn('Erro ao carregar colaboradores:', e2.message);
-      COLABS = []; return;
-    }
+    } catch(e2) { console.warn('Erro ao carregar colaboradores:', e2.message); COLABS = []; return; }
   }
-
   COLABS = colabsFiltrarPorCC(todos);
   console.log(`Colaboradores carregados: ${COLABS.length} (de ${todos.length} totais)`);
 }
 
-// ── Busca de colaborador ─────────────────────
 function colabBuscar() {
-  const q   = (document.getElementById('colab-busca').value || '').toLowerCase().trim();
+  const q    = (document.getElementById('colab-busca').value || '').toLowerCase().trim();
   const drop = document.getElementById('colab-dropdown');
   if (!q || q.length < 2) { drop.classList.remove('aberto'); return; }
   const res = COLABS.filter(c =>
@@ -625,7 +558,6 @@ function limparColab() {
   document.getElementById('colab-selecionado').style.display = 'none';
 }
 
-// ── Tipo de documento ────────────────────────
 function selecionarTipo(t) {
   TIPO = t;
   ['advertencia','suspensao'].forEach(x => document.getElementById('tipo-'+x).classList.toggle('ativo', x===t));
@@ -636,8 +568,8 @@ function selecionarTipo(t) {
 }
 
 function calcularRetorno() {
-  const ini  = document.getElementById('f-inicio').value;
-  const dias  = parseInt(document.getElementById('f-dias').value) || 0;
+  const ini = document.getElementById('f-inicio').value;
+  const dias = parseInt(document.getElementById('f-dias').value) || 0;
   if (ini && dias > 0) {
     const d = new Date(ini + 'T12:00:00');
     d.setDate(d.getDate() + dias);
@@ -645,32 +577,28 @@ function calcularRetorno() {
   }
 }
 
-// ── Tabs ─────────────────────────────────────
 function trocarTab(id) {
   ['minhas','nova','indicar','indicacoes'].forEach(t => {
     document.getElementById('pg-'+t).style.display      = t===id ? 'block' : 'none';
     document.getElementById('tab-'+t).classList.toggle('ativa', t===id);
   });
-  if (id === 'minhas')      carregarSolicitacoes();
-  if (id === 'indicacoes')  carregarIndicacoes();
-  if (id === 'indicar')     indIniciarAba();
+  if (id === 'minhas')     carregarSolicitacoes();
+  if (id === 'indicacoes') carregarIndicacoes();
+  if (id === 'indicar')    indIniciarAba();
 }
 
-// ── Enviar solicitação ───────────────────────
 async function enviarSolicitacao() {
-  const nome    = document.getElementById('colab-nome-hid').value.trim();
-  const motivo  = document.getElementById('f-motivo').value.trim();
-  const cidade  = document.getElementById('f-cidade').value.trim() || 'Ananindeua';
-  const dataDoc = document.getElementById('f-data').value;
+  const nome   = document.getElementById('colab-nome-hid').value.trim();
+  const motivo = document.getElementById('f-motivo').value.trim();
+  const cidade = document.getElementById('f-cidade').value.trim() || 'Ananindeua';
+  const dataDoc= document.getElementById('f-data').value;
   if (!nome)   { toast('Selecione um colaborador.', 'error'); return; }
   if (!motivo) { toast('Informe o motivo.', 'error'); return; }
   if (TIPO === 'suspensao' && (!document.getElementById('f-dias').value || !document.getElementById('f-inicio').value)) {
     toast('Preencha os dias e a data de início da suspensão.', 'error'); return;
   }
-
   const ccLider = (session._operacoes || session.operacoes || [])[0];
   const ccCod   = ccLider?.cc_cod || ccLider?.nome || ccLider || '';
-
   const args = {
     p_tipo:             TIPO,
     p_colab_nome:       nome,
@@ -680,16 +608,15 @@ async function enviarSolicitacao() {
     p_colab_local:      document.getElementById('colab-local-hid').value,
     p_motivo:           motivo,
     p_dias_suspensao:   TIPO==='suspensao' ? parseInt(document.getElementById('f-dias').value)||null : null,
-    p_data_inicio_susp: TIPO==='suspensao' ? (document.getElementById('f-inicio').value||null)      : null,
-    p_data_retorno_susp:TIPO==='suspensao' ? (document.getElementById('f-retorno').value||null)     : null,
+    p_data_inicio_susp: TIPO==='suspensao' ? (document.getElementById('f-inicio').value||null) : null,
+    p_data_retorno_susp:TIPO==='suspensao' ? (document.getElementById('f-retorno').value||null) : null,
     p_data_documento:   dataDoc || null,
     p_cidade_documento: cidade,
     p_obs_lider:        document.getElementById('f-obs').value.trim() || null,
     p_cc_cod:           ccCod,
   };
-
   try {
-    const r = await rpc('wc_lider_solicitar', args);
+    await rpc('wc_lider_solicitar', args);
     toast('Solicitação enviada! O Onsite irá processar em breve.', 'success');
     limparColab();
     document.getElementById('f-motivo').value = '';
@@ -698,7 +625,6 @@ async function enviarSolicitacao() {
   } catch(e) { toast('Erro: ' + e.message, 'error'); }
 }
 
-// ── Carregar solicitações ────────────────────
 async function carregarSolicitacoes() {
   const wrap = document.getElementById('sol-lista');
   wrap.innerHTML = '<div class="empty">Carregando…</div>';
@@ -714,20 +640,15 @@ const STATUS_LABEL = { pendente:'⏳ Pendente', em_andamento:'⚙ Em Andamento',
 
 function renderSolItem(s) {
   const fmt = d => d ? d.split('-').reverse().join('/') : '—';
-  const tipoPill = `<span class="pill ${s.tipo}">${s.tipo==='advertencia'?'⚠️ Advertência':'🚫 Suspensão'}</span>`;
+  const tipoPill   = `<span class="pill ${s.tipo}">${s.tipo==='advertencia'?'⚠️ Advertência':'🚫 Suspensão'}</span>`;
   const statusPill = `<span class="pill ${s.status}">${STATUS_LABEL[s.status]||s.status}</span>`;
-  const suspInfo = s.tipo === 'suspensao' && s.dias_suspensao
+  const suspInfo   = s.tipo === 'suspensao' && s.dias_suspensao
     ? `<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Suspensão: ${s.dias_suspensao} dia(s) · ${fmt(s.data_inicio_susp)} → ${fmt(s.data_retorno_susp)}</div>` : '';
-  const podeBaixar = s.pdf_gerado_path && (s.status === 'em_andamento' || s.status === 'pendente');
   const podeUpload = s.pdf_gerado_path && s.status !== 'concluido' && s.status !== 'cancelado';
-  const podeBaixarConc = s.pdf_assinado_path;
-
   return `<div class="sol-item">
     <div class="sol-head">
       <div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-          ${tipoPill} ${statusPill}
-        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">${tipoPill} ${statusPill}</div>
         <div class="sol-nome">${s.colab_nome}</div>
         <div class="sol-meta">${fmt(s.data_documento)} · ${s.colab_local||''}</div>
         ${suspInfo}
@@ -740,9 +661,7 @@ function renderSolItem(s) {
     ${podeUpload && !s.pdf_assinado_path ? `
     <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
       <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
-        ${s.pdf_gerado_path
-          ? '📥 Baixe o documento, obtenha as assinaturas, e devolva aqui:'
-          : '⏳ Aguardando o Onsite gerar o documento…'}
+        ${s.pdf_gerado_path ? '📥 Baixe o documento, obtenha as assinaturas, e devolva aqui:' : '⏳ Aguardando o Onsite gerar o documento…'}
       </div>
       ${s.pdf_gerado_path ? `
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -761,7 +680,6 @@ function renderSolItem(s) {
   </div>`;
 }
 
-// ── Upload assinado ──────────────────────────
 let _uploadId = null;
 function abrirUploadAssinado(id) {
   _uploadId = id;
@@ -783,7 +701,6 @@ function abrirUploadAssinado(id) {
   inp.click();
 }
 
-// ── Modal de detalhe ─────────────────────────
 function abrirDetalhe(s) {
   const fmt = d => d ? d.split('-').reverse().join('/') : '—';
   document.getElementById('modal-titulo').textContent = s.tipo === 'advertencia' ? '⚠️ Advertência' : '🚫 Suspensão';
@@ -803,17 +720,16 @@ function abrirDetalhe(s) {
       <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:12.5px;line-height:1.6">${s.motivo}</div>
     </div>
     ${s.obs_onsite?`<div><div style="color:var(--muted);font-size:10px;text-transform:uppercase;margin-bottom:4px">Observação do Onsite</div><div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:12.5px">${s.obs_onsite}</div></div>`:''}`;
-
   const acoes = document.getElementById('modal-acoes');
   acoes.innerHTML = '';
   if (s.pdf_gerado_path) {
     const a = document.createElement('a');
-    a.href = s.pdf_gerado_path; a.target='_blank'; a.className='btn btn-ghost btn-sm'; a.textContent='📥 Baixar documento';
+    a.href=s.pdf_gerado_path; a.target='_blank'; a.className='btn btn-ghost btn-sm'; a.textContent='📥 Baixar documento';
     acoes.appendChild(a);
   }
   if (s.pdf_assinado_path) {
     const a = document.createElement('a');
-    a.href = s.pdf_assinado_path; a.target='_blank'; a.className='btn btn-ghost btn-sm'; a.textContent='📋 Ver assinado';
+    a.href=s.pdf_assinado_path; a.target='_blank'; a.className='btn btn-ghost btn-sm'; a.textContent='📋 Ver assinado';
     acoes.appendChild(a);
   }
   if (s.status !== 'concluido' && s.status !== 'cancelado' && s.pdf_gerado_path && !s.pdf_assinado_path) {
@@ -825,14 +741,11 @@ function abrirDetalhe(s) {
   const bc = document.createElement('button');
   bc.className='btn btn-ghost btn-sm'; bc.textContent='Fechar'; bc.onclick=fecharModal;
   acoes.appendChild(bc);
-
   document.getElementById('modal-bg').style.display = 'flex';
 }
 function fecharModal() { document.getElementById('modal-bg').style.display = 'none'; }
 
-// ════════════════════════════════════════════════════════════
-//  INDICAÇÕES — integrado do indicacao.html
-// ════════════════════════════════════════════════════════════
+// ── INDICAÇÕES ──
 const BUCKET_CURRICULOS = 'curriculos';
 let _indArquivo = null;
 let _indDeptoId = null;
@@ -849,17 +762,12 @@ async function indCarregarDeptos() {
     sel.innerHTML = '<option value="">Selecione a operação…</option>' +
       lista.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
     sel.disabled = false;
-
-    // Tenta pré-selecionar pelo CC do líder (operacoes[0])
     const ccLider = (session._operacoes?.[0]?.nome || session._operacoes?.[0] || '').toUpperCase();
     if (ccLider) {
       const match = lista.find(d => d.nome.toUpperCase().includes(ccLider) || ccLider.includes(d.nome.toUpperCase()));
       if (match) { sel.value = match.id; _indDeptoId = match.id; }
     }
-  } catch(e) {
-    sel.innerHTML = '<option value="">Erro ao carregar operações</option>';
-    sel.disabled = false;
-  }
+  } catch(e) { sel.innerHTML = '<option value="">Erro ao carregar operações</option>'; sel.disabled = false; }
   sel.addEventListener('change', function() { _indDeptoId = this.value || null; });
 }
 
@@ -874,18 +782,18 @@ function indArquivoSelecionado(file) {
   if (!file) return;
   _indArquivo = file;
   const ext = file.name.split('.').pop().toLowerCase();
-  document.getElementById('ind-fi-ico').textContent = ext === 'pdf' ? '📄' : '🖼️';
+  document.getElementById('ind-fi-ico').textContent  = ext === 'pdf' ? '📄' : '🖼️';
   document.getElementById('ind-fi-nome').textContent = file.name;
   document.getElementById('ind-fi-size').textContent = indFmtTamanho(file.size);
-  document.getElementById('ind-file-info').style.display = 'flex';
-  document.getElementById('ind-upload-titulo').textContent = 'Arquivo selecionado ✓';
+  document.getElementById('ind-file-info').style.display   = 'flex';
+  document.getElementById('ind-upload-titulo').textContent  = 'Arquivo selecionado ✓';
   document.getElementById('ind-upload-zone').style.borderColor = 'var(--success)';
 }
 function indRemoverArquivo() {
   _indArquivo = null;
   document.getElementById('ind-arquivo').value = '';
-  document.getElementById('ind-file-info').style.display = 'none';
-  document.getElementById('ind-upload-titulo').textContent = 'Clique ou arraste o arquivo aqui';
+  document.getElementById('ind-file-info').style.display   = 'none';
+  document.getElementById('ind-upload-titulo').textContent  = 'Clique ou arraste o arquivo aqui';
   document.getElementById('ind-upload-zone').style.borderColor = '';
 }
 function indFmtTamanho(b) { return b < 1024*1024 ? (b/1024).toFixed(0)+'KB' : (b/1024/1024).toFixed(1)+'MB'; }
@@ -908,15 +816,12 @@ async function enviarIndicacao() {
   const erroEl    = document.getElementById('ind-erro');
   const infoEl    = document.getElementById('ind-info');
   erroEl.style.display = 'none';
-
   const mostrarErro = msg => { erroEl.textContent = msg; erroEl.style.display = 'block'; };
-
-  if (!candidato)    return mostrarErro('Informe o nome do candidato.');
-  if (!cargo)        return mostrarErro('Informe o cargo indicado.');
-  if (!_indDeptoId)  return mostrarErro('Selecione a operação.');
-  if (!_indArquivo)  return mostrarErro('Anexe o currículo do candidato.');
+  if (!candidato)   return mostrarErro('Informe o nome do candidato.');
+  if (!cargo)       return mostrarErro('Informe o cargo indicado.');
+  if (!_indDeptoId) return mostrarErro('Selecione a operação.');
+  if (!_indArquivo) return mostrarErro('Anexe o currículo do candidato.');
   if (_indArquivo.size > 5*1024*1024) return mostrarErro('Arquivo muito grande. Máximo 5MB.');
-
   infoEl.style.display = 'block';
   try {
     const upload = await indUploadArquivo(_indArquivo);
@@ -930,13 +835,10 @@ async function enviarIndicacao() {
       p_depto_id:       _indDeptoId
     });
     infoEl.style.display = 'none';
-    document.getElementById('ind-suc-nome').textContent = candidato;
-    document.getElementById('ind-form').style.display   = 'none';
-    document.getElementById('ind-sucesso').style.display = 'block';
-  } catch(e) {
-    infoEl.style.display = 'none';
-    mostrarErro(e.message);
-  }
+    document.getElementById('ind-suc-nome').textContent     = candidato;
+    document.getElementById('ind-form').style.display       = 'none';
+    document.getElementById('ind-sucesso').style.display    = 'block';
+  } catch(e) { infoEl.style.display = 'none'; mostrarErro(e.message); }
 }
 
 function novaIndicacao() {
@@ -944,8 +846,8 @@ function novaIndicacao() {
   document.getElementById('ind-candidato').value = '';
   document.getElementById('ind-cargo').value     = '';
   document.getElementById('ind-arquivo').value   = '';
-  document.getElementById('ind-file-info').style.display  = 'none';
-  document.getElementById('ind-upload-titulo').textContent = 'Clique ou arraste o arquivo aqui';
+  document.getElementById('ind-file-info').style.display   = 'none';
+  document.getElementById('ind-upload-titulo').textContent  = 'Clique ou arraste o arquivo aqui';
   document.getElementById('ind-upload-zone').style.borderColor = '';
   document.getElementById('ind-erro').style.display    = 'none';
   document.getElementById('ind-sucesso').style.display = 'none';
@@ -960,12 +862,10 @@ async function carregarIndicacoes() {
     const resp = await rpc('wc_indicacoes_lider', { p_email: session.email });
     const lista = resp.indicacoes || [];
     if (!lista.length) { wrap.innerHTML = '<div class="empty">Você ainda não fez nenhuma indicação.</div>'; return; }
-
     const cnt = { pendente:0, recebido:0, concluido:0, rejeitado:0 };
     lista.forEach(i => { if (cnt[i.status]!==undefined) cnt[i.status]++; });
     const lbl = { pendente:'Pendente', recebido:'Recebido', concluido:'Concluído', rejeitado:'Rejeitado' };
     const corPill = { pendente:'rgba(245,158,11,.15);color:var(--warning)', recebido:'rgba(99,204,176,.15);color:var(--accent)', concluido:'rgba(34,197,94,.15);color:var(--success)', rejeitado:'rgba(239,68,68,.1);color:var(--danger)' };
-
     wrap.innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:20px">
         ${Object.entries(cnt).map(([k,v]) => `
@@ -999,7 +899,7 @@ async function carregarIndicacoes() {
   } catch(e) { wrap.innerHTML = `<div class="empty" style="color:var(--danger)">${e.message}</div>`; }
 }
 
-// ── Boot ─────────────────────────────────────
+// ── Boot — sem login próprio, redireciona para index.html se não tiver sessão ──
 window.addEventListener('DOMContentLoaded', () => {
   const s = carregarSessao();
   if (s && s.perfil === 'lider') {
@@ -1007,6 +907,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (session.operacoes?.length && !session._operacoes?.length)
       session._operacoes = session.operacoes;
     iniciarApp();
+  } else {
+    window.location.href = 'index.html';
   }
 });
 </script>
