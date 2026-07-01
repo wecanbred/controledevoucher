@@ -458,6 +458,8 @@ async function fazerLogin() {
     const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
     if (resp.sessao?.perfil !== 'lider') throw new Error('Este portal é exclusivo para líderes. Acesse o sistema principal.');
     session = resp.sessao;
+    // Popula _operacoes igual ao admissao.html
+    if (session.operacoes?.length) session._operacoes = session.operacoes;
     salvarSessao(session);
     iniciarApp();
   } catch(e) {
@@ -477,12 +479,72 @@ async function iniciarApp() {
   await Promise.all([carregarSolicitacoes(), carregarColabs(), indCarregarDeptos()]);
 }
 
-// ── Carregar colaboradores ───────────────────
+// ── Colaboradores do Template (Google Sheets gviz) ───────────
+const COLABS_SHEET_ID    = '1WBYOF9AkoS7NpzhqFyqm5PzQRP13yUF2p5ZY8FfZp_c';
+const COLABS_GID_ATIVOS  = '690743947';
+const COLABS_COLS = [
+  'bpo','cc','nickname','operacao','matricula','nome','data_admissao',
+  'tipo_contrato','cargo','salario','vencimento_contrato','renovacao','horario','escala',
+  'cpf','data_nascimento','nome_mae','celular','email','beneficio_mobilidade',
+  'logradouro','numero','complemento','bairro','cidade','uf','cep',
+  'tam_calca','tam_blusa','tam_calcado','tam_luva','status_colaborador',
+  'sexo','status_operacao','trintidio','categoria'
+];
+
+function colabsParseCSV(text) {
+  const parseRow = row => {
+    const cols = []; let cur = ''; let inQ = false;
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i];
+      if (c === '"') { if (inQ && row[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur=''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  };
+  const linhas = text.trim().split(/\r?\n/);
+  const registros = [];
+  for (let i = 1; i < linhas.length; i++) {
+    const row = parseRow(linhas[i]);
+    if (row.every(c => !c)) continue;
+    const obj = {};
+    COLABS_COLS.forEach((c, idx) => { obj[c] = (row[idx] || '').trim(); });
+    if (!obj.matricula && !obj.nome) continue;
+    registros.push(obj);
+  }
+  return registros;
+}
+
 async function carregarColabs() {
   try {
-    const r = await rpc('wc_lider_listar_colabs', {});
-    COLABS = r.colabs || [];
-  } catch(e) { COLABS = []; }
+    const url = `https://docs.google.com/spreadsheets/d/${COLABS_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${COLABS_GID_ATIVOS}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    if (text.trim().startsWith('<!') || text.trim().startsWith('<h')) throw new Error('Planilha requer autenticação');
+    const todos = colabsParseCSV(text);
+
+    // Filtra pelo CC do líder — compara campo 'cc' da planilha com as operações da sessão
+    const ops = session._operacoes || session.operacoes || [];
+    const ccLider = ops.map(o => (o.cc_cod || o.nome || o || '').toUpperCase().trim()).filter(Boolean);
+
+    if (ccLider.length === 0) {
+      COLABS = todos; // sem CC definido: mostra todos (só Master/fallback)
+    } else {
+      COLABS = todos.filter(c => {
+        const ccColab = (c.cc || '').toUpperCase().trim();
+        const opColab = (c.operacao || '').toUpperCase().trim();
+        return ccLider.some(cc =>
+          ccColab.includes(cc) || cc.includes(ccColab) ||
+          opColab.includes(cc) || cc.includes(opColab)
+        );
+      });
+    }
+  } catch(e) {
+    console.warn('Erro ao carregar colaboradores:', e.message);
+    COLABS = [];
+  }
 }
 
 // ── Busca de colaborador ─────────────────────
@@ -511,14 +573,15 @@ document.addEventListener('click', e => {
 });
 
 function selecionarColab(c) {
-  document.getElementById('colab-busca').value    = c.nome;
-  document.getElementById('colab-nome-hid').value = c.nome || '';
-  document.getElementById('colab-cpf-hid').value  = c.cpf  || '';
-  document.getElementById('colab-mat-hid').value  = c.matricula || '';
-  document.getElementById('colab-cargo-hid').value= c.cargo || '';
-  document.getElementById('colab-local-hid').value= c.cc   || '';
-  document.getElementById('cs-nome').textContent  = c.nome || '—';
-  document.getElementById('cs-sub').textContent   = `${c.cargo||''} · Matrícula ${c.matricula||'—'} · ${c.cc||''}`;
+  const ccLabel = c.cc || c.operacao || '';
+  document.getElementById('colab-busca').value     = c.nome;
+  document.getElementById('colab-nome-hid').value  = c.nome    || '';
+  document.getElementById('colab-cpf-hid').value   = c.cpf     || '';
+  document.getElementById('colab-mat-hid').value   = c.matricula || '';
+  document.getElementById('colab-cargo-hid').value = c.cargo   || '';
+  document.getElementById('colab-local-hid').value = ccLabel;
+  document.getElementById('cs-nome').textContent   = c.nome    || '—';
+  document.getElementById('cs-sub').textContent    = `${c.cargo||''} · Matrícula ${c.matricula||'—'} · ${ccLabel}`;
   document.getElementById('colab-selecionado').style.display = 'block';
   document.getElementById('colab-dropdown').classList.remove('aberto');
 }
@@ -900,7 +963,12 @@ async function carregarIndicacoes() {
 // ── Boot ─────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   const s = carregarSessao();
-  if (s && s.perfil === 'lider') { session = s; iniciarApp(); }
+  if (s && s.perfil === 'lider') {
+    session = s;
+    if (session.operacoes?.length && !session._operacoes?.length)
+      session._operacoes = session.operacoes;
+    iniciarApp();
+  }
 });
 </script>
 </body>
