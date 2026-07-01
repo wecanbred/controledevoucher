@@ -5,179 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WECANBR · Sistema Integrado</title>
 <style>
-  :root{--bg:#150a20;--surface:#211132;--surface2:#2c1740;--surface3:#38204e;
-    --border:#432a5c;--accent:#63ccb0;--brand:#4f0672;--danger:#ef4444;
-    --text:#efe9f7;--muted:#a394bf;--font:'Segoe UI',system-ui,sans-serif}
+  :root{--bg:#150a20;--surface:#211132;--surface2:#2c1740;--border:#432a5c;--accent:#63ccb0;--brand:#4f0672;--danger:#ef4444;--text:#efe9f7;--muted:#a394bf;--font:'Segoe UI',system-ui,sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center}
-  #login-page{position:fixed;inset:0;background:
-    radial-gradient(circle at 18% 18%,rgba(99,204,176,.10),transparent 45%),
-    radial-gradient(circle at 85% 80%,rgba(79,6,114,.35),transparent 55%),
-    var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center;transition:background .4s}
+  body.tema-shopee{--bg:#fff7f0;--surface:#ffffff;--surface2:#fff0e6;--border:#ffd0b0;--accent:#ee4d2d;--brand:#ee4d2d;--text:#1a1a1a;--muted:#888}
+  #login-page{position:fixed;inset:0;background:radial-gradient(circle at 18% 18%,rgba(99,204,176,.10),transparent 45%),radial-gradient(circle at 85% 80%,rgba(79,6,114,.35),transparent 55%),var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;transition:background .4s}
+  body.tema-shopee #login-page{background:radial-gradient(circle at 10% 10%,rgba(238,77,45,.12),transparent 45%),radial-gradient(circle at 90% 90%,rgba(255,87,34,.15),transparent 50%),var(--bg)}
   .login-box{width:420px;max-width:100%}
+  .login-logo{width:48px;height:48px;border-radius:12px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;transition:background .4s}
   .login-head{margin-bottom:26px}
   .login-head h1{font-size:28px;font-weight:800;letter-spacing:1px}
   .login-head .sub{color:var(--accent);font-size:14px;font-style:italic;margin-top:4px}
-  .login-error{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);
-    padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:none}
+  .boas-vindas{display:none;font-size:15px;font-weight:700;color:var(--accent);margin-top:8px;animation:fadeIn .5s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+  .shopee-badge{display:none;align-items:center;gap:8px;margin-bottom:18px;background:rgba(238,77,45,.1);border:1px solid rgba(238,77,45,.25);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#ee4d2d;font-weight:600}
+  body.tema-shopee .shopee-badge{display:flex}
+  .login-error{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;display:none}
   .form-group{margin-bottom:14px}
-  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;
-    text-transform:uppercase;letter-spacing:.4px}
-  .form-group input{width:100%;background:var(--surface2);border:1px solid var(--border);
-    color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+  .form-group input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);outline:none;transition:border-color .15s,background .4s,color .4s}
   .form-group input:focus{border-color:var(--accent)}
-  .btn{padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;
-    font-family:var(--font);font-weight:700}
-  .btn-primary{background:var(--accent);color:var(--brand);width:100%;margin-top:4px}
-  .btn-primary:hover{background:#7adcc4}
+  .btn{padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:700}
+  .btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:4px;transition:opacity .15s}
+  body:not(.tema-shopee) .btn-primary{color:var(--brand)}
+  .btn-primary:hover{opacity:.9}
   .btn-primary:disabled{opacity:.6;cursor:not-allowed}
-  .info{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-    padding:10px 14px;font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.6}
+  .info{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.6;transition:background .4s,border-color .4s}
   .info strong{color:var(--text)}
-
-  /* Modal troca de senha */
-  #modal-troca{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
-    z-index:99999;align-items:center;justify-content:center;padding:24px}
+  #modal-troca{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;align-items:center;justify-content:center;padding:24px}
   #modal-troca.aberto{display:flex}
-  .troca-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;
-    width:400px;max-width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .troca-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:400px;max-width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
   .troca-box h2{font-size:18px;font-weight:800;margin-bottom:6px}
-  .troca-box p{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
-  .troca-aviso{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);
-    color:#f59e0b;padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:16px}
-  .troca-erro{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);
-    padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:14px;display:none}
+  .troca-box p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+  .troca-aviso{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#f59e0b;padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:16px}
+  .troca-erro{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);padding:9px 12px;border-radius:8px;font-size:12px;margin-bottom:14px;display:none}
   .senha-req{font-size:11px;color:var(--muted);margin-top:6px}
   .senha-req span{display:block;margin-top:2px}
   .senha-req span.ok{color:var(--accent)}
 </style>
 </head>
 <body>
-
-<!-- LOGIN -->
 <div id="login-page">
   <div class="login-box">
+    <div class="login-logo" id="login-logo">🏢</div>
     <div class="login-head">
-      <h1>WECANBR</h1>
-      <p class="sub">Sistema Integrado</p>
+      <h1 id="login-titulo">WECANBR</h1>
+      <p class="sub" id="login-sub">Sistema Integrado</p>
+      <p class="boas-vindas" id="boas-vindas"></p>
     </div>
+    <div class="shopee-badge">🛒 Portal do Líder Shopee</div>
     <div class="login-error" id="login-error"></div>
     <div class="form-group"><label>E-mail</label>
-      <input type="email" id="login-email" placeholder="seu@wecanbr.com.br"/>
+      <input type="email" id="login-email" placeholder="seu@email.com" oninput="detectarTema(this.value)" autocomplete="email"/>
     </div>
     <div class="form-group"><label>Senha</label>
       <input type="password" id="login-senha" placeholder="••••••"/>
     </div>
     <button class="btn btn-primary" id="btn-entrar" onclick="fazerLogin()">Entrar</button>
-    <div class="info"><strong>Acesso:</strong> use o e-mail e senha cadastrados pelo administrador.</div>
+    <div class="info" id="login-info"><strong>Acesso:</strong> use o e-mail e senha cadastrados pelo administrador.</div>
   </div>
 </div>
-
-<!-- MODAL: TROCA DE SENHA OBRIGATÓRIA -->
 <div id="modal-troca">
   <div class="troca-box">
     <h2>🔐 Defina sua senha</h2>
     <p>Este é seu primeiro acesso. Por segurança, crie uma senha pessoal antes de continuar.</p>
-    <div class="troca-aviso">⚠️ Você não poderá usar a senha temporária após essa troca.</div>
+    <div class="troca-aviso">⚠️ Após essa troca, a senha temporária não funcionará mais.</div>
     <div class="troca-erro" id="troca-erro"></div>
     <div class="form-group">
       <label>Nova senha</label>
       <input type="password" id="troca-nova" placeholder="Mínimo 6 caracteres" oninput="validarSenha()"/>
-      <div class="senha-req" id="troca-req">
-        <span id="req-len">• Mínimo 6 caracteres</span>
-        <span id="req-dif">• Diferente da senha temporária (WeCan@2026)</span>
-      </div>
+      <div class="senha-req"><span id="req-len">• Mínimo 6 caracteres</span><span id="req-dif">• Diferente da senha temporária</span></div>
     </div>
     <div class="form-group">
-      <label>Confirmar senha</label>
+      <label>Confirmar nova senha</label>
       <input type="password" id="troca-conf" placeholder="Repita a nova senha"/>
     </div>
     <button class="btn btn-primary" id="btn-trocar" onclick="trocarSenha()">Salvar e Entrar</button>
   </div>
 </div>
-
 <script src="shared.js"></script>
 <script>
-let _sessaoPendente = null;
-
-function validarSenha() {
-  const v = document.getElementById('troca-nova').value;
-  const lenOk = v.length >= 6;
-  const difOk = v !== 'WeCan@2026';
-  const reqLen = document.getElementById('req-len');
-  const reqDif = document.getElementById('req-dif');
-  reqLen.className = lenOk ? 'ok' : '';
-  reqDif.className = difOk ? 'ok' : '';
-}
-
-async function fazerLogin() {
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const senha  = document.getElementById('login-senha').value;
-  const err    = document.getElementById('login-error');
-  const btn    = document.getElementById('btn-entrar');
-  err.style.display = 'none';
-  if (!email || !senha) { err.textContent='Informe e-mail e senha.'; err.style.display='block'; return; }
-  btn.disabled=true; btn.textContent='Entrando…';
-  try {
-    const resp = await rpc('wc_login', { p_email:email, p_senha:senha });
-    const sessao = resp.sessao;
-
-    // Redireciona líderes para o portal deles
-    if (sessao.perfil === 'lider') {
-      salvarSessao(sessao);
-      window.location.href = 'lider.html';
-      return;
-    }
-
-    // Senha temporária → abre modal de troca
-    if (sessao.senha_temporaria) {
-      _sessaoPendente = sessao;
-      document.getElementById('modal-troca').classList.add('aberto');
-      return;
-    }
-
+let _sessaoPendente=null,_isShopee=false;
+function detectarTema(e){const s=/@shopee|@sea\.com/i.test(e);if(s===_isShopee)return;_isShopee=s;document.body.classList.toggle('tema-shopee',s);document.getElementById('login-logo').textContent=s?'🛒':'🏢';document.getElementById('login-titulo').textContent=s?'Portal do Líder':'WECANBR';document.getElementById('login-sub').textContent=s?'WeCan BR — Área do Líder Shopee':'Sistema Integrado';document.getElementById('login-info').innerHTML=s?'<strong>Acesso:</strong> use o e-mail e senha fornecidos pelo seu Onsite responsável.':'<strong>Acesso:</strong> use o e-mail e senha cadastrados pelo administrador.';}
+function validarSenha(){const v=document.getElementById('troca-nova').value;document.getElementById('req-len').className=v.length>=6?'ok':'';document.getElementById('req-dif').className=v!=='WeCan@2026'?'ok':'';}
+async function fazerLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const senha=document.getElementById('login-senha').value;
+  const err=document.getElementById('login-error');
+  const btn=document.getElementById('btn-entrar');
+  err.style.display='none';
+  if(!email||!senha){err.textContent='Informe e-mail e senha.';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Entrando…';
+  try{
+    const resp=await rpc('wc_login',{p_email:email,p_senha:senha});
+    const sessao=resp.sessao;
+    const bv=document.getElementById('boas-vindas');
+    bv.textContent='Olá, '+(sessao.nome||'').split(' ')[0]+'! Bem-vindo 👋';
+    bv.style.display='block';
+    if(sessao.senha_temporaria){_sessaoPendente=sessao;setTimeout(()=>document.getElementById('modal-troca').classList.add('aberto'),700);return;}
     salvarSessao(sessao);
-    window.location.href = 'admissao.html';
-  } catch(e) {
-    err.textContent = e.message || 'E-mail ou senha incorretos.';
-    err.style.display = 'block';
-  } finally { btn.disabled=false; btn.textContent='Entrar'; }
+    setTimeout(()=>{window.location.href=sessao.perfil==='lider'?'lider.html':'admissao.html';},600);
+  }catch(e){err.textContent=e.message||'E-mail ou senha incorretos.';err.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='Entrar';}
 }
-
-async function trocarSenha() {
-  const nova  = document.getElementById('troca-nova').value;
-  const conf  = document.getElementById('troca-conf').value;
-  const erro  = document.getElementById('troca-erro');
-  const btn   = document.getElementById('btn-trocar');
-  erro.style.display = 'none';
-
-  if (nova.length < 6)          { erro.textContent='A senha deve ter pelo menos 6 caracteres.'; erro.style.display='block'; return; }
-  if (nova === 'WeCan@2026')    { erro.textContent='Use uma senha diferente da temporária.'; erro.style.display='block'; return; }
-  if (nova !== conf)            { erro.textContent='As senhas não coincidem.'; erro.style.display='block'; return; }
-
-  btn.disabled=true; btn.textContent='Salvando…';
-  try {
-    // Usa o token da sessão pendente para trocar a senha
-    await rpc('wc_trocar_senha', { p_token: _sessaoPendente.token, p_senha_nova: nova });
-    // Marca como não temporária e salva
-    _sessaoPendente.senha_temporaria = false;
+async function trocarSenha(){
+  const nova=document.getElementById('troca-nova').value;
+  const conf=document.getElementById('troca-conf').value;
+  const erro=document.getElementById('troca-erro');
+  const btn=document.getElementById('btn-trocar');
+  erro.style.display='none';
+  if(nova.length<6){erro.textContent='Mínimo 6 caracteres.';erro.style.display='block';return;}
+  if(nova==='WeCan@2026'){erro.textContent='Use uma senha diferente da temporária.';erro.style.display='block';return;}
+  if(nova!==conf){erro.textContent='As senhas não coincidem.';erro.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Salvando…';
+  try{
+    await rpc('wc_trocar_senha',{p_token:_sessaoPendente.token,p_senha_nova:nova});
+    _sessaoPendente.senha_temporaria=false;
     salvarSessao(_sessaoPendente);
-    window.location.href = 'admissao.html';
-  } catch(e) {
-    erro.textContent = e.message || 'Erro ao salvar senha.';
-    erro.style.display = 'block';
-    btn.disabled=false; btn.textContent='Salvar e Entrar';
-  }
+    window.location.href=_sessaoPendente.perfil==='lider'?'lider.html':'admissao.html';
+  }catch(e){erro.textContent=e.message||'Erro ao salvar senha.';erro.style.display='block';btn.disabled=false;btn.textContent='Salvar e Entrar';}
 }
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    if (document.getElementById('modal-troca').classList.contains('aberto')) trocarSenha();
-    else fazerLogin();
-  }
-});
-
-if (carregarSessaoSalva()) window.location.href = 'admissao.html';
+document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;document.getElementById('modal-troca').classList.contains('aberto')?trocarSenha():fazerLogin();});
+const _s=carregarSessaoSalva();
+if(_s)window.location.href=_s.perfil==='lider'?'lider.html':'admissao.html';
 </script>
 </body>
 </html>
