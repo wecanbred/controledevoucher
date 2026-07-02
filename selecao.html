@@ -2083,7 +2083,7 @@ function doPost(e) { return doGet(e); }</pre>
       <input type="hidden" id="ind-id"/>
       <div class="form-group">
         <label>Status</label>
-        <select id="ind-status">
+        <select id="ind-status" onchange="indTogglePrevisao(this.value)">
           <option value="pendente">Pendente</option>
           <option value="recebido">Recebido</option>
           <option value="concluido">Concluído</option>
@@ -2093,6 +2093,16 @@ function doPost(e) { return doGet(e); }</pre>
       <div class="form-group">
         <label>Motivo / Feedback para o Líder</label>
         <textarea id="ind-motivo" rows="3" placeholder="Descreva o motivo ou o próximo passo…"></textarea>
+      </div>
+      <div class="form-group" id="ind-previsao-wrap" style="display:none">
+        <label>📅 Início previsto para</label>
+        <input type="month" id="ind-previsao" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none"/>
+        <small style="color:var(--muted);font-size:11px">Estimativa de quando o candidato pode começar — visível ao líder</small>
+      </div>
+      <div class="form-group" id="ind-inicio-real-wrap" style="display:none">
+        <label>✅ Data de início confirmada</label>
+        <input type="date" id="ind-inicio-real" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 12px;font-size:13px;font-family:var(--font);outline:none"/>
+        <small style="color:var(--muted);font-size:11px">Data real de início — confirmação final para o líder</small>
       </div>
     </div>
     <div class="modal-actions">
@@ -3731,6 +3741,8 @@ function renderIndicacoes() {
         <strong>${i.nome_candidato||'—'}</strong>
         <span>${i.nome_lider||'—'} · ${i.operacao||'—'} · ${i.cargo_indicado||'—'}</span>
         ${i.motivo ? `<div style="font-size:11.5px;color:var(--muted);margin-top:4px;font-style:italic">"${i.motivo}"</div>` : ''}
+        ${i.previsao_inicio && i.status === 'recebido' ? `<div style="font-size:11.5px;color:var(--accent);margin-top:4px;font-weight:600">📅 Início previsto: ${i.previsao_inicio}</div>` : ''}
+        ${i.data_inicio_real && i.status === 'concluido' ? `<div style="font-size:11.5px;color:var(--success);margin-top:4px;font-weight:600">✅ Início confirmado: ${new Date(i.data_inicio_real+'T12:00').toLocaleDateString('pt-BR')}</div>` : ''}
       </div>
       ${pillStatus(i.status)}
       <div class="qc-actions">
@@ -3740,24 +3752,36 @@ function renderIndicacoes() {
     </div>`).join('');
 }
 
+function indTogglePrevisao(status) {
+  const wrapPrev  = document.getElementById('ind-previsao-wrap');
+  const wrapReal  = document.getElementById('ind-inicio-real-wrap');
+  if (wrapPrev) wrapPrev.style.display = status === 'recebido'  ? 'block' : 'none';
+  if (wrapReal) wrapReal.style.display = status === 'concluido' ? 'block' : 'none';
+}
+
 function abrirModalIndicacao(i) {
   document.getElementById('ind-id').value = i.id;
   document.getElementById('ind-modal-sub').textContent = `${i.nome_candidato} — indicado por ${i.nome_lider}`;
   document.getElementById('ind-status').value  = i.status || 'pendente';
   document.getElementById('ind-motivo').value  = i.motivo || '';
+  document.getElementById('ind-previsao').value    = i.previsao_inicio  || '';
+  document.getElementById('ind-inicio-real').value  = i.data_inicio_real || '';
+  indTogglePrevisao(i.status || 'pendente');
   abrirModal('modal-indicacao');
 }
 
 async function salvarIndicacao() {
   const btn    = document.getElementById('btn-salvar-ind');
-  const id     = document.getElementById('ind-id').value;
-  const status = document.getElementById('ind-status').value;
-  const motivo = document.getElementById('ind-motivo').value.trim();
+  const id       = document.getElementById('ind-id').value;
+  const status   = document.getElementById('ind-status').value;
+  const motivo   = document.getElementById('ind-motivo').value.trim();
+  const previsao   = status === 'recebido'  ? (document.getElementById('ind-previsao').value    || null) : null;
+  const inicioReal = status === 'concluido' ? (document.getElementById('ind-inicio-real').value || null) : null;
   btn.disabled=true; btn.textContent='Salvando…';
   try {
-    await rpc('wc_atualizar_indicacao', { p_id:id, p_status:status, p_motivo:motivo });
+    await rpc('wc_atualizar_indicacao', { p_id:id, p_status:status, p_motivo:motivo, p_previsao_inicio:previsao, p_data_inicio_real:inicioReal });
     const idx = INDICACOES.findIndex(x => x.id===id);
-    if (idx>=0) { INDICACOES[idx].status=status; INDICACOES[idx].motivo=motivo; }
+    if (idx>=0) { INDICACOES[idx].status=status; INDICACOES[idx].motivo=motivo; INDICACOES[idx].previsao_inicio=previsao; INDICACOES[idx].data_inicio_real=inicioReal; }
     fecharModal('modal-indicacao');
     renderIndicacoes();
     atualizarBadgeFila();
