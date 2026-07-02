@@ -6,31 +6,31 @@
 <title>Portal do Líder | WeCan BR</title>
 <style>
 :root {
-  --bg:#0f0718; --surface:#1a0a2e; --surface2:#2a1045; --surface3:#3d1860;
-  --border:#432a5c; --accent:#63ccb0; --brand:#4f0672;
+  --bg:#fff7f0; --surface:#ffffff; --surface2:#fff0e6; --surface3:#ffe0cc;
+  --border:#ffd0b0; --accent:#ee4d2d; --brand:#ee4d2d;
   --success:#22c55e; --danger:#ef4444; --warning:#f59e0b;
-  --text:#efe9f7; --muted:#a394bf;
+  --text:#1a1a1a; --muted:#888888;
   --font:'Segoe UI',system-ui,sans-serif;
   --radius:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#ffd0b0;border-radius:3px}
 
 /* ── LAYOUT ── */
 .app{display:flex;flex-direction:column;min-height:100vh}
 .topbar{
-  background:#1e0b35;border-bottom:1px solid var(--border);
+  background:#fff0e6;border-bottom:1px solid var(--border);
   padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:50;
 }
 .topbar-brand{display:flex;align-items:center;gap:10px}
 .topbar-logo{width:30px;height:30px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
-.topbar-brand h1{font-size:14px;font-weight:800;letter-spacing:.5px}
-.topbar-brand p{font-size:11px;color:var(--accent);margin-top:1px}
+.topbar-brand h1{font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--text)}
+.topbar-brand p{font-size:11px;color:var(--brand);margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:12px}
-.user-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px}
-.btn-sair{background:transparent;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:var(--font)}
+.user-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text)}
+.btn-sair{background:transparent;border:1px solid rgba(238,77,45,.3);color:#ee4d2d;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:var(--font)}
 
 .main{max-width:860px;margin:0 auto;padding:24px 16px 60px;width:100%}
 
@@ -41,8 +41,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* ── BOTÕES ── */
 .btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:700;transition:.15s}
-.btn-primary{background:var(--accent);color:#0f0718}
-.btn-primary:hover{background:#7adcc4}
+.btn-primary{background:var(--accent);color:#ffffff}
+.btn-primary:hover{background:#d44426}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
 .btn-ghost:hover{border-color:var(--accent)}
@@ -70,8 +70,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   cursor:pointer;text-align:center;background:var(--surface2);transition:.15s;
 }
 .tipo-btn:hover{border-color:var(--accent)}
-.tipo-btn.ativo.advertencia{border-color:#f59e0b;background:rgba(245,158,11,.1)}
-.tipo-btn.ativo.suspensao{border-color:#ef4444;background:rgba(239,68,68,.1)}
+.tipo-btn.ativo.advertencia{border-color:#f59e0b;background:rgba(245,158,11,.08)}
+.tipo-btn.ativo.suspensao{border-color:#ef4444;background:rgba(239,68,68,.06)}
 .tipo-btn .ico{font-size:24px;margin-bottom:4px}
 .tipo-btn .lbl{font-size:13px;font-weight:700}
 .tipo-btn .sub{font-size:11px;color:var(--muted);margin-top:2px}
@@ -81,7 +81,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .colab-dropdown{
   position:absolute;top:100%;left:0;right:0;z-index:60;
   background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:220px;overflow-y:auto;display:none;
+  box-shadow:0 8px 24px rgba(238,77,45,.12);max-height:220px;overflow-y:auto;display:none;
 }
 .colab-dropdown.aberto{display:block}
 .colab-item{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
@@ -120,7 +120,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 #toast{
   display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:var(--surface2);border:1px solid var(--border);border-radius:10px;
-  padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.5);
+  padding:10px 18px;font-size:13px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.12);
   white-space:nowrap;
 }
 #toast.success{border-color:var(--success);color:var(--success)}
@@ -150,7 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 <div class="app" id="pg-app" style="display:none">
   <header class="topbar">
     <div class="topbar-brand">
-      <div class="topbar-logo">👔</div>
+      <div class="topbar-logo" style="color:#fff">👔</div>
       <div>
         <h1>Portal do Líder</h1>
         <p>WeCan BR</p>
@@ -342,7 +342,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </div>
 
 <!-- MODAL -->
-<div id="modal-bg" onclick="fecharModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;align-items:center;justify-content:center;padding:16px">
+<div id="modal-bg" onclick="fecharModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:800;align-items:center;justify-content:center;padding:16px">
   <div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
     <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
       <h2 style="font-size:15px;font-weight:800" id="modal-titulo">Detalhes</h2>
