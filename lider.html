@@ -825,15 +825,29 @@ async function enviarIndicacao() {
   infoEl.style.display = 'block';
   try {
     const upload = await indUploadArquivo(_indArquivo);
-    await rpc('wc_criar_indicacao', {
-      p_nome_candidato: candidato,
-      p_cargo_indicado: cargo,
-      p_nome_lider:     session.nome  || '',
-      p_email_lider:    session.email || '',
-      p_anexo_url:      upload.url,
-      p_anexo_nome:     upload.nome,
-      p_depto_id:       _indDeptoId
+    // Buscar nome da operação selecionada para p_operacao
+    const selOp = document.getElementById('ind-operacao');
+    const operacaoNome = selOp.options[selOp.selectedIndex]?.text || '';
+
+    // RPC pública — sem p_token
+    const respInd = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_criar_indicacao`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({
+        p_nome_candidato: candidato,
+        p_cargo:          cargo,
+        p_operacao:       operacaoNome,
+        p_nome_lider:     session.nome  || '',
+        p_email_lider:    session.email || '',
+        p_anexo_url:      upload.url,
+        p_anexo_nome:     upload.nome,
+        p_depto_id:       _indDeptoId || null
+      })
     });
+    if (!respInd.ok) {
+      const eInd = await respInd.json().catch(() => ({}));
+      throw new Error(eInd.message || eInd.hint || `Erro ${respInd.status}`);
+    }
     infoEl.style.display = 'none';
     document.getElementById('ind-suc-nome').textContent     = candidato;
     document.getElementById('ind-form').style.display       = 'none';
