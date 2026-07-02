@@ -855,6 +855,26 @@
   .vchr-export-preview th{background:var(--surface3);padding:6px 10px;text-align:left;color:var(--muted);position:sticky;top:0;white-space:nowrap}
   .vchr-export-preview td{padding:5px 10px;border-top:1px solid var(--border);white-space:nowrap}
 
+
+/* ── INDICAÇÕES — abas de status ── */
+.ind-tab {
+  padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border: none; background: none; color: var(--muted); font-family: var(--font);
+  border-bottom: 2px solid transparent; white-space: nowrap; transition: .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.ind-tab:hover { color: var(--text); }
+.ind-tab.ativa { color: var(--accent); border-bottom-color: var(--accent); }
+.ind-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; border-radius: 10px; font-size: 10px;
+  font-weight: 800; padding: 0 5px;
+  background: var(--surface2); color: var(--muted);
+}
+.ind-count.pendente  { background: rgba(245,158,11,.15); color: var(--warning); }
+.ind-count.recebido  { background: rgba(99,204,176,.15); color: var(--accent); }
+.ind-count.concluido { background: rgba(34,197,94,.15);  color: var(--success); }
+.ind-count.rejeitado { background: rgba(239,68,68,.12);  color: var(--danger); }
 </style>
 </head>
 <!-- GAVETA lateral (estilo Jira) -->
@@ -948,18 +968,34 @@
         <h1>📋 Indicações de Currículos</h1>
         <p>Currículos enviados pelos líderes das operações</p>
       </div>
+      <button class="btn btn-ghost btn-sm" onclick="carregarIndicacoes().then(renderIndicacoes)">🔄 Atualizar</button>
     </div>
-    <div class="toolbar">
+
+    <!-- Sub-abas de status -->
+    <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto">
+      <button class="ind-tab ativa" data-status="" onclick="indTrocarAba(this,'')">
+        Todos <span class="ind-count" id="ind-cnt-todos">0</span>
+      </button>
+      <button class="ind-tab" data-status="pendente" onclick="indTrocarAba(this,'pendente')">
+        ⏳ Pendentes <span class="ind-count pendente" id="ind-cnt-pendente">0</span>
+      </button>
+      <button class="ind-tab" data-status="recebido" onclick="indTrocarAba(this,'recebido')">
+        📥 Recebidos <span class="ind-count recebido" id="ind-cnt-recebido">0</span>
+      </button>
+      <button class="ind-tab" data-status="concluido" onclick="indTrocarAba(this,'concluido')">
+        ✅ Aprovados <span class="ind-count concluido" id="ind-cnt-concluido">0</span>
+      </button>
+      <button class="ind-tab" data-status="rejeitado" onclick="indTrocarAba(this,'rejeitado')">
+        ❌ Rejeitados <span class="ind-count rejeitado" id="ind-cnt-rejeitado">0</span>
+      </button>
+    </div>
+
+    <!-- Busca -->
+    <div class="toolbar" style="margin-bottom:12px">
       <input type="text" id="busca-ind" placeholder="Buscar por candidato, líder, operação…" oninput="renderIndicacoes()"/>
-      <select id="filtro-ind-status" onchange="renderIndicacoes()">
-        <option value="">Todos os status</option>
-        <option value="pendente">Pendente</option>
-        <option value="recebido">Recebido</option>
-        <option value="concluido">Concluído</option>
-        <option value="rejeitado">Rejeitado</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="filtroLimparTela('ind')">✕ Limpar</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('busca-ind').value='';renderIndicacoes()">✕ Limpar</button>
     </div>
+
     <div id="lista-indicacoes"></div>
   </div>
 
@@ -3655,16 +3691,38 @@ function renderHomeIndicacoesRecentes() {
 }
 
 // ── INDICAÇÕES ────────────────────────────────
+let _indAbaAtual = '';
+
+function indTrocarAba(btn, status) {
+  _indAbaAtual = status;
+  document.querySelectorAll('.ind-tab').forEach(b => b.classList.remove('ativa'));
+  btn.classList.add('ativa');
+  renderIndicacoes();
+}
+
+function indAtualizarContadores() {
+  const cnt = { '':INDICACOES.length, pendente:0, recebido:0, concluido:0, rejeitado:0 };
+  INDICACOES.forEach(i => { if (cnt[i.status] !== undefined) cnt[i.status]++; });
+  const map = { '':'todos', pendente:'pendente', recebido:'recebido', concluido:'concluido', rejeitado:'rejeitado' };
+  Object.entries(map).forEach(([status, key]) => {
+    const el = document.getElementById(`ind-cnt-${key}`);
+    if (el) el.textContent = cnt[status] || 0;
+  });
+}
+
 function renderIndicacoes() {
+  indAtualizarContadores();
   const busca  = (document.getElementById('busca-ind')?.value||'').toLowerCase();
-  const filtro = document.getElementById('filtro-ind-status')?.value||'';
   let lista = [...INDICACOES];
-  if (busca)  lista = lista.filter(i => [i.nome_candidato,i.nome_lider,i.operacao,i.cargo_indicado].some(f=>(f||'').toLowerCase().includes(busca)));
-  if (filtro) lista = lista.filter(i => i.status===filtro);
+  if (_indAbaAtual) lista = lista.filter(i => i.status === _indAbaAtual);
+  if (busca) lista = lista.filter(i => [i.nome_candidato,i.nome_lider,i.operacao,i.cargo_indicado].some(f=>(f||'').toLowerCase().includes(busca)));
   const el = document.getElementById('lista-indicacoes');
   if (!el) return;
   if (!lista.length) {
-    el.innerHTML=`<div class="empty-state"><div class="ico">📭</div>${busca||filtro?'Nenhuma indicação encontrada com esse filtro':'Nenhuma indicação no seu escopo ainda'}</div>`;
+    const msg = busca ? 'Nenhuma indicação encontrada com essa busca'
+      : _indAbaAtual ? `Nenhuma indicação ${_indAbaAtual === 'concluido' ? 'aprovada' : _indAbaAtual === 'rejeitado' ? 'rejeitada' : _indAbaAtual} ainda`
+      : 'Nenhuma indicação no seu escopo ainda';
+    el.innerHTML=`<div class="empty-state"><div class="ico">📭</div>${msg}</div>`;
     return;
   }
   el.innerHTML = lista.map(i => `
