@@ -873,8 +873,15 @@ async function carregarIndicacoes() {
   wrap.innerHTML = '<div class="empty">Carregando…</div>';
   if (!session?.email) { wrap.innerHTML = '<div class="empty">E-mail não encontrado na sessão.</div>'; return; }
   try {
-    const resp = await rpc('wc_indicacoes_lider', { p_email: session.email });
-    const lista = resp.indicacoes || [];
+    // RPC pública — sem p_token
+    const _rInd = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wc_indicacoes_lider`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':`Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ p_email: session.email })
+    });
+    if (!_rInd.ok) { const _e = await _rInd.json().catch(()=>({})); throw new Error(_e.message || `Erro ${_rInd.status}`); }
+    const resp = await _rInd.json();
+    const lista = (Array.isArray(resp) ? resp : (resp.indicacoes || []));
     if (!lista.length) { wrap.innerHTML = '<div class="empty">Você ainda não fez nenhuma indicação.</div>'; return; }
     const cnt = { pendente:0, recebido:0, concluido:0, rejeitado:0 };
     lista.forEach(i => { if (cnt[i.status]!==undefined) cnt[i.status]++; });
